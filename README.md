@@ -4,6 +4,8 @@ The python code scans for endpoints in websites by looking through all the js fi
 
 If there is a {id} inside the path, it replaces it with 1 to test the endpoint whether it is a 200 OK, 404/403, or a redirect (30x Header)
 
+404(Soft) means there is a 200 response, but a 404 page.
+
 It also tries very sensitive endpoints like .env, .git/config, and a lot more.
 
 If there is a WAF (firewall, basically) in the application, it will sense the sensitive endpoints (including robots.txt) as a 403, even if publicly accessible.

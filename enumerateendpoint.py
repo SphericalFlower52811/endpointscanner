@@ -5,6 +5,10 @@ import re
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 
+HEADER = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
+    "Accept-Language": "en-US, en;q=0.9"
+}
 def identify_javascript_type(response):
     stack = []
     html = response.text
@@ -29,9 +33,9 @@ def identify_javascript_type(response):
     return " + ".join(stack) if stack else "Unknown JS Stack"
 
 async def async_rate_test(url, num_reqs=100):
-    print(f"\n[*] Initializing Async Burst: {num_reqs} requests to {url}")
+    print(f"\nStarting Rate limit test: {num_reqs} requests to {url}")
     async with aiohttp.ClientSession() as session:
-        tasks = [session.get(url, timeout=10) for _ in range(num_reqs)]
+        tasks = [session.get(url, headers=HEADER, timeout=10) for _ in range(num_reqs)]
         responses = await asyncio.gather(*tasks, return_exceptions=True)
         
         status_counts = {}
@@ -50,7 +54,7 @@ async def async_rate_test(url, num_reqs=100):
         print("\n--- Rate Limit Results ---")
         for code, count in status_counts.items():
             if code == 'Error': continue
-            label = "OK" if code == 200 else "LIMITED" if code == 429 else "WAF/FORBIDDEN" if code == 403 else "Other"
+            label = "OK" if code == 200 else "LIMITED" if code == 429 else "WAF/FORBIDDEN" if code == 403 else "CRASHED" if code == 500 else "Other"
             print(f" Status {code} ({label}): {count}")
         
         if status_counts.get(200, 0) == num_reqs:
@@ -69,11 +73,11 @@ def main():
     if not target.startswith(("http://", "https://")):
         target = "https://" + target
     
-    print("\n[!] Using a fake path to test for react shells.")
+    print("\nUsing a fake path to test for react shells, or other shells.")
     
     fake_path = "/very-fake-page-123456123456abcdefg"
     try:
-        fake_res = requests.get(urljoin(target, fake_path), timeout=10)
+        fake_res = requests.get(urljoin(target, fake_path), headers=HEADER, timeout=10)
         shell_content = fake_res.text
     except:
         shell_content = ""
@@ -89,8 +93,8 @@ def main():
     discovered_in_js = set()
 
     try:
-        res = requests.get(target, timeout=10)
-        print(f"[*] Detected JS Type: {identify_javascript_type(res)}")
+        res = requests.get(target, headers=HEADER, timeout=10)
+        print(f"Detected JS Type: {identify_javascript_type(res)}")
         soup = BeautifulSoup(res.text, 'html.parser')
         
         # next js code files
@@ -107,7 +111,7 @@ def main():
         inline_scripts = soup.find_all('script')
         for script in inline_scripts:
             if script.string:
-                # find sum chunk file in code
+                # find sum chunk file in code with a regex lookin
                 chunks = re.findall(r'["\'](/[a-zA-Z0-9_\-\./]*\.js)["\']', script.string)
                 for c in chunks:
                     js_files.append(urljoin(target, c))
@@ -124,7 +128,7 @@ def main():
         # scan all js files
         for js_url in js_files:
             try:
-                js_res = requests.get(js_url, timeout=5)
+                js_res = requests.get(js_url, headers=HEADER, timeout=5)
                 if js_res.status_code == 200:
                     for p in patterns:
                         matches = re.findall(p, js_res.text)
@@ -136,14 +140,14 @@ def main():
                                 discovered_in_js.add(m_clean)
             except: continue
 
-        print(f"[*] Total paths to test: {len(found_paths)} ({len(discovered_in_js)} scraped from JS).")
+        print(f"Total paths to test: {len(found_paths)} ({len(discovered_in_js)} scraped from JS).")
         
         if input("Test all potential endpoints? (y/n): ").lower() == 'y':
             results_200, results_dead, results_30x = [], [], []
 
             for path in sorted(found_paths):
                 try:
-                    r = requests.get(urljoin(target, path), timeout=5, allow_redirects=False)
+                    r = requests.get(urljoin(target, path), headers=HEADER, timeout=5, allow_redirects=False)
                     is_shell = (r.text == shell_content) or any(m in r.text for m in ["id=\"root\"", "id=\"app\"", "<app-root", "__NEXT_DATA__"])
 
                     if r.status_code == 200:
@@ -175,6 +179,8 @@ def main():
             if not test_path.startswith('/'):
                 test_path = '/' + test_path
             num = int(input("Number of requests (default 100): ") or 100)
+            if not test_path:
+                print("No endpoint entered, testing requests on root domain (home page)")
             asyncio.run(async_rate_test(urljoin(target, test_path), num))
 
     except Exception as e:
