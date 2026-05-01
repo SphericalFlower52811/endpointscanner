@@ -74,8 +74,8 @@ async def async_rate_test(url, num_reqs=100):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("target", nargs='?', help="URL")
-    parser.add_argument("--ratelimit", type=int, help="Number of requests")
-    parser.add_argument("--testpath", type=str, help="Endpoint to test")
+    parser.add_argument("--ratelimit", nargs='?', const=100, type=int, help="Number of requests")
+    parser.add_argument("--testpath", nargs='?', const='/', type=str, help="Endpoint to test")
     args = parser.parse_args()
     target = args.target if args.target else input("Enter website (e.g. https://example.com): ").strip()
     if not target.startswith(("http://", "https://")):
@@ -207,8 +207,7 @@ def main():
                         test_path = "/"
                 except:
                     test_path = "/"
-
-            print(f"\nStarting Rate Limit Test: {num} requests to {test_path}")
+                    
             asyncio.run(async_rate_test(urljoin(target, test_path), num))
 
     except Exception as e:

@@ -1,8 +1,22 @@
 # Website Endpoint Scanner and Rate Limit Tester
 
+## How to run
+
+Command to run after installing:
+
+```bash
+enumendpoint (domain, e.g. https://example.com) --ratelimit (number of requests to send) --testpath (endpoint to test rate limiting. Default root domain)
+```
+
+Example use:
+
+```bash
+enumendpoint example.com --ratelimit 100 --testpath
+```
+
 ## Installation
 
-Run the command:
+To install endpointscanner, run the command:
 
 ```bash
 python3 -m pip install git+https://github.com/SphericalFlower52811/endpointscanner.git
