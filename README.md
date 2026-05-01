@@ -43,6 +43,7 @@ python3 -m pip install git+https://github.com/SphericalFlower52811/endpointscann
 ```
 
 to install it without PEP 668.
+
 **Warning**: Using `--break-system-packages` may corrupt your OS-managed python environment. Proceed entirely at your own risk. The author is not liable for any system damage if you run this.
 
 ### Updating script
