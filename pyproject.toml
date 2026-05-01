@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "endpointscanner"
+version = "1.2.0"
+dependencies = [
+    "requests",
+    "beautifulsoup4",
+    "aiohttp"
+]
+
+[project.scripts]
+# This creates the terminal command 'enumendpoint'
+# format: command_name = "filename_without_extension:function_name"
+enumendpoint = "enumerateendpoint:main"

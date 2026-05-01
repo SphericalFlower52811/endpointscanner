@@ -4,6 +4,9 @@ import requests
 import re
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+import argparse
+import sys
+import time
 
 HEADER = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
@@ -69,10 +72,32 @@ async def async_rate_test(url, num_reqs=100):
                 print(f"\nServer began responding with {code} after {req_num} requests.")
 
 def main():
-    target = input("Enter website (e.g. https://example.com): ").strip()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("target", nargs='?', help="URL")
+    parser.add_argument("--ratelimit", type=int, help="Number of requests")
+    parser.add_argument("--testpath", type=str, help="Endpoint to test")
+    args = parser.parse_args()
+    target = args.target if args.target else input("Enter website (e.g. https://example.com): ").strip()
     if not target.startswith(("http://", "https://")):
         target = "https://" + target
-    
+    try:
+        st = time.perf_counter()
+        uptimeres = requests.get(target, headers=HEADER, timeout=10)
+        et = time.perf_counter()
+        restime = et - st
+        print(f"Site responded in {round(restime, 2)} seconds.")
+        if restime < 0.5:
+            print("Server is very fast.")
+        elif restime < 1:
+            print("Server is fast.")
+        elif restime < 2.5:
+            print("Server is average speed.")
+        elif restime < 4:
+            print("Server is slow.")
+        else:
+            print("Server is very slow.")
+    except requests.exceptions.Timeout:
+        print("Server did not respond after 10 seconds.")
     print("\nUsing a fake path to test for react shells, or other shells.")
     
     fake_path = "/very-fake-page-123456123456abcdefg"
@@ -141,46 +166,49 @@ def main():
             except: continue
 
         print(f"Total paths to test: {len(found_paths)} ({len(discovered_in_js)} scraped from JS).")
+        print("Testing endpoints...")
+        results_200, results_dead, results_30x = [], [], []
+
+        for path in sorted(found_paths):
+            try:
+                r = requests.get(urljoin(target, path), headers=HEADER, timeout=5, allow_redirects=False)
+                is_shell = (r.text == shell_content) or any(m in r.text for m in ["id=\"root\"", "id=\"app\"", "<app-root", "__NEXT_DATA__"])
+
+                if r.status_code == 200:
+                    if is_shell:
+                        if path in discovered_in_js: results_200.append(f"{path} [SPA Route]")
+                        else: results_dead.append(f"404 Not Found (Soft): {path}")
+                    else: results_200.append(f"{path} [Real File/API]")
+                elif r.status_code in [403, 404]:
+                    results_dead.append(f"{r.status_code} Error: {path}")
+                elif str(r.status_code).startswith('3'):
+                    results_30x.append(f"{path} -> {r.headers.get('Location')}")
+            except: continue
+
+        print("\n---- 200 OK (Verified Routes & Files) ----")
+        for p in results_200: print(f"  {p}")
+        print("\n---- INACCESSIBLE (Confirmed 404/403) ----")
+        for p in results_dead: print(f"  {p}")
+        print("\n---- Redirects (301/302/307) ----")
+        for p in results_30x: print(f"  {p}")
         
-        if input("Test all potential endpoints? (y/n): ").lower() == 'y':
-            results_200, results_dead, results_30x = [], [], []
+        print(f"\n--- Scan Summary ---")
+        print(f"Total Accessible: {len(results_200)} | Total Inaccessible: {len(results_dead)} | Total Redirects: {len(results_30x)}")
 
-            for path in sorted(found_paths):
+        if args.ratelimit is not None:
+            num = args.ratelimit
+            test_path = "/" #root dir
+            if args.testpath: #idiotproof
+                test_path = args.testpath if args.testpath.startswith('/') else '/' + args.testpath
                 try:
-                    r = requests.get(urljoin(target, path), headers=HEADER, timeout=5, allow_redirects=False)
-                    is_shell = (r.text == shell_content) or any(m in r.text for m in ["id=\"root\"", "id=\"app\"", "<app-root", "__NEXT_DATA__"])
+                    check_res = requests.get(urljoin(target, test_path), headers=HEADER, timeout=5)
+                    if check_res.status_code in [403, 404]:
+                        print(f"{test_path} is {check_res.status_code}. Testing on root domain.")
+                        test_path = "/"
+                except:
+                    test_path = "/"
 
-                    if r.status_code == 200:
-                        if is_shell:
-                            if path in discovered_in_js:
-                                results_200.append(f"{path} [SPA Route]")
-                            else:
-                                results_dead.append(f"404 Not Found (Soft): {path}")
-                        else:
-                            results_200.append(f"{path} [Real File/API]")
-                    elif r.status_code in [403, 404]:
-                        results_dead.append(f"{r.status_code} Error: {path}")
-                    elif str(r.status_code).startswith('3'):
-                        results_30x.append(f"{path} -> {r.headers.get('Location')}")
-                except: continue
-
-            print("\n---- 200 OK (Verified Routes & Files) ----")
-            for p in results_200: print(f"  {p}")
-            print("\n---- INACCESSIBLE (Confirmed 404/403) ----")
-            for p in results_dead: print(f"  {p}")
-            print("\n---- Redirects (301/302/307) ----")
-            for p in results_30x: print(f"  {p}")
-            
-            print(f"\n--- Scan Summary ---")
-            print(f"Total Accessible: {len(results_200)} | Total Inaccessible: {len(results_dead)} | Total Redirects: {len(results_30x)}")
-
-        if input("\nPerform Rate Limit Test? (y/n): ").lower() == 'y':
-            test_path = input("Enter path to test (e.g. /app): ").strip()
-            if not test_path.startswith('/'):
-                test_path = '/' + test_path
-            num = int(input("Number of requests (default 100): ") or 100)
-            if not test_path:
-                print("No endpoint entered, testing requests on root domain (home page)")
+            print(f"\nStarting Rate Limit Test: {num} requests to {test_path}")
             asyncio.run(async_rate_test(urljoin(target, test_path), num))
 
     except Exception as e:
