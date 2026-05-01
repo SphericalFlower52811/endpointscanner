@@ -1,8 +1,0 @@
-Metadata-Version: 2.4
-Name: endpointscanner
-Version: 1.2.0
-License-File: LICENSE
-Requires-Dist: requests
-Requires-Dist: beautifulsoup4
-Requires-Dist: aiohttp
-Dynamic: license-file
