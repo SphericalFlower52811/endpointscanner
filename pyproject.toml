@@ -3,12 +3,13 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "endpointscanner"
-version = "1.2.0"
+name = "enumendpoint"
+version = "6.0"
 dependencies = [
-    "requests",
+    "curl_cffi",
     "beautifulsoup4",
-    "aiohttp"
+    "playwright",
+    "playwright-stealth"
 ]
 
 [project.scripts]

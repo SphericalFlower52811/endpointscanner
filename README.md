@@ -5,21 +5,27 @@
 Command to run after installing:
 
 ```bash
-enumendpoint (domain, e.g. https://example.com) --ratelimit (number of requests to send) --testpath (endpoint to test rate limiting. Default root domain)
+enumendpoint (domain, e.g. https://example.com) --ratelimit (number of requests to send, default: 100) --testpath (endpoint to test rate limiting, e.g. /app, /welcome. Default: root domain)
 ```
 
 Example use:
 
 ```bash
-enumendpoint example.com --ratelimit 100 --testpath
+enumendpoint example.com --ratelimit 100 --testpath /api/v1
 ```
 
 ## Installation
 
-To install endpointscanner, run the command:
+To install enumendpoint, run the command:
 
 ```bash
 python3 -m pip install git+https://github.com/SphericalFlower52811/endpointscanner.git
+```
+
+After that, install chromium on playwright (playwright will be installed when you install endpointscanner):
+
+```bash
+playwright install chromium
 ```
 
 ### You may need to create a virtual environment if there is PEP 668.
@@ -70,21 +76,13 @@ python3 -m pip install --upgrade git+https://github.com/SphericalFlower52811/end
 
 ## Details
 
-I made this a command line tool
-
-How to run: enumendpoint (domain, e.g. https://example.com) --ratelimit (number of requests to send, default 100) --testpath (endpoint to test rate limiting. Default root domain)
+I made this a command line tool that you install with the instructions above
 
 The command prints out how many endpoints to test, and lists them all out after testing them.
 
+It will use playwright to bypass captchas, to find the JS Stack.
+
 The python code scans for endpoints in websites by looking through all the js files listed in the htmml, and also checks <script></script> tags. It also prints what JS type it uses.
-
-If there is a {id} inside the path, it replaces it with 1 to test the endpoint whether it is a 200 OK, 404/403, or a redirect (30x Header)
-
-404(Soft) means there is a 200 response, but a 404 page.
-
-It also tries very sensitive endpoints like .env, .git/config, and a lot more.
-
-If there is a WAF (firewall, basically) in the application, it will sense the sensitive endpoints (including robots.txt) as a 403, even if publicly accessible.
 
 Types of JS it can detect, but it is a bit buggy and may list the wrong js type.
 Node.js
@@ -95,9 +93,20 @@ Angular
 Vite
 Webpack
 
-ai assisted code btw
+If there is a {id} inside the path, it replaces it with 1 to test the endpoint whether it is a 200 OK, 404/403, or a redirect (30x Header)
 
-It is not good at differentiating between react shells and actual pages in single-page applications though, so after listing endpoints in such websites you would have to test them, cuz some are not allowed while some are.
+404(Soft) means the server incorrectly returns 200 response while giving a 404 page instead.
+
+The code uses playwright, a headless browser, to let the html content load so it is able to differentiate between publicly accessible endpoints and ones that are not.
+
+However, if all routes require you to be logged in to access them, and returns you the exact same page as long as you are not logged in, the code cannot tell which endpoints are inaccessible to ordinary users.
+If the endpoints require login to be accessed, they will most likely be marked as inaccessible, or a 200 OK saying it requires login.
+
+It also tries very sensitive endpoints like .env, .git/config, and a lot more.
+
+If there is a WAF (firewall, basically) in the application, it will sense the sensitive endpoints (including robots.txt) as a 403, even if publicly accessible.
+
+ai assisted code btw
 
 The code prints the website uptime, how many seconds it takes to load and whether it is fast or not.
 
