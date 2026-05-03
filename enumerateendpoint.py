@@ -171,7 +171,7 @@ def main():
         
         patterns = [
             r'["\'`](/[a-zA-Z0-9_\-\./{}:]*)["\'`]', 
-            r'(?:path|href|to|post|get|patch|put|delete|head|options)[\s]*[:=\(][\s]*["\'`](/[a-zA-Z0-9_\-\./{}:\$]*)["\'`]'
+            r'(?:path|href|to|post|get|patch|put|delete|head|options)[\s]*[:=\(\|]+[\s]*["\'`](/[a-zA-Z0-9_\-\./{}:\$]*)["\'`]'
         ]
 
         # check <script> for endpoint too
