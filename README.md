@@ -114,3 +114,7 @@ Version 7 is planned to have:
 - reading of files to find more hidden endpoints
 - Proper detection of timeouts
 - Improved regex
+
+# Legal Disclaimer
+
+Note that this tool is strictly meant for **authorised** testing and security research. Running this script on websites where you are not permitted to do so can result in legal action. The author of this script assumes no responsibility for any misuse or legal consequences from running this script. Ensure you have received permission from the owner of the target owner before performing tests or scans on their website.

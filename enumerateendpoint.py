@@ -41,8 +41,6 @@ def gethtmlafterload(url):
             mainhtml = page.content()
             cookies = {c['name']: c['value'] for c in context.cookies()}
 
-                        #find shell page for not found endpoints.
-
         except Exception as e:
             print("Unexpected Error:", e)
             mainhtml, cookies = "", "", {}
