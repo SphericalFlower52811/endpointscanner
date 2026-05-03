@@ -13,6 +13,5 @@ dependencies = [
 ]
 
 [project.scripts]
-# This creates the terminal command 'enumendpoint'
-# format: command_name = "filename_without_extension:function_name"
+# Version 6.0
 enumendpoint = "enumerateendpoint:main"
