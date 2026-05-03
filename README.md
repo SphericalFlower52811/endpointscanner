@@ -80,9 +80,9 @@ I made this a command line tool that you install with the instructions above
 
 The command prints out how many endpoints to test, and lists them all out after testing them.
 
-It will use playwright to bypass captchas, to find the JS Stack.
+It will use playwright to bypass simple captchas like the cloudflare check that says "Verifying you are human...", to find the JS Stack. However, it cannot bypass captchas like PerimeterX.
 
-The python code scans for endpoints in websites by looking through all the js files listed in the htmml, and also checks <script></script> tags. It also prints what JS type it uses.
+The python code scans for endpoints in websites by looking through all the js files listed in the htmml, and also checks <script></script> tags. It also prints what JS type it uses. It scans for code like get, post etc, href and much more.
 
 Types of JS it can detect, but it is a bit buggy and may list the wrong js type.
 Node.js
@@ -97,11 +97,6 @@ If there is a {id} inside the path, it replaces it with 1 to test the endpoint w
 
 404(Soft) means the server incorrectly returns 200 response while giving a 404 page instead.
 
-The code uses playwright, a headless browser, to let the html content load so it is able to differentiate between publicly accessible endpoints and ones that are not.
-
-However, if all routes require you to be logged in to access them, and returns you the exact same page as long as you are not logged in, the code cannot tell which endpoints are inaccessible to ordinary users.
-If the endpoints require login to be accessed, they will most likely be marked as inaccessible, or a 200 OK saying it requires login.
-
 It also tries very sensitive endpoints like .env, .git/config, and a lot more.
 
 If there is a WAF (firewall, basically) in the application, it will sense the sensitive endpoints (including robots.txt) as a 403, even if publicly accessible.
@@ -111,3 +106,11 @@ ai assisted code btw
 The code prints the website uptime, how many seconds it takes to load and whether it is fast or not.
 
 The code can also test for rate limiting in the website by performing an async function to send 100 GET requests to an endpoint the user wants to test.
+
+## Plans for next version
+
+Version 7 is planned to have:
+
+- reading of files to find more hidden endpoints
+- Proper detection of timeouts
+- Improved regex

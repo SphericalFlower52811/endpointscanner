@@ -36,15 +36,16 @@ def gethtmlafterload(url):
             page.mouse.move(100, 100)
             page.mouse.move(200, 300)
             page.evaluate("window.scrollTo(0, 500)")
-            
-            page.wait_for_timeout(5000) 
+             
             page.wait_for_timeout(5000) #wait for page to load downloaded content, and cookie
             mainhtml = page.content()
             cookies = {c['name']: c['value'] for c in context.cookies()}
 
+                        #find shell page for not found endpoints.
+
         except Exception as e:
             print("Unexpected Error:", e)
-            mainhtml, cookies = "", {}
+            mainhtml, cookies = "", "", {}
 
         browser.close()
         return mainhtml, cookies
@@ -153,16 +154,14 @@ def main():
     discovered_in_js = set()
     print("\nStarting headless browser to bypass captchas and detect shells with a fake path.")
     main_html, session_cookies = gethtmlafterload(target)
-            #find shell page for not found endpoints.
+
     fake_path = "/very-fake-page-123456123456abcdefg"
     fake_url = urljoin(target, fake_path)
     try:
-        # Use the 'session_cookies' we just returned
         fake_res = requests.get(fake_url, cookies=session_cookies, impersonate="chrome120", timeout=10)
         shell_content = fake_res.text
     except:
         shell_content = ""
-
     try:
         print(f"Detected JS Type: {identify_javascript_type(main_html)}")
         soup = BeautifulSoup(main_html, 'html.parser')
@@ -174,7 +173,7 @@ def main():
         
         patterns = [
             r'["\'`](/[a-zA-Z0-9_\-\./{}:]*)["\'`]', 
-            r'(?:path|href|to|post|get|put|delete)[:\s\(]*["\'`]([a-zA-Z0-9_\-\./{}:\$]*)["\'`]'
+            r'(?:path|href|to|post|get|patch|put|delete|head|options)[\s]*[:=\(][\s]*["\'`](/[a-zA-Z0-9_\-\./{}:\$]*)["\'`]'
         ]
 
         # check <script> for endpoint too
@@ -191,7 +190,7 @@ def main():
                     for m in matches:
                         m_clean = re.sub(r'(\$\{.*\}|:[a-zA-Z0-9]+)', '1', m)
                         if not m_clean.startswith('/'): m_clean = '/' + m_clean
-                        if not any(m_clean.endswith(ext) for ext in ['.js', '.css', '.png', '.jpg', '.svg']):
+                        if not any(m_clean.endswith(ext) for ext in ['.js', '.css', '.png', '.jpg', '.svg', '.webp']):
                             found_paths.add(m_clean)
                             discovered_in_js.add(m_clean)
 
@@ -203,9 +202,9 @@ def main():
                     for p in patterns:
                         matches = re.findall(p, js_res.text)
                         for m in matches:
-                            m_clean = re.sub(r'(\$\{.*\}|:[a-zA-Z0-9]+)', '1', m)
+                            m_clean = re.sub(r'(\$\{.*?\}|:[a-zA-Z0-9]+)', '1', m)
                             if not m_clean.startswith('/'): m_clean = '/' + m_clean
-                            if not any(m_clean.endswith(ext) for ext in ['.js', '.css', '.png', '.jpg', '.svg', '.wasm']):
+                            if not any(m_clean.endswith(ext) for ext in ['.js', '.css', '.png', '.jpg', '.svg', '.wasm', '.webp']):
                                 found_paths.add(m_clean)
                                 discovered_in_js.add(m_clean)
             except: continue
