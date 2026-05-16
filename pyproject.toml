@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "enumendpoint"
-version = "6.0"
+version = "7.0"
 dependencies = [
     "curl_cffi",
     "beautifulsoup4",
