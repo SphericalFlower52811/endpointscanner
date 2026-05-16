@@ -2,12 +2,75 @@ import asyncio
 from curl_cffi import requests
 import re
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 import argparse
 import time
 from playwright.sync_api import sync_playwright #headless browser to solve captcha
 from playwright_stealth import Stealth #Ensure strict firewalls do not block the playwright browser
 
+#Will be fixed in version 8
+'''
+def isthere_captcha(response):
+   #me when captcha
+    html_content = response.text
+    html_lower = html_content.lower()
+    
+    # cloudflare turnstile
+    if "challenge-platform" in html_content or "cf-challenge" in html_content:
+        return True, "Cloudflare Turnstile (Managed Challenge)"
+    if "window._cf_chl_opt" in html_content or "cf-ray:" in html_lower:
+        return True, "Cloudflare WAF Block Page"
+    if "cf-mitigated" in response.headers.get("Server", "").lower():
+        return True, "Cloudflare Edge Mitigation"
+
+    # perimeterx
+    if "window._pxappid" in html_lower or "px-captcha" in html_lower:
+        return True, "Human Security (PerimeterX) CAPTCHA"
+    if "captcha.px-cdn.net" in html_content or "client.perimeterx.net" in html_content:
+        return True, "Human Security (PerimeterX) Shield Active"
+
+    #recaptcha
+    if "google.com" in html_lower or "g-recaptcha" in html_lower:
+        return True, "Google reCAPTCHA Challenge"
+    if "recaptcha.js" in html_lower or "__recaptcha_api" in html_lower:
+        return True, "Google reCAPTCHA Script Loaded"
+
+    #h captcha
+    if "hcaptcha.com" in html_content or "h-captcha" in html_lower:
+        return True, "hCaptcha Verification Screen"
+
+    #akamai
+    if "akam_bm" in response.cookies or "bm_sz" in response.cookies:
+        return True, "Akamai Bot Manager Cookie Block"
+    if "_sec_challenge" in html_lower or "akamai-extension" in html_lower:
+        return True, "Akamai WAF Challenge Injection"
+
+    # aws/amazon captcha
+    if "aws-waf-token" in html_lower or "awswaf" in html_lower:
+        return True, "AWS WAF Token Challenge"
+    if "amazon captcha" in html_lower or "amzn-captcha" in html_lower:
+        return True, "Amazon Custom CAPTCHA Screen"
+
+    # incapsula or soemthing
+    if "incapsula" in html_lower or "_incap_" in html_lower:
+        return True, "Imperva Incapsula Bot Shield"
+    if "visid_incap" in response.cookies:
+        return True, "Imperva Session Interception"
+
+    # kasada
+    if "kpsdk" in html_lower or "ips.js" in html_lower:
+        return True, "Kasada Anti-Bot Handshake"
+
+    # generic captchas
+    if response.status_code in [403, 429]:
+        generic_signals = ["captcha", "robot", "automated access", "verify you are human", "checking your browser"]
+        for signal in generic_signals:
+            if signal in html_lower:
+                return True, f"Generic Firewall Block ({signal.title()})"
+        return True, f"Unidentified Security Drop (HTTP {response.status_code})"
+
+    return False, ""
+'''
 HEADER = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     "Accept-Language": "en-US, en;q=0.9"
@@ -43,7 +106,7 @@ def gethtmlafterload(url):
 
         except Exception as e:
             print("Unexpected Error:", e)
-            mainhtml, cookies = "", "", {}
+            mainhtml, cookies = "", {}
 
         browser.close()
         return mainhtml, cookies
@@ -116,18 +179,47 @@ async def async_rate_test(url, num_reqs=100):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("target", nargs='?', help="URL")
-    parser.add_argument("--ratelimit", nargs='?', const=100, type=int, help="Number of requests")
+    parser.add_argument("--ratelimit", nargs='?', const=100, type=int, default=None, help="Number of requests")
     parser.add_argument("--testpath", nargs='?', const='/', type=str, help="Endpoint to test")
+    parser.add_argument("--show-404s", action="store_true", help="Show endpoints tested that returned a 404")
+    parser.add_argument("--disable-extra-files", action="store_true", help="Disable scanning of extra structural mapping files (robots, sitemaps, manifests, etc.)")
+    parser.add_argument("--show-assets", action="store_true", help="Include assets like images and fonts in scan results")
+
     args = parser.parse_args()
+    if args.testpath and args.ratelimit is None:
+        args.ratelimit = 100 
+
+    ignored_extensions = ()
+
+    # error if the user somehow didn't read the instructions (i've idiotproofed the code ENOUGH)
+    if args.testpath and args.ratelimit is None:
+        parser.error("--testpath requires the --ratelimit flag.\nIf you want to do a rate limit test, use --ratelimit (number of requests) --testpath (path to test).\nIf not, don't use --ratelimit nor --testpath.")
+
+    show_dead = args.show_404s
     target = args.target if args.target else input("Enter website (e.g. https://example.com): ").strip()
     if not target.startswith(("http://", "https://")):
         target = "https://" + target
+        try:
+            response = requests.get(target, headers=HEADER, timeout=5, impersonate="chrome120")
+        except requests.exceptions.SSLError:
+            if target.startswith("https://"):
+                print('[!] HTTPS SSL Error. Trying HTTP...') #becuase later sum http noob
+                target = target.replace("https://", "http://")
+                try:
+                    requests.get(target, headers=HEADER, timeout=5, impersonate="chrome120")
+                except Exception as e:
+                    print(f'[!] Target unreachable on HTTP: {e}')
+                    exit()
+        except Exception as e:
+            print(f'Target unreachable: {e}')
+            exit()
     try:
         st = time.perf_counter()
         uptimeres = requests.get(target, headers=HEADER, timeout=10, impersonate="chrome120")
         et = time.perf_counter()
         restime = et - st
         print(f"Site responded in {round(restime, 2)} seconds.")
+        
         if restime < 0.5:
             print("Server is very fast.")
         elif restime < 1:
@@ -148,15 +240,88 @@ def main():
         "/.gitignore", "/api/health", "/admin", "/login", "/config"
     }
     
+    results_fromotherfiles = []
     found_paths = set(SENSITIVE_ENDPOINT)
     discovered_in_js = set()
+
+    if not args.disable_extra_files:
+        print("\nFinding paths from map files. (If they exist)")
+        
+        # bobot.txt
+        try:
+            r_res = requests.get(urljoin(target, "/robots.txt"), headers=HEADER, impersonate="chrome120", timeout=4)
+            if r_res.status_code == 200 and "disallow" in r_res.text.lower():
+                rules = re.findall(r'(?:Disallow|Allow):\s*(/[a-zA-Z0-9_\-\./{}:|]*)', r_res.text, re.IGNORECASE)
+                for rule in rules:
+                    clean_rule = rule.strip()
+                    if clean_rule and clean_rule not in ["/", "/*"] and clean_rule not in found_paths:
+                        found_paths.add(clean_rule)
+                        results_fromotherfiles.append(f"{clean_rule} [Source: robots.txt]")
+        except: pass
+
+        # sitemap
+        try:
+            s_res = requests.get(urljoin(target, "/sitemap.xml"), headers=HEADER, impersonate="chrome120", timeout=4)
+            if s_res.status_code == 200 and "<loc" in s_res.text.lower():
+                locs = re.findall(r'<loc>https?://[^/]+(/[^<]+)</loc>', s_res.text, re.IGNORECASE)
+                for loc in locs:
+                    clean_path = loc.strip()
+                    if clean_path and clean_path != "/" and clean_path not in found_paths:
+                        found_paths.add(clean_path)
+                        results_fromotherfiles.append(f"{clean_path} [Source: sitemap.xml]")
+        except: pass
+
+        # me when manifesto without the o
+        try:
+            m_res = requests.get(urljoin(target, "/asset-manifest.json"), headers=HEADER, impersonate="chrome120", timeout=4)
+            if m_res.status_code == 200 and "{" in m_res.text:
+                paths = re.findall(r'["\'](/[a-zA-Z0-9_\-\./]+)["\']', m_res.text)
+                for path in paths:
+                    if path not in found_paths:
+                        found_paths.add(path)
+                        results_fromotherfiles.append(f"{path} [Source: asset-manifest.json]")
+        except: pass
+        for manifest_path in ["/web-manifest.json", "/manifest.json"]:
+            try:
+                m_url = urljoin(target, manifest_path)
+                m_res = requests.get(m_url, headers=HEADER, impersonate="chrome120", timeout=4)
+                if m_res.status_code == 200 and "{" in m_res.text:
+                    paths = re.findall(r'["\'](/[a-zA-Z0-9_\-\./]+)["\']', m_res.text)
+                    for path in paths:
+                        if path not in found_paths:
+                            found_paths.add(path)
+                            results_fromotherfiles.append(f"{path} [Source: {manifest_path.lstrip('/')}]")
+            except: pass
+        # service worker lol
+        for sw_path in ["/service-worker.js", "/sw.js"]:
+            try:
+                sw_res = requests.get(urljoin(target, sw_path), headers=HEADER, impersonate="chrome120", timeout=4)
+                if sw_res.status_code == 200:
+                    paths = re.findall(r'["\'`](/[a-zA-Z0-9_\-\./{}:]+)["\'`]', sw_res.text)
+                    for path in paths:
+                        if path not in found_paths and not any(path.endswith(ext) for ext in ['.js', '.css']):
+                            found_paths.add(path)
+                            results_fromotherfiles.append(f"{path} [Source: {sw_path}]")
+            except: pass
+
+        #openid
+        try:
+            oidc_res = requests.get(urljoin(target, "/.well-known/openid-configuration"), headers=HEADER, impersonate="chrome120", timeout=4)
+            if oidc_res.status_code == 200 and "{" in oidc_res.text:
+                paths = re.findall(r'https?://[^/]+(/[^"\']*)', oidc_res.text)
+                for path in paths:
+                    if path not in found_paths:
+                        found_paths.add(path)
+                        results_fromotherfiles.append(f"{path} [Source: openid-configuration]")
+        except: pass
+
     print("\nStarting headless browser to bypass captchas and detect shells with a fake path.")
     main_html, session_cookies = gethtmlafterload(target)
 
     fake_path = "/very-fake-page-123456123456abcdefg"
     fake_url = urljoin(target, fake_path)
     try:
-        fake_res = requests.get(fake_url, cookies=session_cookies, impersonate="chrome120", timeout=10)
+        fake_res = requests.get(fake_url, cookies=session_cookies, headers=HEADER, impersonate="chrome120", timeout=10)
         shell_content = fake_res.text
     except:
         shell_content = ""
@@ -168,17 +333,35 @@ def main():
         js_files = [urljoin(target, s.get('src')) for s in soup.find_all('script') if s.get('src')]
         js_files.append(urljoin(target, "/_next/static/development/_buildManifest.js"))
         js_files.append(urljoin(target, "/_next/static/runtime/_buildManifest.js"))
-        
+
+        for script_tag in soup.find_all('script'):
+            src = script_tag.get('src')
+            if src and not src.startswith(('http://', 'https://')):
+                # Use urlparse to strip away parameters and isolate a clean local path
+                local_path = urlparse(src).path
+                if local_path:
+                    # Guarantee exactly ONE starting slash, nothing more, nothing less
+                    clean_path = '/' + local_path.lstrip('/')
+                    found_paths.add(clean_path)
+
+        # Gather stylesheets safely without corrupting string slashes
+        for link_tag in soup.find_all('link', rel='stylesheet'):
+            href = link_tag.get('href')
+            if href and not href.startswith(('http://', 'https://')):
+                local_path = urlparse(href).path
+                if local_path:
+                    clean_path = '/' + local_path.lstrip('/')
+                    found_paths.add(clean_path)
         patterns = [
             r'["\'`](/[a-zA-Z0-9_\-\./{}:]*)["\'`]', 
-            r'(?:path|href|to|post|get|patch|put|delete|head|options)[\s]*[:=\(\|]+[\s]*["\'`](/[a-zA-Z0-9_\-\./{}:\$]*)["\'`]'
+            r'(?:path|href|to|post|get|patch|put|delete|head|options)[\s]*[:=\(\|]+[\s]*["\'`](/?[a-zA-Z0-9_\-\./{}:\$]*[\./][a-zA-Z0-9_\-\./{}:\$]*)["\'`]',
+            r'[`](https?://[a-zA-Z0-9_\-\./{}:\$]+)[`]'
         ]
 
         # check <script> for endpoint too
         inline_scripts = soup.find_all('script')
         for script in inline_scripts:
             if script.string:
-                # find sum chunk file in code with a regex lookin
                 chunks = re.findall(r'["\'](/[a-zA-Z0-9_\-\./]*\.js)["\']', script.string)
                 for c in chunks:
                     js_files.append(urljoin(target, c))
@@ -188,7 +371,10 @@ def main():
                     for m in matches:
                         m_clean = re.sub(r'(\$\{.*\}|:[a-zA-Z0-9]+)', '1', m)
                         if not m_clean.startswith('/'): m_clean = '/' + m_clean
-                        if not any(m_clean.endswith(ext) for ext in ['.js', '.css', '.png', '.jpg', '.svg', '.webp']):
+                        
+                        if not m_clean.lower().endswith(ignored_extensions):
+                            if m_clean in ["/", "//", "///", "/.", "/..", "/..."]:
+                                continue
                             found_paths.add(m_clean)
                             discovered_in_js.add(m_clean)
 
@@ -202,7 +388,10 @@ def main():
                         for m in matches:
                             m_clean = re.sub(r'(\$\{.*?\}|:[a-zA-Z0-9]+)', '1', m)
                             if not m_clean.startswith('/'): m_clean = '/' + m_clean
-                            if not any(m_clean.endswith(ext) for ext in ['.js', '.css', '.png', '.jpg', '.svg', '.wasm', '.webp']):
+                            
+                            if not m_clean.lower().endswith(ignored_extensions):
+                                if m_clean in ["/", "//", "///", "/.", "/..", "/..."]:
+                                    continue
                                 found_paths.add(m_clean)
                                 discovered_in_js.add(m_clean)
             except: continue
@@ -210,9 +399,31 @@ def main():
         print(f"Total paths to test: {len(found_paths)} ({len(discovered_in_js)} scraped from JS).")
         print("Testing endpoints...")
         results_200, results_dead, results_30x = [], [], []
+        results_services, results_ext = [], []
+        results_frameworks, results_assets = [], []
 
         for path in sorted(found_paths):
+            # all external url cuz https: //blahblah
+            if "://" in path:
+                results_ext.append(path.lstrip('/'))
+                continue
+
             try:
+                parsed_path = urlparse(path)
+                target_domain = urlparse(target).netloc
+                
+                # get the base domain (efg.hijk from abcd.efg.hijk)
+                def get_base(domain):
+                    parts = domain.split('.')
+                    return ".".join(parts[-2:]) if len(parts) > 1 else domain
+
+                is_external = parsed_path.netloc and get_base(parsed_path.netloc) != get_base(target_domain)
+
+                if is_external:
+                    results_ext.append(f"{path.lstrip('/')} [External Reference]")
+                    continue
+
+
                 r = requests.get(
                     urljoin(target, path), 
                     headers=HEADER, 
@@ -222,33 +433,116 @@ def main():
                     impersonate="chrome120"
                 )
                 
+                content_type = r.headers.get("Content-Type", "").lower()
                 is_shell = (r.text == shell_content)
                 is_home_redirect = (r.text == main_html)
+                
+                # common service and api i think
+                service_markers = ["/api", "/v1", "/v2", "socket.io", "engine.io", "/graphql", "/webhook", "/rpc"]
+                is_machine_path = any(marker in path.lower() for marker in service_markers)
+
+                media_extensions = ('.png', '.jpg', '.jpeg', '.svg', '.webp', '.gif', '.ico', '.woff', '.woff2', '.ttf')
+                framework_extensions = ('.js', '.css', '.json', '.txt', '.xml', '.map')
+                
+                is_media_asset = path.lower().endswith(media_extensions)
+                is_framework_asset = any(path.lower().endswith(ext) for ext in framework_extensions)
+
                 if r.status_code == 200:
-                    if is_shell or is_home_redirect:
+                    # if its a service/api path then like service and stuff ykyk
+                    if is_machine_path:
+                        results_services.append(f"{path} [Service/API]")
+                    elif is_shell or is_home_redirect:
                         if path in discovered_in_js:
                             results_200.append(f"{path} [Client-Side Route, Requires Login]")
                         else:
                             results_dead.append(f"404 Not Found (React Shell): {path}")
                     else:
-                        #realfile
-                        results_200.append(f"{path} [Access no matter what]")
+                        if "text/html" in content_type:
+                            results_200.append(f"{path} [Access no matter what]")
+                        elif is_media_asset:
+                            results_assets.append(f"{path}")
+                        elif is_framework_asset:
+                            results_frameworks.append(f"{path}")
+                        else:
+                            #standard is like js and css
+                            results_frameworks.append(f"{path} [Non-Standard File]")
+
                 
+                elif r.status_code == 400:
+                    if is_framework_asset:
+                        results_frameworks.append(f"{path} [Asset Error - 400]")
+                    # get machine services like socket.io that reject simple GET request. cuz socket stinky.
+                    if "." in path or "/" in path:
+                        results_services.append(f"{path} [Potential Service - 400]")
+                    elif is_machine_path:
+                        results_services.append(f"{path} [Service/API]") #cuz socket
+                    else:
+                        results_dead.append(f"400 Bad Request: {path}")
+
                 elif r.status_code in [403, 404]:
                     results_dead.append(f"{r.status_code} Error: {path}")
                 elif str(r.status_code).startswith('3'):
                     results_30x.append(f"{path} -> {r.headers.get('Location')}")
             except: continue
 
-        print("\n---- 200 OK (Verified Routes & Files) ----")
-        for p in results_200: print(f"  {p}")
-        print("\n---- INACCESSIBLE (Confirmed 404/403) ----")
-        for p in results_dead: print(f"  {p}")
-        print("\n---- Redirects (301/302/307) ----")
-        for p in results_30x: print(f"  {p}")
+
+
+        if len(results_200) != 0:
+            print("\n---- ENDPOINTS FOUND ----")
+            for p in results_200: print(f"  {p}")
+        else:
+            print("\n----NO ENDPOITNS FOUND----")
+        if len(results_services) != 0:
+            print("\n----SERVICES/APIS USED----")
+            for p in results_services: print(f" {p}")
+        else:
+            print("\n----NO SERVICES/APIS FOUND----")
+        if len(results_ext) != 0:
+            print("\n----EXTERNAL LINKS----")
+            for p in results_ext: print(f" {p}")
+        else:
+            print("\n----NO EXTERNAL LINKS FOUND----")
+        if len(results_frameworks) != 0:
+            print("\n----WEBSITE FRAMEWORKS----")
+            for p in results_frameworks: print(f" {p}")
+        else:
+            print("\n----NO WEBSITE FRAMEWORKS FOUND----")
+        if len(results_30x) != 0:
+            print("\n---- REDIRECTS (301/302/307) ----")
+            for p in results_30x: print(f"  {p}")
+        else:
+            print("\n----NO REDIRECTS FOUND----")
+            # if result contains stuff
+        if not args.disable_extra_files:
+            if results_fromotherfiles:
+                print("\n---- PATHS FROM OTHER FILES ----")
+                for entry in results_fromotherfiles:
+                    print(f"  {entry}")
+            else:
+                print("\n----NO EXTRA PATHS FOUND FROM OTHER FILES----")
+        else:
+            pass
+        if args.show_assets:
+            if len(results_assets) != 0:
+                print("\n----WEBSITE ASSETS----")
+                for p in results_assets: print(f" {p}")
+            else:
+                print("\n----NO WEBSITE ASSETS FOUND----")
+        else:
+            pass
+        if show_dead:
+            if len(results_dead) != 0:
+                print("\n---- INACCESSIBLE (Confirmed 404/403) ----")
+                for p in results_dead: print(f"  {p}")
+            else:
+                print("\n----NONE INACCESSIBLE 404/403----")
         
         print(f"\n--- Scan Summary ---")
-        print(f"Total Accessible: {len(results_200)} | Total Inaccessible: {len(results_dead)} | Total Redirects: {len(results_30x)}")
+        if args.show_assets:
+            print(f"Total Accessible Pages: {len(results_200)}\nTotal Assets: {len(results_assets)}\nTotal Inaccessible: {len(results_dead)}\nTotal Redirects: {len(results_30x)}\nTotal Frameworks: {len(results_frameworks)}")
+        else:
+            print(f"Total Accessible Pages: {len(results_200)}\nTotal Assets: {len(results_assets)} (Assets are hidden, use --show-assets to show them.)\nTotal Inaccessible: {len(results_dead)}\nTotal Redirects: {len(results_30x)}\nTotal Frameworks: {len(results_frameworks)}")
+
 
         if args.ratelimit is not None:
             num = args.ratelimit
@@ -257,7 +551,7 @@ def main():
                 test_path = args.testpath if args.testpath.startswith('/') else '/' + args.testpath
                 try:
                     check_res = requests.get(urljoin(target, test_path), headers=HEADER, timeout=5, impersonate="chrome120")
-                    if check_res.status_code in [403, 404]:
+                    if check_res.status_code in [301, 302, 307, 308, 403, 404]:
                         print(f"{test_path} is {check_res.status_code}. Testing on root domain.")
                         test_path = "/"
                 except:
