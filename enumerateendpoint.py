@@ -78,13 +78,27 @@ HEADER = {
 
 def gethtmlafterload(url):
     with sync_playwright() as p:
-        browser = p.chromium.launch(
-            headless=True,
-            args=[
-                "--disable-blink-features=AutomationControlled",
-                "--no-sandbox",
-                "--disable-infobars"
-            ])
+        try:
+            browser = p.chromium.launch(
+                headless=True,
+                args=[
+                    "--disable-blink-features=AutomationControlled",
+                    "--no-sandbox",
+                    "--disable-infobars"
+                ])
+        except Exception as e:
+            error_msg = str(e).lower()
+            error_type = type(e).__name__
+
+            # idiotproofing if people GENUINELY cannot read installation instructions
+            if "error" in error_type.lower() and ("executable" in error_msg.lower() or "install" in error_msg.lower()):
+                print("\nPlaywright installations are missing.")
+                print("Please read the installation instructions in the README of the repository.")
+                print("README link: https://github.com/SphericalFlower52811/endpointscanner/blob/main/README.md")
+            else:
+                print("Unexpected Issue:", e)
+            return "", {}
+    
         context = browser.new_context(
             user_agent=HEADER['User-Agent'], 
             viewport={'width': 1920, 'height': 1080},
@@ -233,11 +247,14 @@ def main():
     except requests.exceptions.Timeout:
         print("Server did not respond after 10 seconds.")
 
+    #hardcoded dangerous endpoints to test
     SENSITIVE_ENDPOINT = {
         "/.env", "/.env.local", "/.env.production", "/.env.development", 
         "/.git/config", "/.git/HEAD", "/robots.txt", "/sitemap.xml", 
         "/package.json", "/package-lock.json", "/.npmrc", "/.dockerenv",
-        "/.gitignore", "/api/health", "/admin", "/login", "/config"
+        "/.gitignore", "/api/health", "/admin", "/login", "/config",
+        "/.env.example", "/docker-compose.yml", "/.babelrc", "/.eslintrc.json",
+        "/wp-config.php", "/config.json", "/.aws/credentials", "/.git/index"
     }
     
     results_fromotherfiles = []
@@ -447,7 +464,7 @@ def main():
                 is_media_asset = path.lower().endswith(media_extensions)
                 is_framework_asset = any(path.lower().endswith(ext) for ext in framework_extensions)
 
-                if r.status_code == 200:
+                if r.status_code in [200, 304]: #304 got me
                     # if its a service/api path then like service and stuff ykyk
                     if is_machine_path:
                         results_services.append(f"{path} [Service/API]")
@@ -539,10 +556,9 @@ def main():
         
         print(f"\n--- Scan Summary ---")
         if args.show_assets:
-            print(f"Total Accessible Pages: {len(results_200)}\nTotal Assets: {len(results_assets)}\nTotal Inaccessible: {len(results_dead)}\nTotal Redirects: {len(results_30x)}\nTotal Frameworks: {len(results_frameworks)}")
+            print(f"Total Accessible Pages: {len(results_200)}\nTotal Services: {len(results_services)}\nTotal External References: {len(results_ext)}\nTotal Frameworks: {len(results_frameworks)}\nTotal Redirects: {len(results_30x)}\nTotal Assets: {len(results_assets)}\nTotal Inaccessible: {len(results_dead)}")
         else:
-            print(f"Total Accessible Pages: {len(results_200)}\nTotal Assets: {len(results_assets)} (Assets are hidden, use --show-assets to show them.)\nTotal Inaccessible: {len(results_dead)}\nTotal Redirects: {len(results_30x)}\nTotal Frameworks: {len(results_frameworks)}")
-
+            print(f"Total Accessible Pages: {len(results_200)}\nTotal Services: {len(results_services)}\nTotal External References: {len(results_ext)}\nTotal Frameworks: {len(results_frameworks)}\nTotal Redirects: {len(results_30x)}\nTotal Assets: {len(results_assets)} (Hidden, use --show-assets to show)\nTotal Inaccessible: {len(results_dead)}")
 
         if args.ratelimit is not None:
             num = args.ratelimit

@@ -1,4 +1,19 @@
-# Website Endpoint Scanner and Rate Limit Tester For Websites (Version 7)
+# Website Endpoint Scanner and Rate Limit Tester For Websites (Version 7.0.1)
+
+For Installation, please go to the Installation section below!
+
+## How it works
+
+- Uses curl_cffi and playwright-stealth to bypass simple captchas
+- If it is blocked by a captcha, it detects what type of captcha it is (if it is a well-known one like akamai bot manager or cloudflare)
+- Uses a fake path to test which are real paths and which are shells. (websites like SPAs give a lot of trouble to current tools)
+- Scrapes all `.js` files and `<script>` tags inside the html with a regex to find paths
+- Differentiates paths by website endpoints, assets, redirects etc.
+- Autofills {id} variables in endpoints as '1' to test the endpoints (can reveal potential IDORs)
+- Checks server uptime and prints out JS Stack of the website
+- Has a rate limit tester by sending n requests to a certain endpoint
+- Can scan extra files like robots.txt for more endpoints
+- Also scans for assets like images with a flag to disable showing them
 
 ## How to run
 
@@ -39,7 +54,7 @@ enumendpoint example.com --ratelimit 100 --testpath /api/v1
 To install enumendpoint, run the command:
 
 ```bash
-python3 -m pip install git+https://github.com/SphericalFlower52811/endpointscanner.git
+python3 -m pip install enumendpoint
 ```
 
 After that, install chromium on playwright (playwright will be installed when you install endpointscanner):
@@ -79,7 +94,7 @@ myvenv\Scripts\Activate.ps1
 If you do not want to create a virtual environment, you can run:
 
 ```bash
-python3 -m pip install git+https://github.com/SphericalFlower52811/endpointscanner.git --break-system-packages
+python3 -m pip install enumendpoint --break-system-packages
 ```
 
 to install it without PEP 668.
@@ -91,63 +106,23 @@ to install it without PEP 668.
 To update the script, you can run:
 
 ```bash
-python3 -m pip install --upgrade git+https://github.com/SphericalFlower52811/endpointscanner.git
+python3 -m pip install --upgrade enumendpoint
 ```
-
-## Details
-
-I made this a command line tool that you install with the instructions above
-
-The command prints out how many endpoints to test, and lists them all out after testing them.
-It can only bypass simple captchas.
-If there is a captcha in the website, it will detect what captcha it is (as long as it is one of the captcha types below)
-
-- google recaptcha
-- hcaptcha
-- cloudflare turnstile
-- perimeterX
-- akamai bot manager
-- kasada
-- incapsula
-- amazon captcha
-
-If there are signs of a generic captcha in the website, it will say it is a generic captcha.
-
-The python code scans for endpoints in websites by looking through all the js files listed in the htmml, and also checks <script></script> tags. It also prints what JS type it uses. It scans for code like get, post etc, href and much more.
-
-Types of JS it can detect, but it is a bit buggy and may list the wrong js type.
-Node.js
-React
-Next.js
-Vue
-Angular
-Vite
-Webpack
-
-If there is a {id} inside the path, it replaces it with 1 to test the endpoint whether it is a 200 OK, 404/403, or a redirect (30x Header)
-
-404(Soft) means the server incorrectly returns 200 response while giving a 404 page instead.
-
-It also tries very sensitive endpoints like .env, .git/config, and a lot more.
-
-ai assisted code btw
-
-The code prints the website uptime, how many seconds it takes to load and whether it is fast or not.
-
-The code can also test for rate limiting in the website by performing an async function to send 100 GET requests to an endpoint the user wants to test.
 
 ## Weaknesses
 
-- If there are shells in the page, it may mistake some sensitive endpoints as real. If you see sensitive endpoints in the scan, they may not actually be exposed on the website if the website has a shell. (E.g. .gitignore, .env)
 - If there is a login page, the script will either show that all of the pages require login, or label all of them as 403.
+- If there are shells in the page, it may give false positives for sensitive endpoints. If you see sensitive endpoints in the scan, they may not actually be exposed on the website if the website has a shell. (E.g. .gitignore, .env.local)
 
 ## What was added
 
-Version 7 added:
+Version 7 (point 0 point 1) added:
 
 - Scanning extra map files (e.g. robots.txt, sitemap.xml) for more endpoints
 - Being able to show assets
 - Hiding inaccessible pages by default
+- Became a proper tool on PyPI (in other words, it can be installed by pip)
+- More sensitive endpoints to test
 
 ## Plans for next version
 
@@ -155,7 +130,10 @@ Version 8 is planned to have:
 
 - Detecting what captcha was used if it is blocked
 - Proper detection of timeouts
+- More JS Stack varieties in the JS Stack check
 - Optimisation (maybe, if not in v9)
+
+ai assisted code btw
 
 # Legal Disclaimer
 

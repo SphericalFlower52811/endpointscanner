@@ -4,7 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "enumendpoint"
-version = "7.0"
+version = "7.0.1"
+description = "Website endpoint scanner and rate limit tester that bypasses simple captchas."
+readme = "README.md"
 dependencies = [
     "curl_cffi",
     "beautifulsoup4",
