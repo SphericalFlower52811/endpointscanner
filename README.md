@@ -1,4 +1,4 @@
-# Website Endpoint Scanner and Rate Limit Tester For Websites (Version 7.0.2)
+# Website Endpoint Scanner and Rate Limit Tester For Websites (Version 7.0.3)
 
 For Installation, please go to the Installation section below!
 
@@ -116,7 +116,7 @@ python3 -m pip install --upgrade endpointscanner
 
 ## What was added
 
-Version 7 (point 0 point two) added:
+Version 7.0.3 added:
 
 - Patches for more accuracy in scanning
 - Showing original endpoints (replaces with 1, but also prints out the endpoint with variables in the actual website code)
