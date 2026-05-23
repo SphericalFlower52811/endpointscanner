@@ -1,11 +1,10 @@
-# Website Endpoint Scanner and Rate Limit Tester For Websites (Version 7.0.1)
+# Website Endpoint Scanner and Rate Limit Tester For Websites (Version 7.0.2)
 
 For Installation, please go to the Installation section below!
 
 ## How it works
 
 - Uses curl_cffi and playwright-stealth to bypass simple captchas
-- If it is blocked by a captcha, it detects what type of captcha it is (if it is a well-known one like akamai bot manager or cloudflare)
 - Uses a fake path to test which are real paths and which are shells. (websites like SPAs give a lot of trouble to current tools)
 - Scrapes all `.js` files and `<script>` tags inside the html with a regex to find paths
 - Differentiates paths by website endpoints, assets, redirects etc.
@@ -22,7 +21,7 @@ Command to run after installing **(For installation, look for the 'Installation'
 Example commands to run:
 
 ```bash
-enumendpoint (domain, e.g. https://example.com) --ratelimit 100 --testpath /app --show-404s --show-assets
+endpointscanner https://example.com(or the website you want to test) --ratelimit 100 --testpath /app --show-404s --show-assets
 ```
 
 Passable arguments:
@@ -46,15 +45,16 @@ Passable arguments:
 Example use:
 
 ```bash
-enumendpoint example.com --ratelimit 100 --testpath /api/v1
+endpointscanner example.com --ratelimit 100 --testpath /api/v1
 ```
 
 ## Installation
 
-To install enumendpoint, run the command:
+You MUST have python 3.9 or above to use this!!
+To install endpointscanner, run the command:
 
 ```bash
-python3 -m pip install enumendpoint
+python3 -m pip install endpointscanner
 ```
 
 After that, install chromium on playwright (playwright will be installed when you install endpointscanner):
@@ -63,7 +63,7 @@ After that, install chromium on playwright (playwright will be installed when yo
 playwright install chromium
 ```
 
-### You may need to create a virtual environment if there is PEP 668.
+### You may need to create a virtual environment if there is PEP 668. (For the endpointscanner installation, not playwright install chromium.)
 
 To create a virtual environment named 'myvenv':
 
@@ -94,7 +94,7 @@ myvenv\Scripts\Activate.ps1
 If you do not want to create a virtual environment, you can run:
 
 ```bash
-python3 -m pip install enumendpoint --break-system-packages
+python3 -m pip install endpointscanner --break-system-packages
 ```
 
 to install it without PEP 668.
@@ -106,7 +106,7 @@ to install it without PEP 668.
 To update the script, you can run:
 
 ```bash
-python3 -m pip install --upgrade enumendpoint
+python3 -m pip install --upgrade endpointscanner
 ```
 
 ## Weaknesses
@@ -116,22 +116,18 @@ python3 -m pip install --upgrade enumendpoint
 
 ## What was added
 
-Version 7 (point 0 point 1) added:
+Version 7 (point 0 point two) added:
 
-- Scanning extra map files (e.g. robots.txt, sitemap.xml) for more endpoints
-- Being able to show assets
-- Hiding inaccessible pages by default
-- Became a proper tool on PyPI (in other words, it can be installed by pip)
-- More sensitive endpoints to test
+- Patches for more accuracy in scanning
+- Showing original endpoints (replaces with 1, but also prints out the endpoint with variables in the actual website code)
 
 ## Plans for next version
 
-Version 8 is planned to have:
+Version 7.1 is planned to have:
 
-- Detecting what captcha was used if it is blocked
-- Proper detection of timeouts
-- More JS Stack varieties in the JS Stack check
-- Optimisation (maybe, if not in v9)
+- Flag to display endpoints as it finds them to show progress
+- Flag to export endpoints found to a text file
+- Flag to disable showing the original endpoints to reduce cluttering (So it just replaces the endpoint with 1 and doesn't show end original endpoint with variables, makes terminal neater but loses original endpoint)
 
 ai assisted code btw
 

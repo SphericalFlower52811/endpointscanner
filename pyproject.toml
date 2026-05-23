@@ -3,10 +3,11 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "enumendpoint"
-version = "7.0.1"
-description = "Website endpoint scanner and rate limit tester that bypasses simple captchas."
+name = "endpointscanner"
+version = "7.0.2"
 readme = "README.md"
+description = "Website endpoint scanner and rate limit tester that bypasses simple captchas."
+requires-python = ">=3.9"
 dependencies = [
     "curl_cffi",
     "beautifulsoup4",
@@ -16,4 +17,4 @@ dependencies = [
 
 [project.scripts]
 # pyprojectthing
-enumendpoint = "enumerateendpoint:main"
+endpointscanner = "enumerateendpoint:main"

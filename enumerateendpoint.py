@@ -76,6 +76,10 @@ HEADER = {
     "Accept-Language": "en-US, en;q=0.9"
 } #browser header
 
+USELESSSTUFF = {
+        "localhost", "127.0.0.1", "0.0.0.0", 
+        "w3.org", "schema.org", "xml.org", "://microsoft.com"
+    }
 def gethtmlafterload(url):
     with sync_playwright() as p:
         try:
@@ -144,8 +148,8 @@ def identify_javascript_type(html, headers=None):
         powered_by = headers.get('X-Powered-By', '').lower()
         if 'express' in powered_by or 'node' in powered_by:
             stack.append(f"Node.js ({powered_by.capitalize()})")
-    # Build Tools
-    if any(term in html.lower() for term in ['@vite/client', 'vite-plugin', 'src="/@vite']):
+    # vite and wekpack
+    if any(term in html.lower() for term in ['@vite/client', 'vite-plugin', 'src="/@vite', '__vite__', 'modulepreload']):
         stack.append("Vite")
     if 'webpack' in html.lower(): stack.append("Webpack")
 
@@ -198,6 +202,7 @@ def main():
     parser.add_argument("--show-404s", action="store_true", help="Show endpoints tested that returned a 404")
     parser.add_argument("--disable-extra-files", action="store_true", help="Disable scanning of extra structural mapping files (robots, sitemaps, manifests, etc.)")
     parser.add_argument("--show-assets", action="store_true", help="Include assets like images and fonts in scan results")
+    #add --show-org
 
     args = parser.parse_args()
     if args.testpath and args.ratelimit is None:
@@ -211,18 +216,19 @@ def main():
 
     show_dead = args.show_404s
     target = args.target if args.target else input("Enter website (e.g. https://example.com): ").strip()
+
     if not target.startswith(("http://", "https://")):
         target = "https://" + target
         try:
             response = requests.get(target, headers=HEADER, timeout=5, impersonate="chrome120")
         except requests.exceptions.SSLError:
             if target.startswith("https://"):
-                print('[!] HTTPS SSL Error. Trying HTTP...') #becuase later sum http noob
+                print('HTTPS SSL Error. Trying HTTP...') #becuase later sum http noob
                 target = target.replace("https://", "http://")
                 try:
-                    requests.get(target, headers=HEADER, timeout=5, impersonate="chrome120")
+                    response = requests.get(target, headers=HEADER, timeout=5, impersonate="chrome120")
                 except Exception as e:
-                    print(f'[!] Target unreachable on HTTP: {e}')
+                    print(f'Target unreachable on HTTP: {e}')
                     exit()
         except Exception as e:
             print(f'Target unreachable: {e}')
@@ -259,7 +265,7 @@ def main():
     
     results_fromotherfiles = []
     found_paths = set(SENSITIVE_ENDPOINT)
-    discovered_in_js = set()
+    discovered_in_js = {}
 
     if not args.disable_extra_files:
         print("\nFinding paths from map files. (If they exist)")
@@ -343,7 +349,7 @@ def main():
     except:
         shell_content = ""
     try:
-        print(f"Detected JS Type: {identify_javascript_type(main_html)}")
+        print(f"Detected JS Stack: {identify_javascript_type(main_html)}")
         soup = BeautifulSoup(main_html, 'html.parser')
         
         # next js code files
@@ -354,15 +360,14 @@ def main():
         for script_tag in soup.find_all('script'):
             src = script_tag.get('src')
             if src and not src.startswith(('http://', 'https://')):
-                # Use urlparse to strip away parameters and isolate a clean local path
                 local_path = urlparse(src).path
                 if local_path:
-                    # Guarantee exactly ONE starting slash, nothing more, nothing less
                     clean_path = '/' + local_path.lstrip('/')
                     found_paths.add(clean_path)
 
-        # Gather stylesheets safely without corrupting string slashes
-        for link_tag in soup.find_all('link', rel='stylesheet'):
+        targetthings = ['stylesheet', 'modulepreload', 'preload', 'prefetch', 'icon', 'shortcut icon', 'manifest']
+        #stylesheet like css
+        for link_tag in soup.find_all('link', rel=targetthings):
             href = link_tag.get('href')
             if href and not href.startswith(('http://', 'https://')):
                 local_path = urlparse(href).path
@@ -372,46 +377,106 @@ def main():
         patterns = [
             r'["\'`](/[a-zA-Z0-9_\-\./{}:]*)["\'`]', 
             r'(?:path|href|to|post|get|patch|put|delete|head|options)[\s]*[:=\(\|]+[\s]*["\'`](/?[a-zA-Z0-9_\-\./{}:\$]*[\./][a-zA-Z0-9_\-\./{}:\$]*)["\'`]',
-            r'[`](https?://[a-zA-Z0-9_\-\./{}:\$]+)[`]'
+            r'["\'`](https?://[a-zA-Z0-9_\-\./{}:\$]+)["\'`]'
         ]
 
+        for p in patterns:
+            respo = requests.get(target, headers=HEADER, timeout=5, impersonate="chrome120")
+            matches = re.findall(p, respo.text)
+            for m in matches:
+                m_clean = re.sub(r'(\$\{.*?\}|:[a-zA-Z0-9]+)', '1', m)
+                if m_clean != m:
+                   m_display = f"{m_clean} [Original: {m}]"
+                else:
+                    m_display = m_clean
+
+                if "://" not in m_clean:
+                    if not m_clean.startswith('/'): 
+                        m_clean = '/' + m_clean
+                        if m_clean != m:
+                            m_display = '/' + m_display
+                
+                if not m_clean.lower().endswith(ignored_extensions):
+                    if m_clean in ["/", "//", "///", "/.", "/..", "/..."]:
+                        continue
+                    if any(term in m_clean.lower() for term in USELESSSTUFF):
+                        continue
+                    found_paths.add(m_clean)
+                    if m_clean not in discovered_in_js:
+                        discovered_in_js[m_clean] = m_display
+
+        
         # check <script> for endpoint too
         inline_scripts = soup.find_all('script')
         for script in inline_scripts:
             if script.string:
-                chunks = re.findall(r'["\'](/[a-zA-Z0-9_\-\./]*\.js)["\']', script.string)
+                chunks = re.findall(r'["\'](/?[a-zA-Z0-9_\-\./]*\.js)["\']', script.string)
                 for c in chunks:
-                    js_files.append(urljoin(target, c))
+                    clean_c = c if c.startswith('/') else '/' + c
+                    js_files.append(urljoin(target, clean_c))
+                    discovered_in_js[clean_c] = clean_c
                 
                 for p in patterns:
                     matches = re.findall(p, script.string)
                     for m in matches:
-                        m_clean = re.sub(r'(\$\{.*\}|:[a-zA-Z0-9]+)', '1', m)
-                        if not m_clean.startswith('/'): m_clean = '/' + m_clean
+                        m_clean = re.sub(r'(\$\{.*?\}|:[a-zA-Z0-9]+)', '1', m)
+                        if m_clean != m:
+                           m_display = f"{m_clean} [Original: {m}]"
+                        else:
+                            m_display = m_clean
+
+                        if "://" not in m_clean:
+                            if not m_clean.startswith('/'): 
+                                m_clean = '/' + m_clean
+                                if m_clean != m:
+                                    m_display = '/' + m_display
                         
                         if not m_clean.lower().endswith(ignored_extensions):
-                            if m_clean in ["/", "//", "///", "/.", "/..", "/..."]:
+                            if m_clean in ["/", "//", "///", "/.", "/..", "/...", "/./", "localhost", "w3.org"]:
+                                continue
+                            if any(term in m_clean.lower() for term in USELESSSTUFF):
                                 continue
                             found_paths.add(m_clean)
-                            discovered_in_js.add(m_clean)
+                            if m_clean not in discovered_in_js:
+                                discovered_in_js[m_clean] = m_display
+
 
         # scan all js files
+        #scan all js files
+        for path in list(found_paths):
+            if path.lower().endswith('.js') and urljoin(target, path) not in js_files:
+                js_files.append(urljoin(target, path))
+
         for js_url in js_files:
             try:
                 js_res = requests.get(js_url, headers=HEADER, cookies=session_cookies, timeout=5, impersonate="chrome120")
                 if js_res.status_code == 200:
+                    if "index" not in js_url.lower() and "main" not in js_url.lower():
+                        continue
                     for p in patterns:
                         matches = re.findall(p, js_res.text)
                         for m in matches:
                             m_clean = re.sub(r'(\$\{.*?\}|:[a-zA-Z0-9]+)', '1', m)
-                            if not m_clean.startswith('/'): m_clean = '/' + m_clean
-                            
+
+                            if m_clean != m:
+                                m_display = f"{m_clean} [Original: {m}]"
+                            else:
+                                m_display = m_clean
+                            if "://" not in m_clean:
+                                if not m_clean.startswith('/'): 
+                                    m_clean = '/' + m_clean
+                                    if m_clean != m:
+                                        m_display = '/' + m_display
                             if not m_clean.lower().endswith(ignored_extensions):
                                 if m_clean in ["/", "//", "///", "/.", "/..", "/..."]:
                                     continue
+                                if any(term in m_clean.lower() for term in USELESSSTUFF):
+                                    continue
                                 found_paths.add(m_clean)
-                                discovered_in_js.add(m_clean)
+                                if m_clean not in discovered_in_js:
+                                    discovered_in_js[m_clean] = m_display
             except: continue
+
 
         print(f"Total paths to test: {len(found_paths)} ({len(discovered_in_js)} scraped from JS).")
         print("Testing endpoints...")
@@ -420,9 +485,10 @@ def main():
         results_frameworks, results_assets = [], []
 
         for path in sorted(found_paths):
+            display_path = discovered_in_js.get(path, path)
             # all external url cuz https: //blahblah
             if "://" in path:
-                results_ext.append(path.lstrip('/'))
+                results_ext.append(display_path.lstrip('/'))
                 continue
 
             try:
@@ -467,39 +533,39 @@ def main():
                 if r.status_code in [200, 304]: #304 got me
                     # if its a service/api path then like service and stuff ykyk
                     if is_machine_path:
-                        results_services.append(f"{path} [Service/API]")
+                        results_services.append(f"{display_path} [Service/API]")
                     elif is_shell or is_home_redirect:
                         if path in discovered_in_js:
-                            results_200.append(f"{path} [Client-Side Route, Requires Login]")
+                            results_200.append(f"{display_path} [Client-Side Route, Requires Login]")
                         else:
                             results_dead.append(f"404 Not Found (React Shell): {path}")
                     else:
                         if "text/html" in content_type:
-                            results_200.append(f"{path} [Access no matter what]")
+                            results_200.append(f"{display_path} [Access no matter what]")
                         elif is_media_asset:
-                            results_assets.append(f"{path}")
+                            results_assets.append(f"{display_path}")
                         elif is_framework_asset:
-                            results_frameworks.append(f"{path}")
+                            results_frameworks.append(f"{display_path}")
                         else:
                             #standard is like js and css
-                            results_frameworks.append(f"{path} [Non-Standard File]")
+                            results_frameworks.append(f"{display_path} [Non-Standard File]")
 
                 
                 elif r.status_code == 400:
                     if is_framework_asset:
-                        results_frameworks.append(f"{path} [Asset Error - 400]")
+                        results_frameworks.append(f"{display_path} [Asset Error - 400]")
                     # get machine services like socket.io that reject simple GET request. cuz socket stinky.
                     if "." in path or "/" in path:
-                        results_services.append(f"{path} [Potential Service - 400]")
+                        results_services.append(f"{display_path} [Potential Service - 400]")
                     elif is_machine_path:
-                        results_services.append(f"{path} [Service/API]") #cuz socket
+                        results_services.append(f"{display_path} [Service/API]") #cuz socket
                     else:
-                        results_dead.append(f"400 Bad Request: {path}")
+                        results_dead.append(f"400 Bad Request: {display_path}")
 
                 elif r.status_code in [403, 404]:
-                    results_dead.append(f"{r.status_code} Error: {path}")
+                    results_dead.append(f"{r.status_code} Error: {display_path}")
                 elif str(r.status_code).startswith('3'):
-                    results_30x.append(f"{path} -> {r.headers.get('Location')}")
+                    results_30x.append(f"{display_path} -> {r.headers.get('Location')}")
             except: continue
 
 
