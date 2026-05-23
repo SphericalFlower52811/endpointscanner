@@ -6,8 +6,9 @@ build-backend = "setuptools.build_meta"
 name = "endpointscanner"
 version = "7.0.2"
 readme = "README.md"
-description = "Website endpoint scanner and rate limit tester that bypasses simple captchas."
+description = "Website endpoint reconnaissance tool and rate limit tester that bypasses simple captchas."
 requires-python = ">=3.9"
+keywords = ["endpoint-scanner", "website-recon", "bug-bounty", "rate-limiting", "dir-search", "url-discovery"]
 dependencies = [
     "curl_cffi",
     "beautifulsoup4",
