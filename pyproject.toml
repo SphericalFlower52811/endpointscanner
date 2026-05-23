@@ -8,7 +8,7 @@ version = "7.0.3"
 readme = "README.md"
 description = "Website endpoint reconnaissance tool and rate limit tester that bypasses simple captchas."
 requires-python = ">=3.9"
-keywords = ["endpoint-scanner", "website-recon", "bug-bounty", "rate-limiting", "dir-search", "url-discovery"]
+keywords = ["endpoint-scanner", "website-recon", "bug-bounty", "rate-limiting", "dir-search", "url-discovery", "web-reconnaissance"]
 dependencies = [
     "curl_cffi",
     "beautifulsoup4",
