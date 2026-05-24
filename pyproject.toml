@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "endpointscanner"
-version = "7.0.3"
+version = "7.0.4"
 readme = "README.md"
 description = "Website endpoint reconnaissance tool and rate limit tester that bypasses simple captchas."
 requires-python = ">=3.9"
@@ -19,3 +19,9 @@ dependencies = [
 [project.scripts]
 # pyprojectthing
 endpointscanner = "enumerateendpoint:main"
+
+[project.urls]
+Homepage = "https://github.com/SphericalFlower52811/endpointscanner"
+Issues = "https://github.com/SphericalFlower52811/endpointscanner/issues"
+Repository = "https://github.com/SphericalFlower52811/endpointscanner"
+

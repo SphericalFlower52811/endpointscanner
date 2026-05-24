@@ -176,23 +176,29 @@ async def async_rate_test(url, num_reqs=100):
             
             if code != 200 and first_limit_at is None:
                 first_limit_at = (request_number, code)
+        
+        pa = urlparse(url)
+        if pa.path and pa.path != '/':
+            tardis = f"Website endpoint {pa.path}"
+        else:
+            tardis = f"Website {pa.netloc if pa.netloc else url}"
 
         print("\n--- Rate Limit Results ---")
         for code, count in status_counts.items():
             if code == 'Error': continue
-            label = "OK" if code == 200 else "LIMITED" if code == 429 else "WAF/FORBIDDEN" if code == 403 else "CRASHED" if code == 500 else "Other"
+            label = "VULNERABLE" if code == 200 else "RATE-LIMITED" if code == 429 else "WAF/FORBIDDEN" if code == 403 else "CRASHED" if code == 500 else "Other"
             print(f" Status {code} ({label}): {count}")
         
         if status_counts.get(200, 0) == num_reqs:
-            print(f"\nWebsite is potentially vulnerable to DoS or brute-forcing (No rate limit detected after {num_reqs} requests).")
+            print(f"\n{tardis} is potentially vulnerable to DoS or brute-forcing (No rate limit detected after {num_reqs} requests).")
         elif first_limit_at:
             req_num, code = first_limit_at
             if code == 403:
-                print(f"\nA WAF (Firewall) likely intercepted the requests (403 Forbidden after {req_num} requests).")
+                print(f"\nA WAF (Firewall) likely intercepted the requests to {tardis.lower()} (403 Forbidden after {req_num} requests).")
             elif code == 429:
-                print(f"\nServer-side rate limiting is active (429 Too Many Requests detected after {req_num} requests).")
+                print(f"\nRate limiting present on {tardis.lower()} (429 Too Many Requests detected after {req_num} requests).")
             else:
-                print(f"\nServer began responding with {code} after {req_num} requests.")
+                print(f"\nServer began responding with {code} after {req_num} requests to {tardis.lower()}.")
 
 def main():
     parser = argparse.ArgumentParser()
@@ -634,7 +640,7 @@ def main():
                 try:
                     check_res = requests.get(urljoin(target, test_path), headers=HEADER, timeout=5, impersonate="chrome120")
                     if check_res.status_code in [301, 302, 307, 308, 403, 404]:
-                        print(f"{test_path} is {check_res.status_code}. Testing on root domain.")
+                        print(f"{test_path} receives status {check_res.status_code} on the first request. Testing on root domain.")
                         test_path = "/"
                 except:
                     test_path = "/"

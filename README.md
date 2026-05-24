@@ -1,4 +1,4 @@
-# Website Endpoint Scanner and Rate Limit Tester For Websites (Version 7.0.3)
+# Website Endpoint Scanner and Rate Limit Tester For Websites (Version 7.0.4)
 
 For Installation, please go to the Installation section below!
 
@@ -18,21 +18,7 @@ For Installation, please go to the Installation section below!
 
 Command to run after installing **(For installation, look for the 'Installation' section.)**:
 
-Example commands to run:
-
-```bash
-endpointscanner https://example.com(or the website you want to test) --ratelimit 100 --testpath /app --show-404s --show-assets
-```
-
 Passable arguments:
-
-```bash
---ratelimit
---testpath
---show-404s
---disable-extra-files
---show-assets
-```
 
 | Argument                | What the argument does                                                                                                                                                                                   |
 | :---------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -42,10 +28,10 @@ Passable arguments:
 | `--disable-extra-files` | The script won't scan through extra map files like robots.txt for extra endpoints.                                                                                                                       |
 | `--show-assets`         | Show assets like images that the script finds.                                                                                                                                                           |
 
-Example use:
+Example command to run (assuming you are testing on https://example.com):
 
 ```bash
-endpointscanner example.com --ratelimit 100 --testpath /api/v1
+endpointscanner https://example.com --ratelimit 100 --testpath /login --show-404s --show-assets
 ```
 
 ## Installation
@@ -112,11 +98,11 @@ python3 -m pip install --upgrade endpointscanner
 ## Weaknesses
 
 - If there is a login page, the script will either show that all of the pages require login, or label all of them as 403.
-- If there are shells in the page, it may give false positives for sensitive endpoints. If you see sensitive endpoints in the scan, they may not actually be exposed on the website if the website has a shell. (E.g. .gitignore, .env.local)
+- If there are shells (e.g. React SPA shells) in the page, it may give false positives for sensitive endpoints. If you see sensitive endpoints in the scan, they may not actually be exposed on the website if the website has a shell. (E.g. .gitignore, .env.local)
 
 ## What was added
 
-Version 7 (point 0 point 3) added:
+Version 7 (7.0.4 is just updating toml and readme) added:
 
 - Patches for more accuracy in scanning
 - Showing original endpoints (replaces with 1, but also prints out the endpoint with variables in the actual website code)
@@ -133,4 +119,4 @@ ai assisted code btw
 
 # Legal Disclaimer
 
-Note that this tool is strictly meant for **authorised** testing and security research. Running this script on websites where you are not permitted to do so can result in legal action. The author of this script assumes no responsibility for any misuse or legal consequences from running this script. Ensure you have received permission from the owner of the target owner before performing tests or scans on their website.
+Note that this tool is strictly meant for **authorised** testing and security research. Running this script on websites where you are not permitted to do so can result in legal action. The author of this script assumes no responsibility for any misuse or legal consequences from running this script. Ensure you have received permission from the owner of the target website before performing tests or scans on their website.
