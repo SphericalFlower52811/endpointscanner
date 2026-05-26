@@ -2,4 +2,3 @@ __pycache__/
 .qodo/
 .DS_Store
 *.egg-info/
-captchacheck.py
