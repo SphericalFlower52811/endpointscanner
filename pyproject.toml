@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "endpointscanner"
-version = "7.0.4"
+version = "7.1.0"
 readme = "README.md"
 description = "Website endpoint reconnaissance tool and rate limit tester that bypasses simple captchas."
 requires-python = ">=3.9"

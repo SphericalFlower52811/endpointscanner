@@ -8,69 +8,6 @@ import time
 from playwright.sync_api import sync_playwright #headless browser to solve captcha
 from playwright_stealth import Stealth #Ensure strict firewalls do not block the playwright browser
 
-#Will be fixed in version 8
-'''
-def isthere_captcha(response):
-   #me when captcha
-    html_content = response.text
-    html_lower = html_content.lower()
-    
-    # cloudflare turnstile
-    if "challenge-platform" in html_content or "cf-challenge" in html_content:
-        return True, "Cloudflare Turnstile (Managed Challenge)"
-    if "window._cf_chl_opt" in html_content or "cf-ray:" in html_lower:
-        return True, "Cloudflare WAF Block Page"
-    if "cf-mitigated" in response.headers.get("Server", "").lower():
-        return True, "Cloudflare Edge Mitigation"
-
-    # perimeterx
-    if "window._pxappid" in html_lower or "px-captcha" in html_lower:
-        return True, "Human Security (PerimeterX) CAPTCHA"
-    if "captcha.px-cdn.net" in html_content or "client.perimeterx.net" in html_content:
-        return True, "Human Security (PerimeterX) Shield Active"
-
-    #recaptcha
-    if "google.com" in html_lower or "g-recaptcha" in html_lower:
-        return True, "Google reCAPTCHA Challenge"
-    if "recaptcha.js" in html_lower or "__recaptcha_api" in html_lower:
-        return True, "Google reCAPTCHA Script Loaded"
-
-    #h captcha
-    if "hcaptcha.com" in html_content or "h-captcha" in html_lower:
-        return True, "hCaptcha Verification Screen"
-
-    #akamai
-    if "akam_bm" in response.cookies or "bm_sz" in response.cookies:
-        return True, "Akamai Bot Manager Cookie Block"
-    if "_sec_challenge" in html_lower or "akamai-extension" in html_lower:
-        return True, "Akamai WAF Challenge Injection"
-
-    # aws/amazon captcha
-    if "aws-waf-token" in html_lower or "awswaf" in html_lower:
-        return True, "AWS WAF Token Challenge"
-    if "amazon captcha" in html_lower or "amzn-captcha" in html_lower:
-        return True, "Amazon Custom CAPTCHA Screen"
-
-    # incapsula or soemthing
-    if "incapsula" in html_lower or "_incap_" in html_lower:
-        return True, "Imperva Incapsula Bot Shield"
-    if "visid_incap" in response.cookies:
-        return True, "Imperva Session Interception"
-
-    # kasada
-    if "kpsdk" in html_lower or "ips.js" in html_lower:
-        return True, "Kasada Anti-Bot Handshake"
-
-    # generic captchas
-    if response.status_code in [403, 429]:
-        generic_signals = ["captcha", "robot", "automated access", "verify you are human", "checking your browser"]
-        for signal in generic_signals:
-            if signal in html_lower:
-                return True, f"Generic Firewall Block ({signal.title()})"
-        return True, f"Unidentified Security Drop (HTTP {response.status_code})"
-
-    return False, ""
-'''
 HEADER = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     "Accept-Language": "en-US, en;q=0.9"
@@ -94,7 +31,7 @@ def gethtmlafterload(url):
             error_msg = str(e).lower()
             error_type = type(e).__name__
 
-            # idiotproofing if people GENUINELY cannot read installation instructions
+            # Instructions to install if people do not read instructions the first time
             if "error" in error_type.lower() and ("executable" in error_msg.lower() or "install" in error_msg.lower()):
                 print("\nPlaywright installations are missing.")
                 print("Please read the installation instructions in the README of the repository.")
@@ -117,6 +54,15 @@ def gethtmlafterload(url):
             page.mouse.move(100, 100)
             page.mouse.move(200, 300)
             page.evaluate("window.scrollTo(0, 500)")
+
+            import time
+            start_time = time.time()
+            while (time.time() - start_time) < 5: #only 5 second later ppl impatient
+                mainhtml = page.content()
+                # check if there are actually scripts loaded into the html yet
+                if ".js" in mainhtml.lower() or "chunk" in mainhtml.lower() or "<script" in mainhtml.lower():
+                    break
+                time.sleep(0.2)
              
             page.wait_for_timeout(5000) #wait for page to load downloaded content, and cookie
             mainhtml = page.content()
@@ -181,7 +127,7 @@ async def async_rate_test(url, num_reqs=100):
         if pa.path and pa.path != '/':
             tardis = f"Website endpoint {pa.path}"
         else:
-            tardis = f"Website {pa.netloc if pa.netloc else url}"
+            tardis = f"{pa.netloc if pa.netloc else url}"
 
         print("\n--- Rate Limit Results ---")
         for code, count in status_counts.items():
@@ -201,22 +147,33 @@ async def async_rate_test(url, num_reqs=100):
                 print(f"\nServer began responding with {code} after {req_num} requests to {tardis.lower()}.")
 
 def main():
+    #arguments/flag
     parser = argparse.ArgumentParser()
     parser.add_argument("target", nargs='?', help="URL")
-    parser.add_argument("--ratelimit", nargs='?', const=100, type=int, default=None, help="Number of requests")
-    parser.add_argument("--testpath", nargs='?', const='/', type=str, help="Endpoint to test")
-    parser.add_argument("--show-404s", action="store_true", help="Show endpoints tested that returned a 404")
-    parser.add_argument("--disable-extra-files", action="store_true", help="Disable scanning of extra structural mapping files (robots, sitemaps, manifests, etc.)")
-    parser.add_argument("--show-assets", action="store_true", help="Include assets like images and fonts in scan results")
-    #add --show-org
+    parser.add_argument("-r", "--ratelimit", nargs='?', const=100, type=int, default=None, help="Number of requests")
+    parser.add_argument("-t", "--testpath", nargs='?', const='/', type=str, help="Endpoint to test")
+    parser.add_argument("-s", "--show-404s", action="store_true", help="Show endpoints tested that returned a 404")
+    parser.add_argument("-d", "--disable-extra-files", action="store_true", help="Disable scanning of extra structural mapping files (robots, sitemaps, manifests, etc.)")
+    parser.add_argument("-m", "--show-media", action="store_true", help="Include assets/media like images and fonts in scan results")
+    parser.add_argument("-sp", "--show-prog", action="store_true", help="Print endpoints to the terminal one by one in real-time as they are found")
+    parser.add_argument("-o", "--output-file", type=str, default=None, help="Save formatted results directly to a local text file.")
+    parser.add_argument("-do", "--disable-og", action="store_true", help="Disable code from showing the original endpoint with variables. Keeps output tidier. Will NOT remove original tag from progress if the --show-prog flag is present.")
+    parser.add_argument("-ti", "--tidy", action="store_true", help="Script will not show where it got extra endpoints from, and will not show if it is a client side route and requires login, or react shell. Will also not show if an endpoint is a potential service.")
+    parser.add_argument("-ta", "--tidy-all", action="store_true", help="Flags --disable-og and --tidy combined.")
+    parser.add_argument("-or", "--only-res", action="store_true", help="Only show summarised endpoints.")
 
     args = parser.parse_args()
     if args.testpath and args.ratelimit is None:
         args.ratelimit = 100 
+    #tests for new flags
+    #args.show_prog = True #comment out later, for testing.
+    #args.tidy_all = True
+    args.show_assets = args.show_media
+    if args.tidy_all == True:
+        args.disable_og, args.tidy = True, True
 
     ignored_extensions = ()
 
-    # error if the user somehow didn't read the instructions (i've idiotproofed the code ENOUGH)
     if args.testpath and args.ratelimit is None:
         parser.error("--testpath requires the --ratelimit flag.\nIf you want to do a rate limit test, use --ratelimit (number of requests) --testpath (path to test).\nIf not, don't use --ratelimit nor --testpath.")
 
@@ -229,35 +186,38 @@ def main():
             response = requests.get(target, headers=HEADER, timeout=5, impersonate="chrome120")
         except requests.exceptions.SSLError:
             if target.startswith("https://"):
-                print('HTTPS SSL Error. Trying HTTP...') #becuase later sum http noob
+                print('HTTPS SSL Error. Trying HTTP...') #becuase some sites may use http instead of https
                 target = target.replace("https://", "http://")
                 try:
                     response = requests.get(target, headers=HEADER, timeout=5, impersonate="chrome120")
                 except Exception as e:
                     print(f'Target unreachable on HTTP: {e}')
-                    exit()
+                    exit(1)
         except Exception as e:
             print(f'Target unreachable: {e}')
-            exit()
+            exit(1)
     try:
         st = time.perf_counter()
         uptimeres = requests.get(target, headers=HEADER, timeout=10, impersonate="chrome120")
         et = time.perf_counter()
         restime = et - st
-        print(f"Site responded in {round(restime, 2)} seconds.")
-        
-        if restime < 0.5:
-            print("Server is very fast.")
-        elif restime < 1:
-            print("Server is fast.")
-        elif restime < 2.5:
-            print("Server is average speed.")
-        elif restime < 4:
-            print("Server is slow.")
-        else:
-            print("Server is very slow.")
+        if not args.only_res:
+            print(f"Site responded in {round(restime, 2)} seconds.")
+        if not args.only_res:
+            if restime < 0.5:
+                print("Server is very fast.")
+            elif restime < 1:
+                print("Server is fast.")
+            elif restime < 2.5:
+                print("Server is average speed.")
+            elif restime < 4:
+                print("Server is slow.")
+            else:
+                print("Server is very slow.")
     except requests.exceptions.Timeout:
         print("Server did not respond after 10 seconds.")
+        print("Quitting script...")
+        exit(1)
 
     #hardcoded dangerous endpoints to test
     SENSITIVE_ENDPOINT = {
@@ -274,7 +234,8 @@ def main():
     discovered_in_js = {}
 
     if not args.disable_extra_files:
-        print("\nFinding paths from map files. (If they exist)")
+        if not args.only_res:
+            print("\nFinding paths from map files. (If they exist)")
         
         # bobot.txt
         try:
@@ -286,6 +247,8 @@ def main():
                     if clean_rule and clean_rule not in ["/", "/*"] and clean_rule not in found_paths:
                         found_paths.add(clean_rule)
                         results_fromotherfiles.append(f"{clean_rule} [Source: robots.txt]")
+                        if args.show_prog:
+                            print(f"[File from robots.txt] New path/file: {clean_rule if 'clean_rule' in locals() else clean_path if 'clean_path' in locals() else path}")
         except: pass
 
         # sitemap
@@ -297,7 +260,12 @@ def main():
                     clean_path = loc.strip()
                     if clean_path and clean_path != "/" and clean_path not in found_paths:
                         found_paths.add(clean_path)
-                        results_fromotherfiles.append(f"{clean_path} [Source: sitemap.xml]")
+                        if not args.tidy:
+                            results_fromotherfiles.append(f"{clean_path} [Source: sitemap.xml]")
+                        else:
+                            results_fromotherfiles.append(f"{clean_path}")
+                        if args.show_prog:
+                            print(f"[File from sitemap.xml] New path/file: {clean_rule if 'clean_rule' in locals() else clean_path if 'clean_path' in locals() else path}")
         except: pass
 
         # me when manifesto without the o
@@ -308,7 +276,12 @@ def main():
                 for path in paths:
                     if path not in found_paths:
                         found_paths.add(path)
-                        results_fromotherfiles.append(f"{path} [Source: asset-manifest.json]")
+                        if not args.tidy:
+                            results_fromotherfiles.append(f"{path} [Source: asset-manifest.json]")
+                        else:
+                            results_fromotherfiles.append(f"{path}")
+                        if args.show_prog:
+                            print(f"[File from asset-manifest.json] New path/file: {clean_rule if 'clean_rule' in locals() else clean_path if 'clean_path' in locals() else path}")
         except: pass
         for manifest_path in ["/web-manifest.json", "/manifest.json"]:
             try:
@@ -319,7 +292,13 @@ def main():
                     for path in paths:
                         if path not in found_paths:
                             found_paths.add(path)
-                            results_fromotherfiles.append(f"{path} [Source: {manifest_path.lstrip('/')}]")
+                            if not args.tidy:
+                                results_fromotherfiles.append(f"{path} [Source: {manifest_path.lstrip('/')}]")
+                            else:
+                                results_fromotherfiles.append(f"{path}")
+                            if args.show_prog:
+                                print(f"[File from {manifest_path}] New path/file: {clean_rule if 'clean_rule' in locals() else clean_path if 'clean_path' in locals() else path}")
+
             except: pass
         # service worker lol
         for sw_path in ["/service-worker.js", "/sw.js"]:
@@ -330,7 +309,12 @@ def main():
                     for path in paths:
                         if path not in found_paths and not any(path.endswith(ext) for ext in ['.js', '.css']):
                             found_paths.add(path)
-                            results_fromotherfiles.append(f"{path} [Source: {sw_path}]")
+                            if not args.tidy:
+                                results_fromotherfiles.append(f"{path} [Source: {sw_path}]")
+                            else:
+                                results_fromotherfiles.append(f"{path}")
+                            if args.show_prog:
+                                print(f"[File from {sw_path}] New path/file: {clean_rule if 'clean_rule' in locals() else clean_path if 'clean_path' in locals() else path}")
             except: pass
 
         #openid
@@ -341,10 +325,16 @@ def main():
                 for path in paths:
                     if path not in found_paths:
                         found_paths.add(path)
-                        results_fromotherfiles.append(f"{path} [Source: openid-configuration]")
+                        if not args.tidy:
+                            results_fromotherfiles.append(f"{path} [Source: openid-configuration]")
+                        else:
+                            results_fromotherfiles.append(f"{path}")
+                        if args.show_prog:
+                            print(f"[File from openid-configuration] New path/file: {clean_rule if 'clean_rule' in locals() else clean_path if 'clean_path' in locals() else path}")
         except: pass
 
-    print("\nStarting headless browser to bypass captchas and detect shells with a fake path.")
+    if not args.only_res:
+        print("\nStarting headless browser to bypass captchas and detect shells with a fake path.")
     main_html, session_cookies = gethtmlafterload(target)
 
     fake_path = "/very-fake-page-123456123456abcdefg"
@@ -355,7 +345,8 @@ def main():
     except:
         shell_content = ""
     try:
-        print(f"Detected JS Stack: {identify_javascript_type(main_html)}")
+        if not args.only_res:
+            print(f"Detected JS Stack: {identify_javascript_type(main_html)}")
         soup = BeautifulSoup(main_html, 'html.parser')
         
         # next js code files
@@ -386,8 +377,8 @@ def main():
             r'["\'`](https?://[a-zA-Z0-9_\-\./{}:\$]+)["\'`]'
         ]
 
+        respo = requests.get(target, headers=HEADER, timeout=5, impersonate="chrome120")
         for p in patterns:
-            respo = requests.get(target, headers=HEADER, timeout=5, impersonate="chrome120")
             matches = re.findall(p, respo.text)
             for m in matches:
                 m_clean = re.sub(r'(\$\{.*?\}|:[a-zA-Z0-9]+)', '1', m)
@@ -403,13 +394,15 @@ def main():
                             m_display = '/' + m_display
                 
                 if not m_clean.lower().endswith(ignored_extensions):
-                    if m_clean in ["/", "//", "///", "/.", "/..", "/..."]:
+                    if m_clean in ["/", "//", "///", "/.", "/..", "/...", "/./", "/ "]:
                         continue
                     if any(term in m_clean.lower() for term in USELESSSTUFF):
                         continue
                     found_paths.add(m_clean)
                     if m_clean not in discovered_in_js:
                         discovered_in_js[m_clean] = m_display
+                        if args.show_prog:
+                            print(f"Found: {m_display}")
 
         
         # check <script> for endpoint too
@@ -438,13 +431,15 @@ def main():
                                     m_display = '/' + m_display
                         
                         if not m_clean.lower().endswith(ignored_extensions):
-                            if m_clean in ["/", "//", "///", "/.", "/..", "/...", "/./", "localhost", "w3.org"]:
+                            if m_clean in ["/", "//", "///", "/.", "/..", "/...", "/./", "/ ", "localhost", "w3.org"]:
                                 continue
                             if any(term in m_clean.lower() for term in USELESSSTUFF):
                                 continue
                             found_paths.add(m_clean)
                             if m_clean not in discovered_in_js:
                                 discovered_in_js[m_clean] = m_display
+                                if args.show_prog:
+                                    print(f"Found: {m_display}")
 
 
         # scan all js files
@@ -474,28 +469,29 @@ def main():
                                     if m_clean != m:
                                         m_display = '/' + m_display
                             if not m_clean.lower().endswith(ignored_extensions):
-                                if m_clean in ["/", "//", "///", "/.", "/..", "/..."]:
+                                if m_clean in ["/", "//", "///", "/.", "/..", "/...", "/./", "/ "]:
                                     continue
                                 if any(term in m_clean.lower() for term in USELESSSTUFF):
                                     continue
                                 found_paths.add(m_clean)
                                 if m_clean not in discovered_in_js:
                                     discovered_in_js[m_clean] = m_display
+                                    if args.show_prog:
+                                        print(f"Found: {m_display}")
             except: continue
 
-
-        print(f"Total paths to test: {len(found_paths)} ({len(discovered_in_js)} scraped from JS).")
-        print("Testing endpoints...")
+        if not args.only_res:
+            print(f"Total paths to test: {len(found_paths)} ({len(discovered_in_js)} scraped from JS).")
+            print("Testing endpoints...")
         results_200, results_dead, results_30x = [], [], []
-        results_services, results_ext = [], []
+        results_services, results_ext, results_subd = [], [], []
         results_frameworks, results_assets = [], []
 
         for path in sorted(found_paths):
             display_path = discovered_in_js.get(path, path)
-            # all external url cuz https: //blahblah
-            if "://" in path:
-                results_ext.append(display_path.lstrip('/'))
-                continue
+            #take away original if disable og actiev
+            if args.disable_og and " [Original:" in display_path:
+                    display_path = display_path.split(" [Original:")[0]
 
             try:
                 parsed_path = urlparse(path)
@@ -509,7 +505,19 @@ def main():
                 is_external = parsed_path.netloc and get_base(parsed_path.netloc) != get_base(target_domain)
 
                 if is_external:
-                    results_ext.append(f"{path.lstrip('/')} [External Reference]")
+                    if not args.disable_og:
+                        results_ext.append(f"{path.lstrip('/')} [External Reference]")
+                    else: 
+                        results_ext.append(f"{path.lstrip('/')}")
+                    continue
+                if "://" in path and parsed_path.netloc == target_domain:
+                    internal_route = parsed_path.path
+                    if parsed_path.query:
+                        internal_route += f"?{parsed_path.query}"
+                    path = internal_route if internal_route.startswith('/') else '/' + internal_route
+                    display_path = path
+                elif parsed_path.netloc and parsed_path.netloc != target_domain:
+                    results_subd.append(display_path.lstrip('/'))
                     continue
 
 
@@ -530,41 +538,59 @@ def main():
                 service_markers = ["/api", "/v1", "/v2", "socket.io", "engine.io", "/graphql", "/webhook", "/rpc"]
                 is_machine_path = any(marker in path.lower() for marker in service_markers)
 
-                media_extensions = ('.png', '.jpg', '.jpeg', '.svg', '.webp', '.gif', '.ico', '.woff', '.woff2', '.ttf')
+                media_extensions = ('.png', '.jpg', '.jpeg', '.svg', '.webp', '.gif', '.ico', '.woff', '.woff2', '.ttf', '.swf')
                 framework_extensions = ('.js', '.css', '.json', '.txt', '.xml', '.map')
                 
                 is_media_asset = path.lower().endswith(media_extensions)
                 is_framework_asset = any(path.lower().endswith(ext) for ext in framework_extensions)
 
                 if r.status_code in [200, 304]: #304 got me
-                    # if its a service/api path then like service and stuff ykyk
+                    # api counts as service even if its an endpoint
                     if is_machine_path:
-                        results_services.append(f"{display_path} [Service/API]")
+                        results_services.append(f"{display_path}")
                     elif is_shell or is_home_redirect:
                         if path in discovered_in_js:
-                            results_200.append(f"{display_path} [Client-Side Route, Requires Login]")
+                            if not args.tidy:
+                                results_200.append(f"{display_path} [Client-Side Route, Requires Login]")
+                            else:
+                                results_200.append(f"{display_path}")
                         else:
-                            results_dead.append(f"404 Not Found (React Shell): {path}")
+                            if not args.tidy:
+                                results_dead.append(f"404 Not Found (React Shell): {path}")
+                            else:
+                                results_dead.append(f"404 Not Found: {path}")
                     else:
                         if "text/html" in content_type:
-                            results_200.append(f"{display_path} [Access no matter what]")
+                            if not args.tidy:
+                                results_200.append(f"{display_path} [Access no matter what]")
+                            else:
+                                results_200.append(f"{display_path}")
                         elif is_media_asset:
                             results_assets.append(f"{display_path}")
                         elif is_framework_asset:
                             results_frameworks.append(f"{display_path}")
                         else:
                             #standard is like js and css
-                            results_frameworks.append(f"{display_path} [Non-Standard File]")
+                            if not args.tidy:
+                                results_frameworks.append(f"{display_path} [Non-Standard File]")
+                            else:
+                                results_frameworks.append(f"{display_path}")
 
                 
                 elif r.status_code == 400:
                     if is_framework_asset:
-                        results_frameworks.append(f"{display_path} [Asset Error - 400]")
-                    # get machine services like socket.io that reject simple GET request. cuz socket stinky.
+                        if not args.tidy:
+                            results_frameworks.append(f"{display_path} [Asset Error - 400]")
+                        else:
+                            results_frameworks.append(f"{display_path}")
+                    # get machine services like socket.io that reject simple GET request.
                     if "." in path or "/" in path:
-                        results_services.append(f"{display_path} [Potential Service - 400]")
+                        if not args.tidy:
+                            results_services.append(f"{display_path} [Potential Service/API - 400]")
+                        else:
+                            results_services.append(f"{display_path}")
                     elif is_machine_path:
-                        results_services.append(f"{display_path} [Service/API]") #cuz socket
+                        results_services.append(f"{display_path}") #cuz socket
                     else:
                         results_dead.append(f"400 Bad Request: {display_path}")
 
@@ -576,28 +602,33 @@ def main():
 
 
 
-        if len(results_200) != 0:
+        if results_200:
             print("\n---- ENDPOINTS FOUND ----")
             for p in results_200: print(f"  {p}")
         else:
             print("\n----NO ENDPOITNS FOUND----")
-        if len(results_services) != 0:
+        if results_services:
             print("\n----SERVICES/APIS USED----")
-            for p in results_services: print(f" {p}")
+            for p in results_services: print(f"  {p}")
         else:
             print("\n----NO SERVICES/APIS FOUND----")
-        if len(results_ext) != 0:
+        if results_ext:
             print("\n----EXTERNAL LINKS----")
-            for p in results_ext: print(f" {p}")
+            for p in results_ext: print(f"  {p}")
         else:
             print("\n----NO EXTERNAL LINKS FOUND----")
-        if len(results_frameworks) != 0:
-            print("\n----WEBSITE FRAMEWORKS----")
-            for p in results_frameworks: print(f" {p}")
+        if results_subd:
+            print("\n----SUBDOMAINS----")
+            for p in results_subd: print(f"  {p}")
         else:
-            print("\n----NO WEBSITE FRAMEWORKS FOUND----")
-        if len(results_30x) != 0:
-            print("\n---- REDIRECTS (301/302/307) ----")
+            print("\n----NO SUBDOMAINS FOUND----")
+        if results_frameworks:
+            print("\n----WEBSITE SOURCE CODE/FILES----")
+            for p in results_frameworks: print(f"  {p}")
+        else:
+            print("\n----NO WEBSITE SOURCE CODE/FILES FOUND----")
+        if results_30x:
+            print("\n---- REDIRECTS ----")
             for p in results_30x: print(f"  {p}")
         else:
             print("\n----NO REDIRECTS FOUND----")
@@ -612,30 +643,97 @@ def main():
         else:
             pass
         if args.show_assets:
-            if len(results_assets) != 0:
-                print("\n----WEBSITE ASSETS----")
-                for p in results_assets: print(f" {p}")
+            if results_assets:
+                print("\n----WEBSITE MEDIA----")
+                for p in results_assets: print(f"  {p}")
             else:
-                print("\n----NO WEBSITE ASSETS FOUND----")
+                print("\n----NO WEBSITE MEDIA FOUND----")
         else:
             pass
         if show_dead:
-            if len(results_dead) != 0:
-                print("\n---- INACCESSIBLE (Confirmed 404/403) ----")
+            if results_dead:
+                print("\n---- INACCESSIBLE ----")
                 for p in results_dead: print(f"  {p}")
             else:
-                print("\n----NONE INACCESSIBLE 404/403----")
+                print("\n---- NONE INACCESSIBLE ----")
+                print("WARNING: There should never be no inaccessble paths on a website.\nThis is most likely a false positive a fault on the script's end.\nReport this to the owner of the script immediately, whether it has found endpoints or not, and what site the script has been tested on.")
         
         print(f"\n--- Scan Summary ---")
         if args.show_assets:
-            print(f"Total Accessible Pages: {len(results_200)}\nTotal Services: {len(results_services)}\nTotal External References: {len(results_ext)}\nTotal Frameworks: {len(results_frameworks)}\nTotal Redirects: {len(results_30x)}\nTotal Assets: {len(results_assets)}\nTotal Inaccessible: {len(results_dead)}")
+            print(f"Total Accessible Pages: {len(results_200)}\nTotal Services: {len(results_services)}\nTotal External References: {len(results_ext)}\nTotal Source Code/Files: {len(results_frameworks)}\nTotal Redirects: {len(results_30x)}\nTotal Assets: {len(results_assets)}\nTotal Inaccessible: {len(results_dead)}")
         else:
-            print(f"Total Accessible Pages: {len(results_200)}\nTotal Services: {len(results_services)}\nTotal External References: {len(results_ext)}\nTotal Frameworks: {len(results_frameworks)}\nTotal Redirects: {len(results_30x)}\nTotal Assets: {len(results_assets)} (Hidden, use --show-assets to show)\nTotal Inaccessible: {len(results_dead)}")
+            print(f"Total Accessible Pages: {len(results_200)}\nTotal Services: {len(results_services)}\nTotal External References: {len(results_ext)}\nTotal Source Code/Files: {len(results_frameworks)}\nTotal Redirects: {len(results_30x)}\nTotal Assets: {len(results_assets)} (Hidden, use --show-assets to show)\nTotal Inaccessible: {len(results_dead)}")
+        if args.output_file:
+            try:
+                with open(args.output_file, 'w', encoding='utf-8') as f:
+                    f.write(f"=== Endpointscanner results for {target} ===\n\n")
+
+                    if results_200:
+                        f.write("---- ENDPOINTS FOUND ----\n")
+                        for p in results_200: f.write(f"  {p}\n")
+                    else: f.write("  ----NO ENDPOINTS FOUND----\n")
+
+                    if results_services:
+                        f.write("\n----SERVICES/APIS USED----\n")
+                        for p in results_services: f.write(f"  {p}\n")
+                    else: f.write("  ----NO SERVICES/APIS FOUND----\n")
+                    
+                    if results_ext:
+                        f.write("\n----EXTERNAL LINKS----\n")
+                        for p in results_ext: f.write(f"  {p}\n")
+                    else: f.write("  ----NO EXTERNAL LINKS FOUND----\n")
+
+                    if results_subd:
+                        f.write("\n----SUBDOMAINS----")
+                        for p in results_subd: f.write(f"  {p}")
+                    else:
+                        f.write("\n----NO SUBDOMAINS FOUND----")
+                    
+                    if results_frameworks:
+                        f.write("\n----SOURCE CODE/FILES----\n")
+                        for p in results_frameworks: f.write(f"  {p}\n")
+                    else: f.write("  ----NO SOURCE CODE/FILES FOUND----\n")
+                    
+                    if results_30x:
+                        f.write("\n---- REDIRECTS (301/302/307) ----\n")
+                        for p in results_30x: f.write(f"  {p}\n")
+                    else: f.write("  ----NO REDIRECTS FOUND----\n")
+
+                    if not args.disable_extra_files:
+                        if results_fromotherfiles:
+                            f.write("\n---- PATHS FROM OTHER FILES ----\n")
+                            for entry in results_fromotherfiles: f.write(f"  {entry}\n")
+                        else: f.write("  ----NO EXTRA PATHS FOUND FROM OTHER FILES----\n")
+
+                    if args.show_assets:
+                        if results_assets:
+                            f.write("\n----WEBSITE ASSETS----\n")
+                            for p in results_assets: f.write(f"  {p}\n")
+                        else: f.write("  ----NO WEBSITE ASSETS FOUND----\n")
+
+                    if args.show_404s:                      
+                        if results_dead:
+                            f.write("\n---- INACCESSIBLE (Confirmed 404/403) ----\n")
+                            for p in results_dead: f.write(f"  {p}\n")
+                        else: f.write("  ----NONE INACCESSIBLE 404/403----\n")
+
+
+                    f.write(f"\n--- Scan Summary ---\n")
+                    f.write(f"Total Accessible Pages: {len(results_200)}\n")
+                    f.write(f"Total Services: {len(results_services)}\n")
+                    f.write(f"Total External References: {len(results_ext)}\n")
+                    f.write(f"Total Source Code/Files: {len(results_frameworks)}\n")
+                    f.write(f"Total Redirects: {len(results_30x)}\n")
+                    f.write(f"Total Inaccessible: {len(results_dead)}\n")
+                    
+                print(f"\nResults successfully written to '{args.output_file}'!")
+            except Exception as e:
+                print(f"\nFailed to write file: {e}")
 
         if args.ratelimit is not None:
             num = args.ratelimit
             test_path = "/" #root dir
-            if args.testpath: #idiotproof
+            if args.testpath:
                 test_path = args.testpath if args.testpath.startswith('/') else '/' + args.testpath
                 try:
                     check_res = requests.get(urljoin(target, test_path), headers=HEADER, timeout=5, impersonate="chrome120")

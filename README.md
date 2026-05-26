@@ -1,4 +1,6 @@
-# Website Endpoint Scanner and Rate Limit Tester For Websites (Version 7.0.4)
+# Website Endpoint Scanner and Rate Limit Tester For Websites (Version 7.1)
+
+A fast automated website reconnaissance tool that extracts endpoints, files, and even external links from websites. Tests for IDOR or other broken access control bugs on websites by changing variables in endpoints to 1. Has a built in rate limit tester that can test on any endpoint, and can bypass simple WAFs/captchas and client-side SPAs.
 
 For Installation, please go to the Installation section below!
 
@@ -7,6 +9,7 @@ For Installation, please go to the Installation section below!
 - Uses curl_cffi and playwright-stealth to bypass simple captchas
 - Uses a fake path to test which are real paths and which are shells. (websites like SPAs give a lot of trouble to current tools)
 - Scrapes all `.js` files and `<script>` tags inside the html with a regex to find paths
+- Has a hardcoded set of paths that should never exist in a website to test. (e.g. .env.local, .git/config)
 - Differentiates paths by website endpoints, assets, redirects etc.
 - Autofills {id} variables in endpoints as '1' to test the endpoints (can reveal potential IDORs)
 - Checks server uptime and prints out JS Stack of the website
@@ -20,18 +23,31 @@ Command to run after installing **(For installation, look for the 'Installation'
 
 Passable arguments:
 
-| Argument                | What the argument does                                                                                                                                                                                   |
-| :---------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--ratelimit`           | how many requests to send to server to test. Without this argument, the rate limit test is not performed.                                                                                                |
-| `--testpath`            | which endpoint to test for rate limiting. Without this argument, the rate limit test will happen on the root directory ('/'). If an endpoint here returns a 404, it also defaults to the root directory. |
-| `--show-404s`           | Show inaccessible endpoints.                                                                                                                                                                             |
-| `--disable-extra-files` | The script won't scan through extra map files like robots.txt for extra endpoints.                                                                                                                       |
-| `--show-assets`         | Show assets like images that the script finds.                                                                                                                                                           |
+| Argument                | Short Form | Description                                                                                                                                                                                          |
+| :---------------------- | :--------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `target`                | `NIL`      | URL to test                                                                                                                                                                                          |
+| `--ratelimit`           | `-r`       | Number of requests                                                                                                                                                                                   |
+| `--testpath`            | `-t`       | Endpoint to test                                                                                                                                                                                     |
+| `--show-404s`           | `-s`       | Show endpoints tested that returned a 404                                                                                                                                                            |
+| `--disable-extra-files` | `-d`       | Disable scanning of extra structural mapping files (robots, sitemaps, manifests, etc.)                                                                                                               |
+| `--show-media`          | `-m`       | Include assets/media like images and fonts in scan results                                                                                                                                           |
+| `--show-prog`           | `-sp`      | Print endpoints to the terminal one by one in real-time as they are found                                                                                                                            |
+| `--output-file`         | `-o`       | Save formatted results directly to a local text file.                                                                                                                                                |
+| `--disable-og`          | `-do`      | Disable code from showing the original endpoint with variables. Keeps output tidier. Will NOT remove original tag from progress if the --show-prog flag is present.                                  |
+| `--tidy`                | `-ti`      | Script will not show where it got extra endpoints from, and will not show if it is a client side route and requires login, or react shell. Will also not show if an endpoint is a potential service. |
+| `--tidy-all`            | `-ta`      | Flags --disable-og and --tidy combined.                                                                                                                                                              |
+| `--only-res`            | `-or`      | Only show summarised endpoints.                                                                                                                                                                      |
 
 Example command to run (assuming you are testing on https://example.com):
 
 ```bash
-endpointscanner https://example.com --ratelimit 100 --testpath /login --show-404s --show-assets
+endpointscanner https://example.com --ratelimit 100 --testpath /login --show-404s --show-media --show-prog
+```
+
+Example but with shorted flags:
+
+```bash
+endpointscanner https://example.com -r 100 -t /login -s -m -sp
 ```
 
 ## Installation
@@ -102,18 +118,32 @@ python3 -m pip install --upgrade endpointscanner
 
 ## What was added
 
-Version 7 (7.0.4 is just updating toml and readme) added:
+Version 7.1 added:
 
-- Patches for more accuracy in scanning
-- Showing original endpoints (replaces with 1, but also prints out the endpoint with variables in the actual website code)
+- flag (--show-prog, or -sp) to show endpoints in finds in real time
+- flag (--output-file, or -o) to export summarised results to a local text file
+- flag (--disable-og, or -do) to disable showing original endpoints (with variables)
+- flag (--only-res, or -or) to only show summarised endpoints (No longer shows if server is fast or not, and no longer says JS Stack of website if the flag is passed in the command)
+- flag (-ti, or --tidy) to disable extra info like source of the file or client side route in summarised results
+- Shortened versions of flags for faster running of the command
+- Subdomains section in the summarised results
+- Exit code if the server is unreachable (Not responding after 10s)
 
-## Plans for next version
+## Plans for next version and the future
 
-Version 7.1 is planned to have:
+Version 7.2 is planned to have:
 
-- Flag to display endpoints as it finds them to show progress
-- Flag to export endpoints found to a text file
-- Flag to disable showing the original endpoints to reduce cluttering (So it just replaces the endpoint with 1 and doesn't show end original endpoint with variables, makes terminal neater but loses original endpoint)
+- Read extra sitemaps that may have a different name from sitemap.xml
+- New flag to only print the original endpoint (and not show it replaced with the number 1)
+- Flag to stop the scan after a time (in minutes) has been exceeded
+- Check for other errors such as a 405 which means it is a real endpoint on the website
+- Different HTTP methods for the rate limit test. (POST, PUT, PATCH will be added)
+
+Future plans:
+
+- Detecting what type of captcha was used if the script cannot bypass it.
+- Adding more JS Stacks to the identification function.
+- Optimisation to the tool. (Maybe by using an async function to check endpoint accessibility multiple times instead one at a time)
 
 ai assisted code btw
 
