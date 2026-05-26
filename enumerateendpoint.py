@@ -155,11 +155,30 @@ def identify_javascript_type(html, headers=None):
 
     return " + ".join(stack) if stack else "Unknown JS Stack"
 
-async def async_rate_test(url, num_reqs=100):
+def build_ratelimit_request(method, body):
+    method_upper = method.upper()
+    req_headers = dict(HEADER)
+    payload = None
+    if method_upper == "POST":
+        payload = "" if body is None else body
+        if "Content-Type" not in req_headers:
+            if isinstance(payload, str) and payload.lstrip().startswith(("{", "[")):
+                req_headers["Content-Type"] = "application/json"
+            else:
+                req_headers["Content-Type"] = "application/x-www-form-urlencoded"
+    return method_upper, req_headers, payload
+
+async def async_rate_test(url, num_reqs=100, method="GET", body=None):
+    method_upper, req_headers, payload = build_ratelimit_request(method, body)
+    print(f"\nStarting Rate Limit Test: {num_reqs} {method_upper} requests to {url}")
+
     print(f"\nStarting Rate Limit Test: {num_reqs} requests to {url}")
 
     async with requests.AsyncSession(impersonate="chrome120") as session:
-        tasks = [session.get(url, headers=HEADER, timeout=10) for _ in range(num_reqs)]
+        if method_upper == "POST":
+            tasks = [session.post(url, headers=req_headers, data=payload, timeout=10) for _ in range(num_reqs)]
+        else:
+            tasks = [session.get(url, headers=req_headers, timeout=10) for _ in range(num_reqs)]
         responses = await asyncio.gather(*tasks, return_exceptions=True)
         
         status_counts = {}
@@ -186,7 +205,7 @@ async def async_rate_test(url, num_reqs=100):
         print("\n--- Rate Limit Results ---")
         for code, count in status_counts.items():
             if code == 'Error': continue
-            label = "VULNERABLE" if code == 200 else "RATE-LIMITED" if code == 429 else "WAF/FORBIDDEN" if code == 403 else "CRASHED" if code == 500 else "Other"
+            label = "VULNERABLE" if code == 200 else "RATE-LIMITED" if code == 429 else "WAF/FORBIDDEN" if code == 403 else "METHOD NOT ALLOWED" if code == 405 else "CRASHED" if code == 500 else "Other"
             print(f" Status {code} ({label}): {count}")
         
         if status_counts.get(200, 0) == num_reqs:
@@ -205,6 +224,8 @@ def main():
     parser.add_argument("target", nargs='?', help="URL")
     parser.add_argument("--ratelimit", nargs='?', const=100, type=int, default=None, help="Number of requests")
     parser.add_argument("--testpath", nargs='?', const='/', type=str, help="Endpoint to test")
+    parser.add_argument("--ratelimit-method", choices=["get", "post"], default="get", help="HTTP method for rate limit test")
+    parser.add_argument("--ratelimit-body", type=str, default=None, help="Body to send with POST rate limit test (raw string)")
     parser.add_argument("--show-404s", action="store_true", help="Show endpoints tested that returned a 404")
     parser.add_argument("--disable-extra-files", action="store_true", help="Disable scanning of extra structural mapping files (robots, sitemaps, manifests, etc.)")
     parser.add_argument("--show-assets", action="store_true", help="Include assets like images and fonts in scan results")
@@ -635,17 +656,23 @@ def main():
         if args.ratelimit is not None:
             num = args.ratelimit
             test_path = "/" #root dir
+            rate_method = args.ratelimit_method
+            rate_body = args.ratelimit_body
+            method_upper, check_headers, check_payload = build_ratelimit_request(rate_method, rate_body)
             if args.testpath: #idiotproof
                 test_path = args.testpath if args.testpath.startswith('/') else '/' + args.testpath
                 try:
-                    check_res = requests.get(urljoin(target, test_path), headers=HEADER, timeout=5, impersonate="chrome120")
+                    if method_upper == "POST":
+                        check_res = requests.post(urljoin(target, test_path), headers=check_headers, data=check_payload, timeout=5, impersonate="chrome120")
+                    else:
+                        check_res = requests.get(urljoin(target, test_path), headers=check_headers, timeout=5, impersonate="chrome120")
                     if check_res.status_code in [301, 302, 307, 308, 403, 404]:
                         print(f"{test_path} receives status {check_res.status_code} on the first request. Testing on root domain.")
                         test_path = "/"
                 except:
                     test_path = "/"
 
-            asyncio.run(async_rate_test(urljoin(target, test_path), num))
+            asyncio.run(async_rate_test(urljoin(target, test_path), num, method=rate_method, body=rate_body))
 
     except Exception as e:
         print(f"Main Error: {e}")

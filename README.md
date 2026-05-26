@@ -24,6 +24,8 @@ Passable arguments:
 | :---------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--ratelimit`           | how many requests to send to server to test. Without this argument, the rate limit test is not performed.                                                                                                |
 | `--testpath`            | which endpoint to test for rate limiting. Without this argument, the rate limit test will happen on the root directory ('/'). If an endpoint here returns a 404, it also defaults to the root directory. |
+| `--ratelimit-method`    | HTTP method for rate limit test. Options: `get` or `post`. Default: `get`.                                                                                                                                |
+| `--ratelimit-body`      | Body to send with POST rate limit tests (raw string). Optional.                                                                                                                                          |
 | `--show-404s`           | Show inaccessible endpoints.                                                                                                                                                                             |
 | `--disable-extra-files` | The script won't scan through extra map files like robots.txt for extra endpoints.                                                                                                                       |
 | `--show-assets`         | Show assets like images that the script finds.                                                                                                                                                           |
@@ -31,7 +33,7 @@ Passable arguments:
 Example command to run (assuming you are testing on https://example.com):
 
 ```bash
-endpointscanner https://example.com --ratelimit 100 --testpath /login --show-404s --show-assets
+endpointscanner https://example.com --ratelimit 100 --testpath /login --ratelimit-method post --ratelimit-body '{"email":"test@example.com"}' --show-404s --show-assets
 ```
 
 ## Installation
