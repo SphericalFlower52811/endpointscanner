@@ -1,1 +1,3 @@
 title: EndpointScanner Docs
+markdown: kramdown
+theme: jekyll-theme-primer
