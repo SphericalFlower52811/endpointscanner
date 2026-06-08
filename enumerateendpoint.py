@@ -7,7 +7,7 @@ import argparse
 import time
 import json
 from playwright.sync_api import sync_playwright #headless browser to solve captcha
-from playwright_stealth import Stealth #Ensure strict firewalls do not block the playwright browser
+from playwright_stealth import Stealth #ensure strict firewalls do not block the playwright browser
 
 HEADER = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",

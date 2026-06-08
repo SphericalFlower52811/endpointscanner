@@ -1,6 +1,6 @@
-# Website Endpoint Scanner and Rate Limit Tester For Websites (Version 7.2.1)
+# Website Endpoint Scanner and Rate Limit Tester For Websites (Version 7.2.2)
 
-A fast automated website reconnaissance tool that extracts endpoints, files, and even external links from websites. Tests for IDOR or other broken access control bugs on websites by changing variables in endpoints to 1. Has a built in rate limit tester that can test on any endpoint, and can bypass simple WAFs/captchas and client-side SPAs.
+A fast automated website reconnaissance tool that extracts endpoints, files, and even external links from websites. Automates IDOR and broken access control vulnerability testing through replacing variables with 1 in endpoints. Has a built in rate limit tester that can test on any endpoint, and can bypass simple WAFs/captchas and client-side SPAs.
 
 For Installation, please go to the Installation section below!
 
@@ -49,8 +49,8 @@ Passable arguments:
 
 ## Installation
 
-You MUST have python 3.9 or above to use this!!
-To install endpointscanner, run the command:
+You MUST have python 3.9 or above to use this tool!
+To install the official [endpointscanner Python package](https://pypi.org/project/endpointscanner/), run the command:
 
 ```bash
 python3 -m pip install endpointscanner
@@ -168,6 +168,8 @@ Version 7.2.1 (patch update) added:
 
 - fixed bug where paths would still show /
 - fixed bug where some external links were coded into files like e.g. https://n. It is not a real link but got included, and the bug was fixed.
+
+Version 7.2.2 just changed wording and description of the tool to be more clear.
 
 ## Plans for next version and the future
 
