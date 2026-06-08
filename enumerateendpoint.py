@@ -653,6 +653,7 @@ def main():
             matches = re.findall(p, respo.text)
             for m in matches:
                 m_clean = re.sub(r'(\$\{.*?\}|:[a-zA-Z0-9]+)', '1', m)
+                m_clean = m_clean.strip()
                 if m_clean != m:
                    m_display = f"{m_clean} [Original: {m}]"
                 else:
@@ -705,6 +706,7 @@ def main():
                     matches = re.findall(p, script.string)
                     for m in matches:
                         m_clean = re.sub(r'(\$\{.*?\}|:[a-zA-Z0-9]+)', '1', m)
+                        m_clean = m_clean.strip()
                         if m_clean != m:
                            m_display = f"{m_clean} [Original: {m}]"
                         else:
@@ -772,7 +774,7 @@ def main():
                         matches = re.findall(p, js_res.text)
                         for m in matches:
                             m_clean = re.sub(r'(\$\{.*?\}|:[a-zA-Z0-9]+)', '1', m)
-
+                            m_clean = m_clean.strip()
                             if m_clean != m:
                                 m_display = f"{m_clean} [Original: {m}]"
                             else:
@@ -783,7 +785,7 @@ def main():
                                     if m_clean != m:
                                         m_display = '/' + m_display
                             if not m_clean.lower().endswith(ignored_extensions):
-                                if m_clean in ["/", "//", "///", "/.", "/..", "/...", "/./", "/ "]:
+                                if m_clean.strip in ["/", "//", "///", "/.", "/..", "/...", "/./", "/ "]:
                                     continue
                                 if any(term in m_clean.lower() for term in USELESSSTUFF):
                                     continue
@@ -809,7 +811,7 @@ def main():
                     if urlparse(target_x_url).netloc == urlparse(target if "://" in target else f"https://{target}").netloc:
                         if clean_f not in xml_files:
                             xml_files.append(clean_f)
-
+            
             for xmlfile in xml_files:
                 if args.scan_timeout:
                     ts = checktime(start_test_time, args.scan_timeout) #timer status
@@ -827,6 +829,10 @@ def main():
                         for loc in locs:
                             clean_path = loc.strip()
                             if clean_path and clean_path != "/" and clean_path not in found_paths:
+                                if clean_path in ["/", "//", "///", "/.", "/..", "/...", "/./", "/ "]:
+                                    continue
+                                if any(term in clean_path.lower() for term in USELESSSTUFF):
+                                    continue
                                 found_paths.add(clean_path)
                                 
                                 if not args.tidy:
@@ -853,6 +859,11 @@ def main():
             for path in sorted(found_paths):
                 display_path = discovered_in_js.get(path, path)
                 #take away original if disable og actiev
+                pure_path = display_path.split(" [Original:")[0]
+                if pure_path.strip() in ["/", "//", "///", "/.", "/..", "/...", "/./", "/ "]:
+                    continue
+                if not any(char.isalnum() for char in pure_path):
+                    continue
                 if args.only_original and " [Original: " in display_path:
                     display_path = display_path.split(" [Original: ")[1].rstrip(']')
                 elif args.disable_og and " [Original:" in display_path:
@@ -870,6 +881,8 @@ def main():
                     is_external = parsed_path.netloc and get_base(parsed_path.netloc) != get_base(target_domain)
 
                     if is_external:
+                        if "." not in pure_path:
+                            continue
                         results_ext.append(f"{display_path.lstrip('/')}")
                         continue
                     if "://" in path and parsed_path.netloc == target_domain:
@@ -878,6 +891,8 @@ def main():
                             internal_route += f"?{parsed_path.query}"
                         path = internal_route if internal_route.startswith('/') else '/' + internal_route
                         display_path = path
+                        if display_path.strip() in ["/", "//", "///", "/.", "/..", "/...", "/./"]:
+                            continue
                     elif parsed_path.netloc and parsed_path.netloc != target_domain:
                         results_subd.append(display_path.lstrip('/'))
                         continue
@@ -992,6 +1007,11 @@ def main():
         else:
             for path in sorted(found_paths):
                 display_path = discovered_in_js.get(path, path)
+                pure_path = display_path.split(" [Original:")[0]
+                if pure_path.strip() in ["/", "//", "///", "/.", "/..", "/...", "/./", "/ "]:
+                    continue
+                if not any(char.isalnum() for char in pure_path):
+                    continue
                 if args.only_original and " [Original: " in display_path:
                     display_path = display_path.split(" [Original: ")[1].rstrip(']')
                 elif args.disable_og and " [Original:" in display_path:

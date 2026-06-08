@@ -1,4 +1,4 @@
-# Website Endpoint Scanner and Rate Limit Tester For Websites (Version 7.2.0)
+# Website Endpoint Scanner and Rate Limit Tester For Websites (Version 7.2.1)
 
 A fast automated website reconnaissance tool that extracts endpoints, files, and even external links from websites. Tests for IDOR or other broken access control bugs on websites by changing variables in endpoints to 1. Has a built in rate limit tester that can test on any endpoint, and can bypass simple WAFs/captchas and client-side SPAs.
 
@@ -164,17 +164,22 @@ Version 7.2 added:
 - More accurate sorting (previous bug that put /api/health in SPAs patched)
 - Removed the 'Scraped from JS' label as extra files and html src are being scraped.
 
+Version 7.2.1 (patch update) added:
+
+- fixed bug where paths would still show /
+- fixed bug where some external links were coded into files like e.g. https://n. It is not a real link but got included, and the bug was fixed.
+
 ## Plans for next version and the future
 
 Version 7.3 is planned to have:
 
-- Optimisation to make sorting of endpoints faster
+- More JS Stacks to detect
 - Detecting what type of captcha was used if the script is blocked.
 
 Future plans (May be added in the next version):
 
 - Recursive scanning (Going into each valid path to find more endpoints as some files only show up in specific endpoints.)
-- More JS Stacks to detect
+- Optimisation to make sorting of endpoints faster
 
 ai assisted code btw
 
