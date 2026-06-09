@@ -1,4 +1,4 @@
-# Website Endpoint Scanner and Rate Limit Tester For Websites (Version 7.2.3)
+# Website Endpoint Scanner and Rate Limit Tester For Websites (Version 7.2.4)
 
 A fast automated website reconnaissance tool that extracts endpoints, files, and even external links from websites. Automates IDOR and broken access control vulnerability testing through replacing variables with 1 in endpoints. Has a built in rate limit tester that can test on any endpoint, and can bypass simple WAFs/captchas and client-side SPAs.
 
@@ -173,14 +173,19 @@ Version 7.2.2 just changed wording and description of the tool to be more clear.
 
 Version 7.2.3 added one more sensitive endpoint and fixed bug where some paths would be / from extra files.
 
+Version 7.2.4 added:
+
+- fixing pdf keys like /Btn and /Widget used in jsPDF, as they were previously detected as endpoints
+- better SPA separation
+- added more asset formats (.avif, .mp3, .mp4, .webm, .wav)
+- Added text at start saying Endpointscanner 7.2.4 (i wanted it to have the vibe of most open source tools but the 3d text was just too much)
+
 ## Plans for next version and the future
 
 Version 7.3 is planned to have:
 
-- More JS Stacks to detect
+- More JS Stacks to detect (and more accurate)
 - Detecting what type of captcha was used if the script is blocked.
-- Fix pdf keys that look like endpoints (e.g. /Btn, /Widget)
-- Fix bug in scanning extra file: openid configuration. (currently no verification that the file is in the config format, meaning on SPAs it will be mistaken as a real file.)
 
 Future plans (May be added in the next version):
 

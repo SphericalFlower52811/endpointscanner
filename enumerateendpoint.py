@@ -8,6 +8,7 @@ import time
 import json
 from playwright.sync_api import sync_playwright #headless browser to solve captcha
 from playwright_stealth import Stealth #ensure strict firewalls do not block the playwright browser
+from colorama import Fore, Style, init
 
 HEADER = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -18,6 +19,21 @@ USELESSSTUFF = {
         "localhost", "127.0.0.1", "0.0.0.0", 
         "w3.org", "schema.org", "xml.org", "://microsoft.com", "/../"
     }
+#jspdf makes all those for no reason
+JSPDF_SIGNATURE_KEYS = {
+    "/ASCII85Decode", "/ASCII85Encode", "/ASCIIHexDecode", "/ASCIIHexEncode", 
+    "/Annot", "/Btn", "/CIDSystemInfo", "/Ch", "/FlateDecode", "/FlateEncode", 
+    "/Form", "/I", "/Image", "/Outlines", "/Pattern", "/Sig", "/Tx", "/Widget", "/XObject"
+}
+
+S_HEADER = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ...",
+    "Cache-Control": "no-store",    
+    "Pragma": "no-cache",
+    "If-None-Match": "",    
+    "If-Modified-Since": ""      
+}
+
 unsorted_paths = []
 e_files = []
 start_test_time = None
@@ -347,6 +363,13 @@ def main():
     parser.add_argument("-ro", "--raw-output", action="store_true", help="Do not sort out endpoints after finding them. Will leave out sensitive endpoints whether they are exposed or not.")
     parser.add_argument("-rh", "--ratelimit-header", type=str, default=None, help="Custom headers. Must be seperated by a pipe(|), or newlines. Example use: Cookies: {ExampleCookie: example} | Accept: application/json, text/plain, */*. If the custom header contains double quotes, please use single quotes instead of double quotes to pass this flag.")
     args = parser.parse_args()
+    if not args.only_res:
+        init(autoreset=True)
+        print()
+        print("-" * 40)
+        print(f"{Style.BRIGHT}Endpointscanner {Fore.LIGHTMAGENTA_EX}v7.2.4")
+        print("-" * 40)
+        print()
     #ratelimit type always defaults to get
     if (args.ratelimit_type != 'GET' or args.ratelimit_var or args.ratelimit_body or args.ratelimit_header) and args.ratelimit is None:
         passedrateargs = []
@@ -592,7 +615,7 @@ def main():
         #openid
         try:
             oidc_res = requests.get(urljoin(target, "/.well-known/openid-configuration"), headers=E_HEADER, impersonate="chrome120", timeout=4)
-            if oidc_res.status_code == 200 and "{" in oidc_res.text:
+            if oidc_res.status_code == 200 and "authorization_endpoint" in oidc_res.text and "issuer" in oidc_res.text:
                 e_files.append("/.well-known/openid-configuration")
                 paths = re.findall(r'https?://[^/]+(/[^"\']*)', oidc_res.text)
                 for path in paths:
@@ -661,6 +684,10 @@ def main():
                     start_test_time = time.perf_counter()
                     args.scan_timeout = 5.0 #5min more
             matches = re.findall(p, respo.text)
+            detected_library_keys = set(matches).intersection(JSPDF_SIGNATURE_KEYS)
+            if len(detected_library_keys) >= 3:
+                matches = [m for m in matches if m not in JSPDF_SIGNATURE_KEYS]
+
             for m in matches:
                 m_clean = re.sub(r'(\$\{.*?\}|:[a-zA-Z0-9]+)', '1', m)
                 m_clean = m_clean.strip()
@@ -782,6 +809,9 @@ def main():
                     current_filename = js_url
                     for p in patterns:
                         matches = re.findall(p, js_res.text)
+                        detected_library_keys = set(matches).intersection(JSPDF_SIGNATURE_KEYS)
+                        if len(detected_library_keys) >= 3:
+                            matches = [m for m in matches if m not in JSPDF_SIGNATURE_KEYS]
                         for m in matches:
                             m_clean = re.sub(r'(\$\{.*?\}|:[a-zA-Z0-9]+)', '1', m)
                             m_clean = m_clean.strip()
@@ -831,8 +861,13 @@ def main():
                         start_test_time = time.perf_counter()
                         args.scan_timeout = 5.0 #5min more
                 try:
+                    DOWNLOAD_XML_HEADERS = HEADER.copy()
+                    DOWNLOAD_XML_HEADERS["Cache-Control"] = "no-cache"
+                    DOWNLOAD_XML_HEADERS["Pragma"] = "no-cache"
+                    DOWNLOAD_XML_HEADERS["If-None-Match"] = ""
+                    DOWNLOAD_XML_HEADERS["If-Modified-Since"] = ""
                     target_xml_url = urljoin(target, xmlfile)
-                    x_res = requests.get(target_xml_url, headers=HEADER, impersonate="chrome120", timeout=4)
+                    x_res = requests.get(target_xml_url, headers=DOWNLOAD_XML_HEADERS, impersonate="chrome120", timeout=4)
 
                     if x_res.status_code == 200 and "<loc" in x_res.text.lower():
                         locs = re.findall(r'<loc>https?://[^/]+(/[^<]+)</loc>', x_res.text, re.IGNORECASE)
@@ -862,9 +897,11 @@ def main():
         results_services, results_ext, results_subd = [], [], []
         results_frameworks, results_assets = [], []
         unsorted = []
+        assets_suffix = "" if args.show_assets else " (Hidden, use --show-assets to show)"
+        dead_suffix = "" if args.show_404s else " (Hidden, use --show-404s to show)"
         if not args.raw_output:
             if not args.only_res:
-                print(f"Total paths to test: {len(found_paths)}")
+                print(f"Total paths to test: {len(found_paths)} (Scraped: {len(found_paths) - len(SENSITIVE_ENDPOINT)} | Built-in: {len(SENSITIVE_ENDPOINT)})")
                 print("Testing endpoints...")
             for path in sorted(found_paths):
                 display_path = discovered_in_js.get(path, path)
@@ -910,7 +947,7 @@ def main():
 
                     r = requests.get(
                         urljoin(target, path), 
-                        headers=HEADER, 
+                        headers=S_HEADER, 
                         cookies=session_cookies, 
                         timeout=5, 
                         allow_redirects=False, 
@@ -925,8 +962,8 @@ def main():
                     service_markers = ["/api", "/v1", "/v2", "socket.io", "engine.io", "/graphql", "/webhook", "/rpc", "/actuator", "/swagger", "/v3/api-docs", "/rest/", "/ws", "/metrics"]
                     is_machine_path = any(marker in path.lower() for marker in service_markers)
 
-                    media_extensions = ('.png', '.jpg', '.jpeg', '.svg', '.webp', '.gif', '.ico', '.woff', '.woff2', '.ttf', '.swf')
-                    framework_extensions = ('.js', '.css', '.json', '.txt', '.xml', '.map')
+                    media_extensions = ('.png', '.jpg', '.jpeg', '.svg', '.webp', '.gif', '.ico', '.woff', '.woff2', '.ttf', '.swf', '.mp4', '.mp3', '.avif', '.webm', '.wav')
+                    framework_extensions = ('.js', '.css', '.json', '.txt', '.xml', '.map', '.rels', '.md')
                     
                     is_media_asset = path.lower().endswith(media_extensions)
                     is_framework_asset = any(path.lower().endswith(ext) for ext in framework_extensions)
@@ -937,7 +974,13 @@ def main():
                         if not args.tidy and r.status_code == 405:
                             statag = ' [405]'
                         is_transport = any(p in path.lower() for p in ["socket.io", "engine.io", "/rpc", "/webhook", "/graphql"])
-                        if (is_shell or is_home_redirect) and not is_transport:
+                        if (is_shell or is_home_redirect) and (is_framework_asset or is_media_asset or "." in path) and not is_transport:
+                            if not args.tidy:
+                                results_dead.append(f"404 Not Found (React Shell): {path}{statag}")
+                            else:
+                                results_dead.append(f"404 Not Found: {path}{statag}")
+                            continue
+                        if (is_shell or is_home_redirect) and not is_transport and not is_framework_asset and not is_media_asset:
                             if path in discovered_in_js:
                                 if not args.tidy:
                                     results_200.append(f"{display_path}{statag} [Client-Side Route, Requires Login]")
@@ -960,7 +1003,7 @@ def main():
                                 results_services.append(f"{display_path}{statag}")
                             
                         else:
-                            if "text/html" in content_type:
+                            if "text/html" in content_type and not ((is_shell or is_home_redirect) and (is_framework_asset or "." in path)):
                                 if not args.tidy:
                                     results_200.append(f"{display_path}{statag} [Access no matter what]")
                                 else:
@@ -968,7 +1011,13 @@ def main():
                             elif is_media_asset:
                                 results_assets.append(f"{display_path}{statag}")
                             elif is_framework_asset:
-                                results_frameworks.append(f"{display_path}{statag}")
+                                if is_shell or is_home_redirect:
+                                    if not args.tidy:
+                                        results_dead.append(f"404 Not Found (React Shell Fake File): {path}{statag}")
+                                    else:
+                                        results_dead.append(f"404 Not Found: {path}{statag}")
+                                else:
+                                    results_frameworks.append(f"{display_path}{statag}")
                             else:
                                 if not args.tidy:
                                     results_frameworks.append(f"{display_path}{statag} [Non-Standard File]")
@@ -1015,6 +1064,7 @@ def main():
                         start_test_time = time.perf_counter()
                         args.scan_timeout = 5.0 #5min more
         else:
+            #UNSORTED_PATHS IS FOR RAW OUTPUT FLAG. FOR UNSORTED AFTER SCAN TIMEOUT IT IS THE 'UNSORTED' LIST.
             for path in sorted(found_paths):
                 display_path = discovered_in_js.get(path, path)
                 pure_path = display_path.split(" [Original:")[0]
@@ -1085,17 +1135,23 @@ def main():
                     print("WARNING: There should never be no inaccessble paths on a website.\nThis is most likely a false positive a fault on the script's end.\nReport this to the owner of the script immediately, whether it has found endpoints or not, and what site the script has been tested on.")
             if unsorted:
                 print("\n----UNSORTED (Scan timed out)----")
-                for p in unsorted_paths: print(f"  {p}")
+                for p in unsorted: print(f"  {p}")
             else:
                 if args.scan_timeout:
                     if not args.only_res:
                         print("\nAll paths sorted out.")
             
             print(f"\n--- Scan Summary ---")
-            if args.show_assets:
-                print(f"Total Accessible Pages: {len(results_200)}\nTotal Services: {len(results_services)}\nTotal External References: {len(results_ext)}\nTotal Source Code/Files: {len(results_frameworks)}\nTotal Redirects: {len(results_30x)}\nTotal Assets: {len(results_assets)}\nTotal Inaccessible: {len(results_dead)}")
-            else:
-                print(f"Total Accessible Pages: {len(results_200)}\nTotal Services: {len(results_services)}\nTotal External References: {len(results_ext)}\nTotal Source Code/Files: {len(results_frameworks)}\nTotal Redirects: {len(results_30x)}\nTotal Assets: {len(results_assets)} (Hidden, use --show-assets to show)\nTotal Inaccessible: {len(results_dead)}")
+            summary_report = (
+                f"Total Accessible Pages: {len(results_200)}\n"
+                f"Total Services: {len(results_services)}\n"
+                f"Total External References: {len(results_ext)}\n"
+                f"Total Source Code/Files: {len(results_frameworks)}\n"
+                f"Total Redirects: {len(results_30x)}\n"
+                f"Total Assets: {len(results_assets)}{assets_suffix}\n"
+                f"Total Inaccessible: {len(results_dead)}{dead_suffix}"
+            )
+            print(summary_report)
             if unsorted:
                 print(f"Total Unsorted: {len(unsorted)}") 
             if args.show_source:
@@ -1168,12 +1224,7 @@ def main():
                                     f.write("All paths sorted out.\n")
 
                         f.write(f"\n--- Scan Summary ---\n")
-                        f.write(f"Total Accessible Pages: {len(results_200)}\n")
-                        f.write(f"Total Services: {len(results_services)}\n")
-                        f.write(f"Total External References: {len(results_ext)}\n")
-                        f.write(f"Total Source Code/Files: {len(results_frameworks)}\n")
-                        f.write(f"Total Redirects: {len(results_30x)}\n")
-                        f.write(f"Total Inaccessible: {len(results_dead)}\n")
+                        f.write(summary_report)
                         if unsorted:
                             f.write(f"Total Unsorted: {len(unsorted)}")
                         if args.show_source:
