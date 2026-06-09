@@ -225,9 +225,7 @@ async def async_rate_test(url, num_reqs=100, method="GET", rb=None, rv=None, coo
             print("[+] Streaming requests into the background network pipeline...")
             await asyncio.sleep(45.0)
 
-        #after network is gone
-        #Fancy label below
-        #----AFTER NETWORK IS GONE----
+        #label every single request using enumerate() to find out exactly when the first request timed out, or hit a non-200.
         status_counts = {}
         first_limit_at = None
         
@@ -404,7 +402,7 @@ def main():
             exit(1)
             
         if args.ratelimit_body and args.ratelimit_var:
-            # bracket escaping
+            # bracket escaping, so if someone puts {{X}} or X, it will end up as {X}.
             expected_bracket_token = f"{{{args.ratelimit_var.strip('{}')}}}"
 
             if expected_bracket_token not in args.ratelimit_body:
@@ -473,7 +471,7 @@ def main():
     start_test_time = time.perf_counter()
     #hardcoded dangerous endpoints to test
     SENSITIVE_ENDPOINT = {
-        "/.env", "/.env.local", "/.env.production", "/.env.development", 
+        "/.env", "/.env.local", "/.env.production", "/.env.development", ".env.dev",
         "/.git/config", "/.git/HEAD", "/package.json", "/package-lock.json", "/.npmrc", "/.dockerenv",
         "/.gitignore", "/api/health", "/admin", "/login", "/config",
         "/.env.example", "/docker-compose.yml", "/.babelrc", "/.eslintrc.json",
@@ -504,6 +502,8 @@ def main():
                 for rule in rules:
                     clean_rule = rule.strip()
                     if clean_rule and clean_rule not in ["/", "/*"] and clean_rule not in found_paths:
+                        if clean_rule.strip() in ["/", "/*"]:
+                            continue
                         found_paths.add(clean_rule)
                         results_fromotherfiles.append(f"{clean_rule} [Source: robots.txt]")
                         if args.show_prog:
@@ -519,6 +519,8 @@ def main():
                 for loc in locs:
                     clean_path = loc.strip()
                     if clean_path and clean_path != "/" and clean_path not in found_paths:
+                        if clean_path.strip() == "/":
+                            continue
                         found_paths.add(clean_path)
                         if not args.tidy:
                             results_fromotherfiles.append(f"{clean_path} [Source: sitemap.xml]")
@@ -536,6 +538,8 @@ def main():
                 paths = re.findall(r'["\'](/[a-zA-Z0-9_\-\./]+)["\']', m_res.text)
                 for path in paths:
                     if path not in found_paths:
+                        if path.strip() == "/":
+                            continue
                         found_paths.add(path)
                         if not args.tidy:
                             results_fromotherfiles.append(f"{path} [Source: asset-manifest.json]")
@@ -553,6 +557,8 @@ def main():
                     paths = re.findall(r'["\'](/[a-zA-Z0-9_\-\./]+)["\']', m_res.text)
                     for path in paths:
                         if path not in found_paths:
+                            if path.strip() == "/":
+                                continue
                             found_paths.add(path)
                             if not args.tidy:
                                 results_fromotherfiles.append(f"{path} [Source: {manifest_path.lstrip('/')}]")
@@ -572,6 +578,8 @@ def main():
                     paths = re.findall(r'["\'`](/[a-zA-Z0-9_\-\./{}:]+)["\'`]', sw_res.text)
                     for path in paths:
                         if path not in found_paths and not any(path.endswith(ext) for ext in ['.js', '.css']):
+                            if path.strip() == "/":
+                                continue
                             found_paths.add(path)
                             if not args.tidy:
                                 results_fromotherfiles.append(f"{path} [Source: {sw_path}]")
@@ -589,6 +597,8 @@ def main():
                 paths = re.findall(r'https?://[^/]+(/[^"\']*)', oidc_res.text)
                 for path in paths:
                     if path not in found_paths:
+                        if path.strip() == "/":
+                            continue
                         found_paths.add(path)
                         if not args.tidy:
                             results_fromotherfiles.append(f"{path} [Source: openid-configuration]")
