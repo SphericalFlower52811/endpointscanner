@@ -1,4 +1,4 @@
-# Website Endpoint Scanner and Rate Limit Tester For Websites (Version 7.2.4)
+# Website Endpoint Scanner and Rate Limit Tester For Websites (Version 7.2.5)
 
 A fast automated website reconnaissance tool that extracts endpoints, files, and even external links from websites. Automates IDOR and broken access control vulnerability testing through replacing variables with 1 in endpoints. Has a built in rate limit tester that can test on any endpoint, and can bypass simple WAFs/captchas and client-side SPAs.
 
@@ -35,13 +35,14 @@ Passable arguments:
 | `--testpath`            | `-t`       | Endpoint to test for rate limiting.                                                                                                                                                                                                                                          |
 | `--show-404s`           | `-s`       | Show endpoints tested that returned a 404                                                                                                                                                                                                                                    |
 | `--disable-extra-files` | `-d`       | Disable scanning of extra structural mapping files (robots, sitemaps, manifests, etc.)                                                                                                                                                                                       |
-| `--show-media`          | `-m`       | Include assets/media like images and fonts in scan results                                                                                                                                                                                                                   |
-| `--show-prog`           | `-sp`      | Print endpoints to the terminal one by one in real-time as they are found. Warning: will show duplicate paths if endpoints are defined multiple times in the code. Results will not contain duplicates.                                                                      |
+| `--show-media`          | `-m`       | Include assets/media like images and fonts and videos in scan results                                                                                                                                                                                                        |
+| `--show-prog`           | `-sp`      | Print endpoints to the terminal one by one in real-time as they are found. Warning: Progress will show duplicate paths if endpoints are defined multiple times in the code. Use the flag -nd to remove duplicates from progress. Results will not contain duplicates.        |
+| `--no-duplicate-prog`   | `-nd`      | If --show-prog is passed, duplicate endpoints in progress will not be shown.                                                                                                                                                                                                 |
 | `--output-file`         | `-o`       | Save formatted results directly to a local text file.                                                                                                                                                                                                                        |
 | `--disable-og`          | `-do`      | Disable code from showing the original endpoint with variables. Keeps output tidier. Will NOT remove original tag from progress if the --show-prog flag is present.                                                                                                          |
 | `--tidy`                | `-ti`      | Script will not show where it got extra endpoints from, and will not show if it is a client side route and requires login, or react shell etc (or any SPA shell). Will also not show if an endpoint is a potential service.                                                  |
 | `--tidy-all`            | `-ta`      | Flags --disable-og and --tidy combined.                                                                                                                                                                                                                                      |
-| `--only-res`            | `-or`      | Only show summarised endpoints.                                                                                                                                                                                                                                              |
+| `--only-res`            | `-or`      | Only show summarised endpoints, and not print out extra information. Has an exception if number of endpoints exceeds 3000.                                                                                                                                                   |
 | `--only-original`       | `-oo`      | Only show the original version of the flag instead of it being replaced with a 1. Will also affect show prog.                                                                                                                                                                |
 | `--show-source`         | `-ss`      | Print the source of each endpoint during progress, like printing out which file it found the endpoint from.                                                                                                                                                                  |
 | `--scan-timeout`        | `-st`      | Stop scan completely after given number of minutes and print/save any results found in that time window. Will leave unsorted endpoints in a section labelled 'UNSORTED', and will leave out sensitive endpoints. Will NOT interrupt rate limiting test.                      |
@@ -50,19 +51,33 @@ Passable arguments:
 ## Installation
 
 You MUST have python 3.9 or above to use this tool!
-To install the official [endpointscanner Python package](https://pypi.org/project/endpointscanner/), run the command:
+To install the official [endpointscanner Python package](https://pypi.org/project/endpointscanner/):
+Command for MacOS/Linux:
 
 ```bash
 python3 -m pip install endpointscanner
 ```
 
+Command for Windows Command Prompt:
+
+```text
+py -m pip install endpointscanner
+```
+
 After that, install chromium on playwright (playwright will be installed when you install endpointscanner):
+Command for MacOS/Linux:
 
 ```bash
 playwright install chromium
 ```
 
-### You may need to create a virtual environment if there is PEP 668. (For the endpointscanner installation, not playwright install chromium.)
+Command for Windows Command Prompt:
+
+```text
+py -m playwright install chromium
+```
+
+### You may need to create a virtual environment if PEP 668 blocks you. (For the endpointscanner installation, not playwright install chromium.) Windows users do not need this step as they will not face the PEP 668 restriction.
 
 To create a virtual environment named 'myvenv':
 
@@ -70,25 +85,13 @@ To create a virtual environment named 'myvenv':
 python3 -m venv myvenv
 ```
 
-To activate virtual environment on Mac/Linux:
+To activate virtual environment:
 
 ```bash
 source myvenv/bin/activate
 ```
 
-To activate virtual environment on Windows Command Prompt:
-
-```text
-myvenv\Scripts\activate
-```
-
-To activate virtual environment on Windows PowerShell:
-
-```powershell
-myvenv\Scripts\Activate.ps1
-```
-
-### Alternative (Not Recommended)
+### Alternative for Virtual Environment (Not Recommended)
 
 If you do not want to create a virtual environment, you can run:
 
@@ -100,12 +103,34 @@ to install it without PEP 668.
 
 **Warning**: Using `--break-system-packages` may corrupt your OS-managed python environment. Proceed entirely at your own risk. The author is not liable for any system damage if you run this.
 
+### Troubleshooting Windows "Command Not Found" Error:
+
+If you are on Windows (especially a non-admin account) and get an 'command not recognised' error when typing `endpointscanner` or `playwright`, run this command **on PowerShell** (not Command Prompt) to fix user environmental paths automatically:
+
+```powershell
+$pDir = (py -c "import sys, os; print(os.path.dirname(sys.executable))"); if ($pDir) { $s = "$pDir\Scripts"; $p = [Environment]::GetEnvironmentVariable("Path", "User"); if ($p -notlike "*$s*") { [Environment]::SetEnvironmentVariable("Path", "$p;$s", "User") } }
+```
+
+What the PowerShell command does:
+Checks the current version of python being used, and adds that python version as an environmental variable in the computer so you can run `endpointscanner` as a standalone command. Does not require admin privileges.
+
+**Requirements for this command:** Python must already be installed.
+
+**Note:** You MUST close the terminal (not minimise) and open a new one for the changes to work.
+
 ### Updating script
 
 To update the script, you can run:
+MacOS and Linux Command:
 
 ```bash
 python3 -m pip install --upgrade endpointscanner
+```
+
+Windows Command:
+
+```bash
+py -m pip install --upgrade endpointscanner
 ```
 
 ## Example Commands
@@ -180,16 +205,18 @@ Version 7.2.4 added:
 - added more asset formats (.avif, .mp3, .mp4, .webm, .wav)
 - Added text at start saying Endpointscanner 7.2.4 (i wanted it to have the vibe of most open source tools but the 3d text was just too much)
 
+Version 7.2.5 is to improve documentation for windows installation.
+
 ## Plans for next version and the future
 
 Version 7.3 is planned to have:
 
 - More JS Stacks to detect (and more accurate)
-- Detecting what type of captcha was used if the script is blocked.
+- Recursive scanning (Going into each valid path to find more endpoints as some files only show up in specific endpoints.)
 
 Future plans (May be added in the next version):
 
-- Recursive scanning (Going into each valid path to find more endpoints as some files only show up in specific endpoints.)
+- Detecting what type of captcha was used if the script is blocked.
 - Optimisation to make sorting of endpoints faster
 
 ai assisted code btw
