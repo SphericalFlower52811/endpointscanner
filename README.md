@@ -1,4 +1,4 @@
-# Website Endpoint Scanner and Rate Limit Tester For Websites (Version 7.2.5)
+# Website Endpoint Scanner and Rate Limit Tester For Websites (Version 7.3)
 
 A fast automated website reconnaissance tool that extracts endpoints, files, and even external links from websites. Automates IDOR and broken access control vulnerability testing through replacing variables with 1 in endpoints. Has a built in rate limit tester that can test on any endpoint, and can bypass simple WAFs/captchas and client-side SPAs.
 
@@ -26,6 +26,7 @@ Passable arguments:
 | Argument                | Short Form | Description                                                                                                                                                                                                                                                                  |
 | :---------------------- | :--------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `target`                | `NIL`      | URL                                                                                                                                                                                                                                                                          |
+| `--local`               | `-l`       | Pass this flag if the target is a local site like development-server, but is not a localhost/IP address.                                                                                                                                                                     |
 | `--ratelimit`           | `-r`       | Number of requests to send during the rate limit test. Default is 100.                                                                                                                                                                                                       |
 | `--ratelimit-type`      | `-rt`      | HTTP Method to use for the rate limit test. Defaults to GET.                                                                                                                                                                                                                 |
 | `--ratelimit-body`      | `-rb`      | Payload data to send in request to use for POST, PATCH and PUT requests. If the custom payload contains double quotes, please use single quotes instead of double quotes to pass this flag.                                                                                  |
@@ -169,55 +170,55 @@ Example command to only show the original endpoint, only print endpoints and out
 endpointscanner example.com -oo -or -o examplescan.txt
 ```
 
+## What was added
+
+Version 7.3 added:
+
+- Recursive scanning for sitemaps (all xml files)
+- Recursive scanning for javascript files
+- Scanning of localhost:port and IP addresses like 127.0.0.1, not just example.com.
+- Filtering out Emscripten + Pyodide Virtual File System endpoints as they were false positives.
+- More JS Stacks to detect, and more accurate. Full list of stacks after 7.3:
+  - React
+  - Nuxt.js
+  - Next.js
+  - Node.js
+  - Vue.js
+  - Angular
+  - Astro
+  - Gatsby
+  - Remix
+  - Solid.js
+  - Svelte
+  - Alpine.js
+  - Backbone.js
+  - Ember.js
+  - Redux
+  - Ruby on Rails
+  - Forem (also ruby on rails)
+  - Deno
+  - Bun
+  - jQuery
+  - Webpack
+  - Vite
+  - Turbopack
+  - Parcel
+
+## Plans for next version and the future
+
+Version 7.4:
+
+- Detecting what type of captcha was used if the script is blocked.
+- Optimisation to make sorting of endpoints faster (called parallel requests or something)
+
+Future plans (May be added in the next version):
+none. please leave any suggestions you want.
+
 ## Weaknesses
 
 - If there is a login page, the script will either show that all of the pages require login, or label all of them as 403.
 - If there are shells (e.g. React SPA shells) in the page, it may give false positives for sensitive endpoints. If you see sensitive endpoints in the scan, they may not actually be exposed on the website if the website has a shell. (E.g. .gitignore, .env.local)
 - The rate limit test is more susceptible to captchas as it uses a module (httpx, not curl_cffi) that is not built to specifically pass through firewalls/captchas. This is as the httpx module for requests is better for asynchronous functions for rate limit testing on websites.
-
-## What was added
-
-Version 7.2 added:
-
-- Timeout after a set number of minutes (defined with the -st flag). Accepts floats, not just integers.
-- Raw output flag to not sort out endpoints. Will make output faster as sorting takes up the majority of the time.
-- New rate limit test flags, -rh, -rb, -rv, -rt. Allows defining of the HTTP method for the test, rate limiting headers (Either seperated by newlines or pipes), rate limiting body (may include an {X}), and rate limiting variable (can be defined as {X}, so each body will be different.) Example use is to test login attempts, testing passwords from 1 - 100 with {X} bein the iteration variable.
-- -ss flag, shows source files for where endpoints are found in progress and in the final result.
-- -oo flag, Show only the original endpoint with variables instead of the version replaced with 1.
-- Headers to avoid 304 responses so code and files is always received.
-- Detecting of 405 responses.
-- More accurate sorting (previous bug that put /api/health in SPAs patched)
-- Removed the 'Scraped from JS' label as extra files and html src are being scraped.
-
-Version 7.2.1 (patch update) added:
-
-- fixed bug where paths would still show /
-- fixed bug where some external links were coded into files like e.g. https://n. It is not a real link but got included, and the bug was fixed.
-
-Version 7.2.2 just changed wording and description of the tool to be more clear.
-
-Version 7.2.3 added one more sensitive endpoint and fixed bug where some paths would be / from extra files.
-
-Version 7.2.4 added:
-
-- fixing pdf keys like /Btn and /Widget used in jsPDF, as they were previously detected as endpoints
-- better SPA separation
-- added more asset formats (.avif, .mp3, .mp4, .webm, .wav)
-- Added text at start saying Endpointscanner 7.2.4 (i wanted it to have the vibe of most open source tools but the 3d text was just too much)
-
-Version 7.2.5 is to improve documentation for windows installation.
-
-## Plans for next version and the future
-
-Version 7.3 is planned to have:
-
-- More JS Stacks to detect (and more accurate)
-- Recursive scanning (Going into each valid path to find more endpoints as some files only show up in specific endpoints.)
-
-Future plans (May be added in the next version):
-
-- Detecting what type of captcha was used if the script is blocked.
-- Optimisation to make sorting of endpoints faster
 
 ai assisted code btw
 
