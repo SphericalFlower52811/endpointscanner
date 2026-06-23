@@ -447,7 +447,7 @@ def main():
     parser.add_argument("-rv", "--ratelimit-var", type=str, default=None, help="Variable in payload data (e.g. {X}) to use.")
     parser.add_argument("--force", action="store_true", help="Mandatory flag to pass if doing a rate limit test with over 2500 requests using a non-GET HTTP method. Has no short form flag.")
     parser.add_argument("-t", "--testpath", nargs='?', const='/', type=str, help="Endpoint to test for rate limiting.")
-    parser.add_argument("-s", "--show-404s", action="store_true", help="Show endpoints tested that returned a 404")
+    parser.add_argument("-s", "--show-404s", action="store_true", help="Show endpoints tested that returned a 404 or an SPA shell.")
     parser.add_argument("-d", "--disable-extra-files", action="store_true", help="Disable scanning of extra structural mapping files (robots, sitemaps, manifests, etc.)")
     parser.add_argument("-m", "--show-media", action="store_true", help="Include assets/media like images and fonts and videos in scan results")
     parser.add_argument("-sp", "--show-prog", action="store_true", help="Print endpoints to the terminal one by one in real-time as they are found. Warning: Progress will show duplicate paths if endpoints are defined multiple times in the code. Use the flag -nd to remove duplicates from progress. Results will not contain duplicates.")
@@ -469,7 +469,7 @@ def main():
         init(autoreset=True)
         print()
         print("-" * 40)
-        print(f"{Style.BRIGHT}Endpointscanner {Fore.LIGHTMAGENTA_EX}v7.3")
+        print(f"{Style.BRIGHT}Endpointscanner {Fore.LIGHTMAGENTA_EX}v7.3.1")
         print("-" * 40)
         print()
     if args.no_duplicate_prog and not args.show_prog:

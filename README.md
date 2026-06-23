@@ -1,4 +1,4 @@
-# Website Endpoint Scanner and Rate Limit Tester For Websites (Version 7.3)
+# Website Endpoint Scanner and Rate Limit Tester For Websites (Version 7.3.1)
 
 A fast automated website reconnaissance tool that extracts endpoints, files, and even external links from websites. Automates IDOR and broken access control vulnerability testing through replacing variables with 1 in endpoints. Has a built in rate limit tester that can test on any endpoint, and can bypass simple WAFs/captchas and client-side SPAs.
 
@@ -34,7 +34,7 @@ Passable arguments:
 | `--ratelimit-header`    | `-rh`      | Custom headers. Must be seperated by a pipe(\|), or newlines. Example use: Cookies: {ExampleCookie: example} \| Accept: application/json, text/plain, _/_. If the custom header contains double quotes, please use single quotes instead of double quotes to pass this flag. |
 | `--force`               | `NIL`      | Mandatory flag to pass if doing a rate limit test with over 2500 requests using a non-GET HTTP method. Has no short form flag.                                                                                                                                               |
 | `--testpath`            | `-t`       | Endpoint to test for rate limiting.                                                                                                                                                                                                                                          |
-| `--show-404s`           | `-s`       | Show endpoints tested that returned a 404                                                                                                                                                                                                                                    |
+| `--show-404s`           | `-s`       | Show endpoints tested that returned a 404 or an SPA shell.                                                                                                                                                                                                                   |
 | `--disable-extra-files` | `-d`       | Disable scanning of extra structural mapping files (robots, sitemaps, manifests, etc.)                                                                                                                                                                                       |
 | `--show-media`          | `-m`       | Include assets/media like images and fonts and videos in scan results                                                                                                                                                                                                        |
 | `--show-prog`           | `-sp`      | Print endpoints to the terminal one by one in real-time as they are found. Warning: Progress will show duplicate paths if endpoints are defined multiple times in the code. Use the flag -nd to remove duplicates from progress. Results will not contain duplicates.        |
@@ -50,6 +50,10 @@ Passable arguments:
 | `--raw-output`          | `-ro`      | Do not sort out endpoints after finding them. Will leave out sensitive endpoints whether they are exposed or not.                                                                                                                                                            |
 
 ## Installation
+
+You can install EndpointScanner via PyPI(global, recommended for Windows), Homebrew(MacOS), and Apt(Linux).
+
+### Installation via PyPI (or pip)
 
 You MUST have python 3.9 or above to use this tool!
 To install the official [endpointscanner Python package](https://pypi.org/project/endpointscanner/):
@@ -92,7 +96,7 @@ To activate virtual environment:
 source myvenv/bin/activate
 ```
 
-### Alternative for Virtual Environment (Not Recommended)
+#### Alternative for Virtual Environment (Not Recommended)
 
 If you do not want to create a virtual environment, you can run:
 
@@ -104,7 +108,7 @@ to install it without PEP 668.
 
 **Warning**: Using `--break-system-packages` may corrupt your OS-managed python environment. Proceed entirely at your own risk. The author is not liable for any system damage if you run this.
 
-### Troubleshooting Windows "Command Not Found" Error:
+#### Troubleshooting Windows "Command Not Found" Error:
 
 If you are on Windows (especially a non-admin account) and get an 'command not recognised' error when typing `endpointscanner` or `playwright`, run this command **on PowerShell** (not Command Prompt) to fix user environmental paths automatically:
 
@@ -119,7 +123,7 @@ Checks the current version of python being used, and adds that python version as
 
 **Note:** You MUST close the terminal (not minimise) and open a new one for the changes to work.
 
-### Updating script
+#### Updating script
 
 To update the script, you can run:
 MacOS and Linux Command:
@@ -132,6 +136,39 @@ Windows Command:
 
 ```bash
 py -m pip install --upgrade endpointscanner
+```
+
+### Homebrew
+
+You may need to update first to be able to install EndpointScanner.
+
+```bash
+brew update
+```
+
+To install EndpointScanner via Homebrew (MacOS), run these two commands:
+
+```bash
+brew trust sphericalflower52811/tap
+brew install endpointscanner
+```
+
+After that, you will need to install chromium on playwright for the headless browser:
+
+```bash
+python3 -m playwright install chromium
+```
+
+### Apt
+
+To install EndpointScanner via Apt (Linux), run these commands:
+
+```bash
+wget https://github.com/SphericalFlower52811/endpointscanner/releases/download/v7.3.1/endpointscanner_7.3.1-1_all.deb
+
+sudo dpkg -i endpointscanner_7.3.1-1_all.deb
+
+python3 -m playwright install chromium
 ```
 
 ## Example Commands
@@ -203,6 +240,13 @@ Version 7.3 added:
   - Vite
   - Turbopack
   - Parcel
+
+Version 7.3.1 added:
+
+- EndpointScanner now installable on:
+  - Linux via sudo apt
+  - Homebrew
+  - Winget
 
 ## Plans for next version and the future
 
