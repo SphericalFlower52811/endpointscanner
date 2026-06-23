@@ -51,7 +51,7 @@ Passable arguments:
 
 ## Installation
 
-You can install EndpointScanner via PyPI(global, recommended for Windows), Homebrew(MacOS), and Apt(Linux).
+You can install EndpointScanner via PyPI(global, recommended for Windows and Linux) or Homebrew(MacOS).
 
 ### Installation via PyPI (or pip)
 
@@ -159,18 +159,6 @@ After that, you will need to install chromium on playwright for the headless bro
 python3 -m playwright install chromium
 ```
 
-### Apt
-
-To install EndpointScanner via Apt (Linux), run these commands:
-
-```bash
-wget https://github.com/SphericalFlower52811/endpointscanner/releases/download/v7.3.1/endpointscanner_7.3.1-1_all.deb
-
-sudo dpkg -i endpointscanner_7.3.1-1_all.deb
-
-python3 -m playwright install chromium
-```
-
 ## Example Commands
 
 Example command to run to scan a site (show inaccessible endpoints, show assets, show progress as it finds endpoints, and show files that it got endpoints from):
@@ -244,7 +232,6 @@ Version 7.3 added:
 Version 7.3.1 added:
 
 - EndpointScanner now installable on:
-  - Linux via sudo apt
   - Homebrew
 
 ## Plans for next version and the future
