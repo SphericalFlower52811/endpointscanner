@@ -16,29 +16,34 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install Debian Packaging Tools
+      - name: Install System Packaging Prerequisites
         run: |
           sudo apt-get update
-          sudo apt-get install -y debhelper dh-python python3-all python3-setuptools
-          pip install stdeb
+          sudo apt-get install -y ruby ruby-dev rubygems build-essential
+          sudo gem install --no-document fpm
 
-      - name: Compile and Build Python Distribution Artifacts
+      - name: Compile and Build Python Artifacts
         run: |
           python3 -m pip install --upgrade pip build
           python3 -m build
 
-      - name: Convert Project Files into Native Debian Format
+      - name: Convert Source Code to Flawless Debian Package
         run: |
-          cat << 'EOF' > setup.py
-          from setuptools import setup
-          setup()
-          EOF
-          python3 setup.py --command-packages=stdeb.command bdist_deb
+          # Use fpm to translate your fresh wheel build directly into a .deb installer file
+          fpm -s python -t deb \
+            --name "endpointscanner" \
+            --version "7.3.1" \
+            --iteration "1" \
+            --architecture "all" \
+            --description "Website endpoint reconnaissance tool and rate limit tester that can bypass simple captchas and WAFs." \
+            --maintainer "SphericalFlower52811 <endpointscanner@gmail.com>" \
+            --license "MIT" \
+            dist/*.whl
 
-      - name: Relocate Compiled Debian Packages for Release Upload
+      - name: Relocate Package for Release Upload
         run: |
           mkdir dist-deb
-          cp deb_dist/*.deb dist-deb/
+          cp *.deb dist-deb/
 
       - name: Upload Debian Archive to Release Assets
         uses: softprops/action-gh-release@v2
