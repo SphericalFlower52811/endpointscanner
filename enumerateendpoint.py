@@ -469,7 +469,7 @@ def main():
         init(autoreset=True)
         print()
         print("-" * 40)
-        print(f"{Style.BRIGHT}Endpointscanner {Fore.LIGHTMAGENTA_EX}v7.3.1")
+        print(f"{Style.BRIGHT}Endpointscanner {Fore.LIGHTMAGENTA_EX}v7.3.2")
         print("-" * 40)
         print()
     if args.no_duplicate_prog and not args.show_prog:
@@ -648,7 +648,7 @@ def main():
         try:
             r_res = requests.get(urljoin(target, "/robots.txt"), headers=E_HEADER, impersonate=impersonate_settings, timeout=4)
             if r_res.status_code == 200:
-                e_files.append('/robots.txt')
+                appendrobottoe = False
                 
                 for line in r_res.text.splitlines():
                     _local_robots_line = line.strip()
@@ -663,6 +663,9 @@ def main():
                         if _local_directive in ["disallow", "allow"]:
                             if _local_payload and _local_payload not in ["/", "/*"] and _local_payload not in found_paths:
                                 found_paths.add(_local_payload)
+                                if appendrobottoe == False:
+                                    e_files.append('/robots.txt')
+                                    appendrobottoe = True
                                 if not args.tidy: 
                                     results_fromotherfiles.append(f"{_local_payload} [Source: robots.txt]")
                                 else:

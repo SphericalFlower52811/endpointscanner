@@ -1,4 +1,4 @@
-# EndpointScanner: Website Endpoint Scanner and Rate Limit Tester For Websites (Version 7.3.1)
+# EndpointScanner: Website Endpoint Scanner and Rate Limit Tester For Websites (Version 7.3.2)
 
 A fast automated website reconnaissance tool that extracts endpoints, files, and even external links from websites. Automates IDOR and broken access control vulnerability testing through replacing variables with 1 in endpoints. Has a built in rate limit tester that can test on any endpoint, and can bypass simple WAFs/captchas and client-side SPAs.
 
@@ -233,6 +233,8 @@ Version 7.3.1 added:
 
 - EndpointScanner now installable on:
   - Homebrew
+
+Version 7.3.2 fixed a glitch showing robots.txt when it was not scanned.
 
 ## Plans for next version and the future
 
