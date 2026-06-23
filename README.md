@@ -246,7 +246,6 @@ Version 7.3.1 added:
 - EndpointScanner now installable on:
   - Linux via sudo apt
   - Homebrew
-  - Winget
 
 ## Plans for next version and the future
 
