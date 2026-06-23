@@ -39,9 +39,7 @@ jobs:
           Package: endpointscanner
           Architecture: all
           Depends: python3, python3-pip, ${misc:Depends}
-          Description: Website endpoint recon tool and rate limit tester.
-           Advanced web reconnaissance tool and JS crawler utilizing high-fidelity
-           TLS/JA3 impersonation and dynamic headless client-side parsing.
+          Description: Website endpoint reconnaissance tool and rate limit tester that can bypass simple captchas and WAFs.
           EOF
 
       - name: Configure Debian Build Compatibility
