@@ -1,5 +1,5 @@
 ---
-title: EndpointScanner Docs
+description: EndpointScanner Docs
 ---
 
 # Website Endpoint Scanner and Rate Limit Tester For Websites (Version 7.3.1)
