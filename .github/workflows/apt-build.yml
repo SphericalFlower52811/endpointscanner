@@ -29,7 +29,6 @@ jobs:
 
       - name: Convert Source Code to Flawless Debian Package
         run: |
-          # Use fpm to translate your fresh wheel build directly into a .deb installer file
           fpm -s python -t deb \
             --name "endpointscanner" \
             --version "7.3.1" \
@@ -38,7 +37,7 @@ jobs:
             --description "Website endpoint reconnaissance tool and rate limit tester that can bypass simple captchas and WAFs." \
             --maintainer "SphericalFlower52811 <endpointscanner@gmail.com>" \
             --license "MIT" \
-            dist/*.whl
+            dist/endpointscanner-7.3.1-py3-none-any.whl
 
       - name: Relocate Package for Release Upload
         run: |
