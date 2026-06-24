@@ -51,7 +51,7 @@ Passable arguments:
 
 ## Installation
 
-You can install EndpointScanner via PyPI(global, recommended for Windows and Linux) or Homebrew(MacOS).
+You can install EndpointScanner via PyPI.
 
 ### Installation via PyPI (or pip)
 
@@ -138,25 +138,10 @@ Windows Command:
 py -m pip install --upgrade endpointscanner
 ```
 
-### Homebrew
-
-You may need to update first to be able to install EndpointScanner.
-
-```bash
-brew update
-```
-
-To install EndpointScanner via Homebrew (MacOS), run these two commands:
-
-```bash
-brew trust sphericalflower52811/tap
-brew install endpointscanner
-```
-
 After that, you will need to install chromium on playwright for the headless browser:
 
 ```bash
-python3 -m playwright install chromium
+playwright install chromium
 ```
 
 ## Example Commands
@@ -229,16 +214,13 @@ Version 7.3 added:
   - Turbopack
   - Parcel
 
-Version 7.3.1 added:
-
-- EndpointScanner now installable on:
-  - Homebrew
-
 Version 7.3.2 fixed a glitch showing robots.txt when it was not scanned.
 
 Version 7.3.3 was another minor patch and included a llms.txt for LLMs to digest.
 
 Version 7.3.4 fixed header for the variable S_HEADER, as it contained an invalid User-Agent Header.
+
+Version 7.3.5 removed endpointscanner from Homebrew.
 
 ## Plans for next version and the future
 

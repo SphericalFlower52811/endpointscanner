@@ -19,9 +19,11 @@ EndpointScanner is an open-source tool created by SphericalFlower52811 made for 
 - **Built-in Rate Limit Tester**: EndpointScanner comes with a rate limit tester. Many website rate limit testers simply send requests one by one, while EndpointScanner uses an asynchronous function to send many requests instantly and simulating a real-world Denial of Service attack. Many website rate limit testers simply send many GET requests, or send the same payload each time, which is a problem for endpoints like /signup as they require a different username each time, for example. EndpointScanner allows for any HTTP Method of your choice between GET, POST, PATCH and PUT, allows for custom headers, allows for a custom body, and you can add a custom variable into the body to iterate every request, ensuring the payload in every request is different.
 - **Local Scanning**: Popular recon tools like Katana and more often are unable to scan sites like localhost:3000, or 127.0.0.1:8080 for example, as many scanners are meant to scan example.com. However, many pentesters have to test a company website through localhost or a private IP address first. The first step to any pentest is reconnaissance, and this tool solves the problem of others not being able to scan websites which are localhosts and private IP addresses.
 - **Built-in Time Limit**: A time limit of (float) minutes can be declared as a flag and the scan will automatically stop scraping anything. 
-## Installation Methods:
-Homebrew, via `brew update && brew trust sphericalflower52811/tap && brew install endpointscanner`
-PyPI, via `pip install endpointscanner && python3 -m playwright install chromium`
+
+## Installation:
+EndpointScanner can only be installed via PyPI.
+Command to Install (Virtual Environment may be required):
+`python3 -m pip install endpointscanner`
 
 ## How it works:
 Firstly, it checks whether sensitive files like .env.local are inside, and also scans for extra files like robots.txt and sitemap.xml.

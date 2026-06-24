@@ -472,7 +472,7 @@ def main():
         init(autoreset=True)
         print()
         print("-" * 40)
-        print(f"{Style.BRIGHT}Endpointscanner {Fore.LIGHTMAGENTA_EX}v7.3.4")
+        print(f"{Style.BRIGHT}Endpointscanner {Fore.LIGHTMAGENTA_EX}v7.3.5")
         print("-" * 40)
         print()
     if args.no_duplicate_prog and not args.show_prog:
