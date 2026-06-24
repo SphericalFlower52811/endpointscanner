@@ -245,7 +245,7 @@ Version 7.3.4 fixed header for the variable S_HEADER, as it contained an invalid
 Version 7.4:
 
 - Detecting what type of captcha was used if the script is blocked.
-- Optimisation to make sorting of endpoints faster (called parallel requests or something)
+- Optimisation to make sorting of endpoints faster
 
 Future plans (May be added in the next version):
 none. please leave any suggestions you want.
