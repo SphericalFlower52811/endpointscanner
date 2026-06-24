@@ -40,7 +40,7 @@ PYODIDE_VFS_PRECISION_PATTERNS = [
 ]
 
 S_HEADER = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ...",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     "Cache-Control": "no-store",    
     "Pragma": "no-cache",
     "If-None-Match": "",    
@@ -359,7 +359,8 @@ async def async_rate_test(url, num_reqs=100, method="GET", rb=None, rv=None, coo
             for idx, (h, body_data, json_flag) in enumerate(processed_queue):
                 asyncio.create_task(worker(h, body_data, json_flag, idx))
                 
-            print("[+] Streaming requests into the background network pipeline...")
+            print("Finishing up rate limiting test...")
+            #wait for all responses to load properly
             await asyncio.sleep(45.0)
 
         #label every single request using enumerate() to find out exactly when the first request timed out, or hit a non-200.
@@ -432,9 +433,11 @@ def checktime(st, at):
         else:
             if choice in ['n', 'no']:
                 print('Scan stopped. Any data found in the time window will be printed.')
+                print('Sensitive endpoints like ".git/config" will be automatically skipped.')
             else:
                 print('Choice not recognised, and will be defaulted to no.')
                 print('Scan stopped. Any data found in the time window will be printed.')
+                print('Sensitive endpoints like ".git/config" will be automatically skipped.')
             return "STOP"
     return "CONTINUE"
 def main():
@@ -1246,6 +1249,7 @@ def main():
                 try:
                     userawoutput = input("Would you like to use the raw output instead? (No sorting at all) [y/n]\n >>> ")
                     if userawoutput.lower() in ['y', 'yes']:
+                        print("Endpoints will not be sorted.")
                         args.raw_output = True
                     else:
                         print("Endpoints will still be sorted.")
