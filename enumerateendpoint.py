@@ -70,6 +70,7 @@ def gethtmlafterload(url):
                 print("\nPlaywright installations are missing.")
                 print("Please read the installation instructions in the README of the repository.")
                 print("README link: https://github.com/SphericalFlower52811/endpointscanner/blob/main/README.md")
+                exit(1)
             else:
                 print("Unexpected Issue:", e)
             return "", {}
@@ -472,7 +473,7 @@ def main():
         init(autoreset=True)
         print()
         print("-" * 40)
-        print(f"{Style.BRIGHT}Endpointscanner {Fore.LIGHTMAGENTA_EX}v7.3.5")
+        print(f"{Style.BRIGHT}Endpointscanner {Fore.LIGHTMAGENTA_EX}v7.3.6")
         print("-" * 40)
         print()
     if args.no_duplicate_prog and not args.show_prog:
