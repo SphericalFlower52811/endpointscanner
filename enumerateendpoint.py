@@ -1087,7 +1087,7 @@ def main():
                                         if nested_netloc == target_netloc:
                                             nested_safe = True
                                         elif get_apex(nested_netloc) == get_apex(target_netloc):
-                                            if any(token in nested_netloc for token in ["assets.", "cdn.", "vendor."]):
+                                            if any(token in nested_netloc for token in ["assets.", "cdn."]):
                                                 nested_safe = True
                                                 
                                         if nested_safe and check_nested_url not in js_files:
@@ -1240,8 +1240,8 @@ def main():
                 if len(found_paths) >= 12500:
                     exaggerate = "REALLY REALLY "
                     
-                print(f"\n[!] Number of endpoints found is {exaggerate}large.")
-                print(f"[*] Estimated sorting time: {esttime}")
+                print(f"\n[WARNING] Number of endpoints found is {exaggerate}large.")
+                print(f"Estimated sorting time: {esttime}")
                 
                 try:
                     userawoutput = input("Would you like to use the raw output instead? (No sorting at all) [y/n]\n >>> ")
@@ -1251,7 +1251,7 @@ def main():
                         print("Endpoints will still be sorted.")
                         args.raw_output = False
                 except (KeyboardInterrupt, SystemExit):
-                    print("\n[!] Scan cancelled by user.")
+                    print("\nScan cancelled by user.")
                     return
 
                 
