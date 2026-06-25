@@ -1,4 +1,4 @@
-# EndpointScanner
+# EndpointScanner: A Website Endpoint Scanner and Rate Limit Tester
 
 EndpointScanner is an open-source tool created by SphericalFlower52811 made for web bug bounty hunters and pentesters.
 
