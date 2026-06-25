@@ -2,7 +2,7 @@
 
 EndpointScanner is an open-source tool created by SphericalFlower52811 made for web bug bounty hunters and pentesters.
 
-## Features (version 7.3.6):
+## Features (version 7.3.7):
 - Uses a playwright headless browser to retrieve clearance cookies and a hydrated homepage for the website.
 - Uses curl_cffi to impersonate a chrome browser's TLS and JA3 footprint to bypass CAPTCHAs, for example Cloudflare Turnstile.
 - 25 built-in sensitive endpoints like .env.local, .env, package-lock.json that should never be pushed to git.

@@ -1091,7 +1091,7 @@ def main():
                                         if nested_netloc == target_netloc:
                                             nested_safe = True
                                         elif get_apex(nested_netloc) == get_apex(target_netloc):
-                                            if any(token in nested_netloc for token in ["assets.", "cdn."]):
+                                            if any(token in nested_netloc for token in ["assets.", "cdn.", "vendor."]):
                                                 nested_safe = True
                                                 
                                         if nested_safe and check_nested_url not in js_files:
