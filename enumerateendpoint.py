@@ -257,8 +257,8 @@ async def async_rate_test(url, num_reqs=100, method="GET", rb=None, rv=None, coo
         if not rh:
             current_headers = HEADER.copy()
             pa_target = urlparse(url)
-            current_headers["Origin"] = f"https://{pa_target.netloc}"
-            current_headers["Referer"] = f"https://{pa_target.netloc}/"
+            current_headers["Origin"] = f"{pa_target.scheme}://{pa_target.netloc}"
+            current_headers["Referer"] = f"{pa_target.scheme}://{pa_target.netloc}/"
             is_json_string = rb and current_body.strip().startswith(('{', '['))
             if rb:
                 if is_json_string:
@@ -362,7 +362,7 @@ async def async_rate_test(url, num_reqs=100, method="GET", rb=None, rv=None, coo
                 
             print("Finishing up rate limiting test...")
             #wait for all responses to load properly
-            await asyncio.sleep(45.0)
+            await asyncio.sleep(50.0)
 
         #label every single request using enumerate() to find out exactly when the first request timed out, or hit a non-200.
         status_counts = {}
@@ -473,7 +473,7 @@ def main():
         init(autoreset=True)
         print()
         print("-" * 40)
-        print(f"{Style.BRIGHT}Endpointscanner {Fore.LIGHTMAGENTA_EX}v7.3.6")
+        print(f"{Style.BRIGHT}Endpointscanner {Fore.LIGHTMAGENTA_EX}v7.3.8")
         print("-" * 40)
         print()
     if args.no_duplicate_prog and not args.show_prog:
