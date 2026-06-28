@@ -1,4 +1,4 @@
-# EndpointScanner: Website Endpoint Scanner and Rate Limit Tester (Version 7.3.8)
+# EndpointScanner: Website Endpoint Scanner and Rate Limit Tester (Version 7.3.9)
 
 A fast automated website reconnaissance tool that extracts endpoints, files, and even external links from websites. Automates IDOR and broken access control vulnerability testing through replacing variables with 1 in endpoints. Has a built in rate limit tester that can test on any endpoint, and can bypass simple WAFs/captchas and client-side SPAs.
 
@@ -227,6 +227,8 @@ Version 7.3.6 updated the script to exit if playwright browser does not exist.
 Version 7.3.7 was a patch that added vendor.example.com to subdomains to scan as it contains code for the website.
 
 version 7.3.8 gave more time for rate limiting test requests to settle.
+
+Version 7.3.9 removed /admin and /login from the built-in endpoints to test, as they would be removed from the unsorted list from --raw-output flag even if they were found in the javascript code. Also changed fake path to include a random hash behind in case people actually hardcoded such a path.
 
 ## Plans for next version and the future
 

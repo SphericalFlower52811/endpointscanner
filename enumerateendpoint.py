@@ -473,7 +473,7 @@ def main():
         init(autoreset=True)
         print()
         print("-" * 40)
-        print(f"{Style.BRIGHT}Endpointscanner {Fore.LIGHTMAGENTA_EX}v7.3.8")
+        print(f"{Style.BRIGHT}Endpointscanner {Fore.LIGHTMAGENTA_EX}v7.3.9")
         print("-" * 40)
         print()
     if args.no_duplicate_prog and not args.show_prog:
@@ -623,9 +623,8 @@ def main():
     SENSITIVE_ENDPOINT = {
         "/.env", "/.env.local", "/.env.production", "/.env.development", ".env.dev",
         "/.git/config", "/.git/HEAD", "/package.json", "/package-lock.json", "/.npmrc", "/.dockerenv",
-        "/.gitignore", "/api/health", "/admin", "/login", "/config",
-        "/.env.example", "/docker-compose.yml", "/.babelrc", "/.eslintrc.json",
-        "/wp-config.php", "/config.json", "/.aws/credentials", "/.git/index",
+        "/.gitignore", "/api/health", "/config", "/.env.example", "/docker-compose.yml", "/.babelrc", 
+        "/.eslintrc.json", "/wp-config.php", "/config.json", "/.aws/credentials", "/.git/index",
         "/etc/passwd"
     }
     
@@ -866,7 +865,9 @@ def main():
     #identify js stacks.
     js_stack = []
     identify_javascript_type(html=main_html, headers=None, current_stack=js_stack)
-    fake_path = "/very-fake-page-123456123456abcdefg"
+    #add randomly generated hash later/tomorrow.
+    import secrets
+    fake_path = f"/very-fake-page-123456123456abcdefg_{secrets.token_hex(16)}"
     fake_url = urljoin(target, fake_path)
     try:
         fake_res = requests.get(fake_url, cookies=session_cookies, headers=HEADER, impersonate=impersonate_settings, timeout=10)
@@ -1258,6 +1259,8 @@ def main():
                 except (KeyboardInterrupt, SystemExit):
                     print("\nScan cancelled by user.")
                     return
+        else:
+            print(f"Endpoints Found: {len(found_paths) - len(SENSITIVE_ENDPOINT)}")
 
                 
         if not args.raw_output:
@@ -1631,8 +1634,8 @@ def main():
                     print(f"\nFailed to write file: {e}")
         else:
             if not args.only_res:
-                print("Endpoints will not be sorted. Sensitive endpoints like '.git/config' will be automatically skipped.")
-                print('----Raw Endpoints----')
+                print("\nEndpoints will not be sorted. Sensitive endpoints like '.git/config' will be automatically skipped.\n")
+                print('----Raw Endpoints----\n')
             clean_found_paths = []
             #delete all sensitive endpoints, as they are not sorted and may be misleading that all are exposed.
             for p in unsorted_paths:

@@ -2,7 +2,7 @@
 
 EndpointScanner is an open-source tool created by SphericalFlower52811 made for web bug bounty hunters and pentesters.
 
-## Features (version 7.3.8):
+## Features (version 7.3.9):
 - Uses a playwright headless browser to retrieve clearance cookies and a hydrated homepage for the website.
 - Uses curl_cffi to impersonate a chrome browser's TLS and JA3 footprint to bypass CAPTCHAs, for example Cloudflare Turnstile.
 - 25 built-in sensitive endpoints like .env.local, .env, package-lock.json that should never be pushed to git.
@@ -36,6 +36,7 @@ Finally, it recursively scans XML files like sitemaps as some websites have nest
 ## Sorting Algorithm
 It then sorts all found paths through a loop.
 As Single-Page Applications (SPAs) on the web will return a 200 status code despite the endpoint not being found, the script checks if the path was found in the JavaScript code, as it definitely does not exist if it is not mentioned anywhere in the websites's JavaScript files.
+EndpointScanner also uses a randomly generated fake path each time which is /very-fake-page-123456123456abcdefg_ along with a 32 character hash behind, making it impossible for developers of the website to actually hardcode that fake path inside. It uses this fake path to get the response containing an SPA shell (if not a generic 404 page for multi-page applications, and will still work perfectly) to compare each result when sorting each endpoint to filter out "soft" 404s, which are 404 pages but a 200 status code (in SPAs)
 This SPA separation feature is very good as many current endpoint scanning tools get confused when dealing with SPAs and often return false positives. This means EndpointScanner natively handles both SPAs and traditional multi-page websites.
 If the file ends with '.png', '.jpg', '.jpeg', '.svg', '.webp', '.gif', '.ico', '.woff', '.woff2', '.ttf', '.swf', '.mp4', '.mp3', '.avif', '.webm', '.wav', it is classified as media.
 If the file ends with '.js', '.css', '.json', '.txt', '.xml', '.map', '.rels', '.md', it is considered source code of the website.
