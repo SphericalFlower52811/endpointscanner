@@ -354,7 +354,7 @@ def main():
     except:
         shell_content = ""
     if not args.only_res:
-        print("\nHeadless browser + fake path test finished.")
+        print("\nHeadless browser & fake path test finished.")
         print(f"Starting scan on {target}.\n")
     try:
         soup = BeautifulSoup(main_html, 'html.parser')
