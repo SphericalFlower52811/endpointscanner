@@ -1,3 +1,7 @@
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["endpointscanner*"]
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
@@ -39,7 +43,7 @@ dependencies = [
 
 [project.scripts]
 # pyprojectthing
-endpointscanner = "enumerateendpoint:main"
+endpointscanner = "endpointscanner.enumerateendpoint:main"
 
 [project.urls]
 Homepage = "https://github.com/SphericalFlower52811/endpointscanner"

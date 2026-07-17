@@ -1,24 +1,85 @@
 # EndpointScanner: A Website Endpoint Scanner and Rate Limit Tester
 
-EndpointScanner is an open-source tool created by SphericalFlower52811 made for web bug bounty hunters and pentesters.
+## What is EndpointScanner?
 
-## Features (version 7.3.9):
-- Uses a playwright headless browser to retrieve clearance cookies and a hydrated homepage for the website.
-- Uses curl_cffi to impersonate a chrome browser's TLS and JA3 footprint to bypass CAPTCHAs, for example Cloudflare Turnstile.
-- 25 built-in sensitive endpoints like .env.local, .env, package-lock.json that should never be pushed to git.
-- Crawls XML, HTML and JS files for endpoints, subdomains, external links, media, source code, and redirects.
-- Built in optional rate limit tester on any endpoint of your choice where you can have a custom header, custom HTTP method, custom body, and a custom variable to iterate in the payload defined as {X}.
-- Scans response headers, JS and HTML files to properly detect what JS Stack the website uses.
-- If the path contains a variable, like example.com/${userId}/settings, the script automatically changes the variable to 1 to make it a valid URL path. This also serves as a test for broken access control, for endpoints where you should not see such information.
-- Shows the original variable used for paths where it was switched to 1.
+EndpointScanner is an open-source cybersecurity tool created by SphericalFlower52811 made for web bug bounty hunters and pentesters.
+It is a tool to crawl and parse a website's code files to extract the endpoints of a website, like `/admin`, `/dashboard`, and `/api/v1/users/1`.
+Doing this is very important during a website pentest as it is reconnaissance, the first step in the **Cyber Kill Chain**.
+Finding endpoints on a website allows you to plan out your pentest, like:
+- Testing attacks on useful endpoints like /admin for broken access control allowing you in the admin panel and allowing an unauthorized user to escalate their privileges
+- Checking for rate-limiting on seemingly insignificant endpoints like /profile/description or /comment/editing, as sending thousands of data-changing requests (POST, PATCH, PUT) can easily exhaust the server leading to a DoS.
+- Finding any injections like SQL/NoSQL/XPATH injection, XSS, SSTI and more in endpoints like /login or /register.
 
-## Why use EndpointScanner?
-- **Does not brute-force**: Many popular endpoint scanning tools like Gobuster, Feroxbuster, Dirsearch and FFuF rely on brute-forcing every endpoint using a wordlist. This approach is weak, as sending many GET requests will easily trigger anti-bot software and rate limiting, and unique endpoints not mentioned in the wordlist given will never be found, meaning that vulnerable endpoints could be left out of the results. EndpointScanner uses a smarter approach which is to crawl and scan all JavaScript, HTML, and XML Files of a website and use a regex (Regular Expression) to detect endpoints in the code.
-- **Natively handles SPAs**: Many modern websites now are Single-Page Applications, and they return a 200 response code for every request, regardless of whether the user is forbidden or not. As many modern tools like Katana (by projectdiscovery) and cariddi fall for this trap, this is a very important feature. Katana also has a feature to detect SPAs, but it has to spin a headless browser for every request, making it take more time for a scan than usual.
-- **Hardened Regex**: Katana output false endpoints, which were actually javascript elements. Here is an example: https://example.com/assets/s.dom.offsetHeight/s.do. This proves that Katana, a very popular tool had a flawed regular expression when crawling the files for endpoints. EndpointScanner is not known to have that flaw.
-- **Built-in Rate Limit Tester**: EndpointScanner comes with a rate limit tester. Many website rate limit testers simply send requests one by one, while EndpointScanner uses an asynchronous function to send many requests instantly and simulating a real-world Denial of Service attack. Many website rate limit testers simply send many GET requests, or send the same payload each time, which is a problem for endpoints like /signup as they require a different username each time, for example. EndpointScanner allows for any HTTP Method of your choice between GET, POST, PATCH and PUT, allows for custom headers, allows for a custom body, and you can add a custom variable into the body to iterate every request, ensuring the payload in every request is different.
-- **Local Scanning**: Popular recon tools like Katana and more often are unable to scan sites like localhost:3000, or 127.0.0.1:8080 for example, as many scanners are meant to scan example.com. However, many pentesters have to test a company website through localhost or a private IP address first. The first step to any pentest is reconnaissance, and this tool solves the problem of others not being able to scan websites which are localhosts and private IP addresses.
-- **Built-in Time Limit**: A time limit of (float) minutes can be declared as a flag and the scan will automatically stop scraping anything. 
+
+## Features (version 7.4):
+- **Sorting Algorithm**: Sorts all results into endpoints, services/APIs, subdomains, code files, and more categories.
+- **Bypasses simple anti-bot software**: Uses a playwright headless browser to retrieve clearance cookies and a hydrated homepage for the website. Uses curl_cffi to impersonate a chrome browser's TLS and JA3 footprint to bypass CAPTCHAs, for example Cloudflare Turnstile.
+- **Built-in Sensitive Endpoints**: 23 built-in sensitive endpoints like .env.local, .env, package-lock.json that should never be pushed to git.
+- **Crawls many types of files**: Crawls XML, HTML and JS files for endpoints, subdomains, external links, media, source code, and redirects.
+- **Built-in Rate-Limiting Tester** EndpointScanner has a native optional rate limit tester on any endpoint of your choice where you can have a custom header, custom HTTP method, custom body, and a custom variable to iterate in the payload defined as `{X}`.
+- **JavaScript Stack detection**: Scans response headers, JS and HTML files to properly detect what JS Stack the website uses.
+- **Built-in URL normalization**: If the path contains a variable, like example.com/${userId}/settings, the script automatically changes the variable to 1 to make it a valid URL path, which many current scripts fail to do. This also serves as an additional test for broken access control if the endpoint is private user data and should not be accessed by the public. Also shows the original variable used for paths where it was switched to 1.
+- **Local Scanning**: EndpointScanner can scan local/private hosts like a localhost, 127.0.0.1 or a private subnet. For localhost and 127.0.0.1, you will need to pass the -l flag for it to be scanned.
+- **Scan Time Limit Feature**: EndpointScanner has a feature where you can pass the -st flag to make the scan stop after (float) amount of minutes. It will ask you if you want to extend the scan by 5 minutes before actually stopping.
+- **Pinpoint Accuracy**: EndpointScanner only scans code files to extract endpoints if the code file is from the actual target domain. Many other tools tend to scan code files of different subdomains, taking up a lot more time and returning useless results.
+- **Allows External Script Loaders**: EndpointScanner allows you to add multiple external script loaders for their code files to also be scanned for the website.
+
+## Advantage EndpointScanner has against other popular tools
+
+### Brute Forcing Tools
+
+#### Flaws of other Tools
+Brute forcing tools like Gobuster, FFuF, Feroxbuster, and Dirbuster rely on a wordlist, and send thousands of request to a server. 
+Flaws with brute-forcing:
+- Easily triggers anti-bot software
+- Sends many requests, can trigger rate-limiting
+- Guaranteed to miss directory/endpoint paths in the website that are not mentioned in the wordlist
+
+#### How EndpointScanner does better
+EndpointScanner downloads the JavaScript files of the website in order to scan them, and uses a RegEx (Regular Expression) to scrape all the paths in the website.
+This makes it send much less requests to the server when scraping for endpoints initially. Additionally, website code files are typically unguarded by strict CAPTCHAs.
+As it scrapes from the files themselves, unique endpoints coded will not be missed.
+
+### Katana by ProjectDiscovery
+
+#### Flaws of Katana
+> This was done on a mirrored copy of a real website, hence localhost in the url.
+Tools like Katana mistake minified JavaScript as website endpoints, like:
+- `https://localhost:8080/assets/s.dom.offsetHeight/s.do`
+- `http://localhost:8080/assets/this.program`
+- `http://localhost:8080/assets/a.number/o.do`
+- `http://localhost:8080/assets/-e/this.pl`
+
+Alongside that, Katana also outputs duplicate paths, like outputting `http://www.w3.org/2000/svg` twice as an external link. 
+**Why is this bad?**: It is bad for multiple reasons below:
+- Having duplicates in the output is very inefficient and can make the website look bigger than it is.
+- It wastes time when looking for an attack surface.
+- If Katana returns hundreds of duplicates, it wastes a lot of time during the scan itself.
+
+Finally, if scanning a subdomain, Katana will drift towards other subdomains and scan those too.
+This is **extremely bad** because:
+- It can scan a completely out-of-scope website that is not your target, and since you are not authorised to scan that different subdomain it becomes illegal even if your target gave you legal permission.
+- If the domain has many subdomains, the scan will take an extremely long time, even if your target subdomain is not a complex website.
+
+#### How EndpointScanner does better
+- EndpointScanner has a more accurate RegEx, and does not print out such JavaScript elements that are not real paths.
+- EndpointScanner does not print duplicate paths into the website, making it so you do not have to filter out duplicates yourself manually.
+- EndpointScanner ensures that it is scanning the correct domain. If it is scanning a subdomain, it will not scan the code files of other subdomains nor the main domain.
+    - For example, if it is scanning `examplesub.example.com`, it will not scan `wrongsub.example.com`, nor will it scan `example.com`.
+
+### WaybackUrls and GetAllURLs (gau)
+
+#### Flaws in both
+waybackurls and gau both use historical databases.
+This is a fundamentally flawed approach as it will return endpoints that may have been removed previously by the developer, and will also not provide new endpoints that have been added since the last save into historical databases.
+
+#### Why EndpointScanner is better
+EndpointScanner takes endpoints from present updated code files, ensuring outdated results are not returned.
+
+## Weaknesses of EndpointScanner
+While EndpointScanner is a top-tier scanning tool, it also has its set of weaknesses.
+- For Single-Page Applications, there may be false positives if the developer left outdated/deleted endpoints defined in the JavaScript/XML files but had removed those endpoints or made it return a 404 page but a 200 status response code.
+- The sorting algorithm to sort each endpoint is not multi-threaded, which will be fixed in a future update.
 
 ## Installation:
 EndpointScanner can only be installed via PyPI.
@@ -26,25 +87,20 @@ Command to Install (Virtual Environment may be required):
 `python3 -m pip install endpointscanner`
 
 ## How it works:
-Firstly, it checks whether sensitive files like .env.local are inside, and also scans for extra files like robots.txt and sitemap.xml.
+Firstly, it checks whether sensitive files like .env.local are inside, and also scans for extra files like `robots.txt` and `sitemap.xml`.
 Secondly, it scans the HTML itself for any endpoints
-After that, it scans for src and href tags in the HTML code for JavaScript files. It will also scan assets.example.com, cdn.example.com, or vendor.example.com
+After that, it scans for src and href tags in the HTML code for JavaScript files. For websites that use external script loaders like `examplestatic.com` or `assets.example.com`, there is a flag that can be passed multiple times to whitelist all the external script loaders of the website as there are infinite variations.
 Next, it parses JavaScript files for defined endpoints and more links.
 It will perform step 3 and step 4 recursively until it is fully done scanning every .html file and .js file.
 Finally, it recursively scans XML files like sitemaps as some websites have nested sitemaps.
 
 ## Sorting Algorithm
-It then sorts all found paths through a loop.
-As Single-Page Applications (SPAs) on the web will return a 200 status code despite the endpoint not being found, the script checks if the path was found in the JavaScript code, as it definitely does not exist if it is not mentioned anywhere in the websites's JavaScript files.
-EndpointScanner also uses a randomly generated fake path each time which is /very-fake-page-123456123456abcdefg_ along with a 32 character hash behind, making it impossible for developers of the website to actually hardcode that fake path inside. It uses this fake path to get the response containing an SPA shell (if not a generic 404 page for multi-page applications, and will still work perfectly) to compare each result when sorting each endpoint to filter out "soft" 404s, which are 404 pages but a 200 status code (in SPAs)
+EndpointScanner sorts all output found into multiple categories, which are: endpoints, services/APIs, external links, subdomains, source code files, redirects, paths from other extra files, media assets, and inaccessible endpoints.
+As Single-Page Applications (SPAs) on the web will return a 200 status code despite the endpoint not being found, the script checks if the path was found in the JavaScript code, as it definitely does not exist if it is not mentioned anywhere in the websites' JavaScript files.
+EndpointScanner also uses a randomly generated fake path each time which is `/very-fake-page-123456123456abcdefg_` along with a 32 character hash behind, making it impossible for developers of the website to actually hardcode that fake path inside. It uses this fake path to get the response containing an SPA shell (if not a generic 404 page for multi-page applications, and will still work perfectly) to compare each result when sorting each endpoint to filter out "soft" 404s, which are 404 pages but a 200 status code (in SPAs).
 This SPA separation feature is very good as many current endpoint scanning tools get confused when dealing with SPAs and often return false positives. This means EndpointScanner natively handles both SPAs and traditional multi-page websites.
-If the file ends with '.png', '.jpg', '.jpeg', '.svg', '.webp', '.gif', '.ico', '.woff', '.woff2', '.ttf', '.swf', '.mp4', '.mp3', '.avif', '.webm', '.wav', it is classified as media.
-If the file ends with '.js', '.css', '.json', '.txt', '.xml', '.map', '.rels', '.md', it is considered source code of the website.
-Also sorts out subdomains and external links.
+If the file ends with `.png`, `.jpg`, `.jpeg`, `.svg`, `.webp`, `.gif`, `.ico`, `.woff`, `.woff2`, `.ttf`, `.swf`, `.mp4`, `.mp3`, `.avif`, `.webm`, `.wav`, it is classified as media.
+If the file ends with `.js`, `.css`, `.json`, `.txt`, `.xml`, `.map`, `.rels`, `.md`, it is considered source code of the website.
+However, the entire sorting algorithm takes time, hence there is a `-ro` flag which stands for raw output, which disables the sorting feature thus saving a lot of time.
 
-## Weaknesses of EndpointScanner
-While EndpointScanner is a top-tier scanning tool, it also has its set of weaknesses.
-- If the scan timeout flag is passed and the timeout is hit, the same input prompt asking to continue or stop the scan might appear a few more times as each scraping loop has its own check, making you have to provide the same answer to the input a few times if the flag to stop the scan after a certain time is active.
-- For Single-Page Applications, there may be false positives if the developer left endpoints defined in the JavaScript/XML files but had removed those endpoints or made it return a 404 page but a 200 status response code.
-- If it is blocked by a CAPTCHA, it is currently unable to detect what CAPTCHA was used. This will be fixed in version 7.4.
-- The sorting algorithm to sort each endpoint is not multi-threaded, which will be fixed in version 7.4/7.5.
+
