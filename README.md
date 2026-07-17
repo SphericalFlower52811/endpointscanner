@@ -1,5 +1,3 @@
-<link rel="shortcut icon" type="image/x-icon" href="https://raw.githubusercontent.com/SphericalFlower52811/endpointscanner/refs/heads/main/favicon.ico">
-
 # EndpointScanner: Website Endpoint Scanner and Rate Limit Tester (Version 7.4)
 
 A fast automated website reconnaissance tool that extracts endpoints, files, and even external links from websites. Automates IDOR and broken access control vulnerability testing through replacing variables with 1 in endpoints. Has a built in rate limit tester that can test on any endpoint, and can bypass simple WAFs/captchas and client-side SPAs.
