@@ -1,4 +1,4 @@
-<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+<link rel="shortcut icon" type="image/x-icon" href="https://raw.githubusercontent.com/SphericalFlower52811/endpointscanner/refs/heads/main/favicon.ico">
 
 # EndpointScanner: Website Endpoint Scanner and Rate Limit Tester (Version 7.4)
 
@@ -23,16 +23,14 @@ For Installation, please go to the Installation section below!
 
 Command to run after installing **(For installation, look for the 'Installation' section.)**:
 
-### 🎛️ Command-Line Arguments Matrix
-
 | Argument                       | Short Form | Description                                                                                                                                                                                                                                                                    |
 | :----------------------------- | :--------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `target`                       | _None_     | URL                                                                                                                                                                                                                                                                            |
+| `target`                       | `NIL`      | URL                                                                                                                                                                                                                                                                            |
 | `--ratelimit`                  | `-r`       | Number of requests to send during the rate limit test. Default is 100.                                                                                                                                                                                                         |
 | `--ratelimit-type`             | `-rt`      | HTTP Method to use for the rate limit test. Defaults to GET.                                                                                                                                                                                                                   |
 | `--ratelimit-body`             | `-rb`      | Payload data to send in request to use for POST, PATCH and PUT requests. If the custom payload contains double quotes, please use single quotes instead of double quotes to pass this flag.                                                                                    |
 | `--ratelimit-var`              | `-rv`      | Variable in payload data (e.g. {X}) to use.                                                                                                                                                                                                                                    |
-| `--force`                      | _None_     | Mandatory flag to pass if doing a rate limit test with over 2500 requests using a non-GET HTTP method. Has no short form flag.                                                                                                                                                 |
+| `--force`                      | `NIL`      | Mandatory flag to pass if doing a rate limit test with over 2500 requests using a non-GET HTTP method. Has no short form flag.                                                                                                                                                 |
 | `--testpath`                   | `-t`       | Endpoint to test for rate limiting.                                                                                                                                                                                                                                            |
 | `--show-404s`                  | `-s`       | Show endpoints tested that returned a 404 or an SPA shell.                                                                                                                                                                                                                     |
 | `--disable-extra-files`        | `-d`       | Disable scanning of extra structural mapping files (robots, sitemaps, manifests, etc.)                                                                                                                                                                                         |
