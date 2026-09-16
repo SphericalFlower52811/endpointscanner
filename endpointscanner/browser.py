@@ -10,6 +10,7 @@ import random
 from playwright.sync_api import sync_playwright #headless browser to solve captcha
 from playwright_stealth import Stealth #ensure strict firewalls do not block the playwright browser
 import time
+import sys
 from .headerconfig import HEADER
 
 #move mouse like a human for playwright stealth.
@@ -54,8 +55,6 @@ def isthere_captcha(response, playwright_html=None):
         return True, "Google reCAPTCHA Challenge"
 
     # akamai
-    if response and ("akam_bm" in response.cookies or "bm_sz" in response.cookies):
-        return True, "Akamai Bot Manager"
     if "_sec_challenge" in html_lower or "akamai-extension" in html_lower:
         return True, "Akamai Bot Manager"
 
@@ -115,7 +114,7 @@ def gethtmlafterload(url, debugbrowser, initial_response=None):
                 print("\nPlaywright installations are missing.")
                 print("Please read the installation instructions in the README of the repository.")
                 print("README link: https://github.com/SphericalFlower52811/endpointscanner/blob/main/README.md")
-                exit(1)
+                sys.exit(1)
             else:
                 print("Unexpected Issue:", e)
             return "", {}
@@ -144,17 +143,11 @@ def gethtmlafterload(url, debugbrowser, initial_response=None):
             final_x, final_y = random.randint(200, 500), random.randint(200, 400)
             human_mouse_move(page, next_x, next_y, final_x, final_y, steps=random.randint(12, 22))
 
-            #proper scrolling and not teleporting.
-            for _ in range(random.randint(3, 5)):
-                scroll_amount = random.randint(150, 250)
-                page.evaluate(f"window.scrollBy(0, {scroll_amount})")
-                time.sleep(random.uniform(0.1, 0.4))
-
             start_time = time.time()
             while (time.time() - start_time) < 5: #only 5 second later ppl impatient
                 mainhtml = page.content()
                 # check if there are actually scripts loaded into the html yet
-                if ".js" in mainhtml.lower() or "chunk" in mainhtml.lower() or "<script" in mainhtml.lower():
+                if ".js" in mainhtml.lower() or "<script" in mainhtml.lower():
                     break
                 time.sleep(0.2)
              

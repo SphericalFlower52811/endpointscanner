@@ -5,10 +5,11 @@ Asynchronous rate-limiting tester on any endpoint, with 4 different available HT
 from urllib.parse import urljoin, urlparse
 import asyncio
 import json
+import sys
 from .headerconfig import HEADER
 
 
-async def async_rate_test(url, num_reqs=100, method="GET", rb=None, rv=None, cookies=None, rh=None):
+async def async_rate_test(url, num_reqs=100, method="GET", rb=None, rv=None, cookies=None, rh=None, awaittime=50):
     dyn_limit = num_reqs + 100
     payload_queue = []
     for i in range(num_reqs):
@@ -46,7 +47,7 @@ async def async_rate_test(url, num_reqs=100, method="GET", rb=None, rv=None, coo
                             print("\nHTTP Method DELETE is blocked.")
                             print("Running many DELETE requests on a server can easily delete a lot of important data.")
                             print("Rate limit test will not be executed.")
-                            exit(1)
+                            sys.exit(1)
                         elif extracted_method in ['HEAD', 'OPTIONS']:
                             print("WARNING")
                             print(f"\nHTTP Method {extracted_method} is a light read request that omits response data bodies.")
@@ -106,28 +107,48 @@ async def async_rate_test(url, num_reqs=100, method="GET", rb=None, rv=None, coo
             processed_queue.append((h, parsed_body, is_json))
 
         async with httpx.AsyncClient(limits=limits) as client:
+            queue = asyncio.Queue()
             
-            async def worker(current_headers, final_body, is_json_type, index):
-                try:
-                    res = await client.request(
-                        method=method,
-                        url=url, 
-                        headers=current_headers,
-                        cookies=cookies,
-                        json=final_body if is_json_type else None,
-                        content=None if is_json_type else final_body,
-                        timeout=35.0
-                    )
-                    responses[index] = res 
-                except Exception as e:
-                    responses[index] = e
-
             for idx, (h, body_data, json_flag) in enumerate(processed_queue):
-                asyncio.create_task(worker(h, body_data, json_flag, idx))
+                queue.put_nowait((h, body_data, json_flag, idx))
+
+            async def queue_worker():
+                while not queue.empty():
+                    try:
+                        h, final_body, is_json_type, index = queue.get_nowait()
+                    except asyncio.QueueEmpty:
+                        break
+                    
+                    try:
+                        res = await client.request(
+                            method=method,
+                            url=url, 
+                            headers=h,
+                            cookies=cookies,
+                            json=final_body if is_json_type else None,
+                            content=None if is_json_type else final_body,
+                            timeout=35.0
+                        )
+                        responses[index] = res 
+                    except Exception as e:
+                        responses[index] = e
+                    finally:
+                        queue.task_done()
+
+            print()
+            worker_pool_size = min(2500, num_reqs)
+            active_tasks = [asyncio.create_task(queue_worker()) for _ in range(worker_pool_size)]
                 
-            print("Finishing up rate limiting test...")
-            #wait for all responses to load properly
-            await asyncio.sleep(50.0)
+            print("Finishing up rate limit test.")
+            print(f"Wait {awaittime} seconds to ensure all requests have loaded properly.")
+            print("In the meantime check the website to see if it is slower or not.")
+            
+            await asyncio.sleep(float(awaittime))
+            
+            for t in active_tasks:
+                t.cancel()
+            await asyncio.gather(*active_tasks, return_exceptions=True)
+
 
         #label every single request using enumerate() to find out exactly when the first request timed out, or hit a non-200.
         status_counts = {}
@@ -158,7 +179,7 @@ async def async_rate_test(url, num_reqs=100, method="GET", rb=None, rv=None, coo
                 print(f' {code}: {count}')
                 maycrash = True
                 continue
-            label = "VULNERABLE" if code == 200 else "RATE-LIMITED" if code == 429 else "WAF/FORBIDDEN" if code == 403 else "UNAUTHORISED" if code == 401 else "CRASHED" if code == 500 else "MALFORMED REQUEST" if code == 400 else "METHOD NOT ALLOWED" if code == 405 else "Other"
+            label = "VULNERABLE" if code == 200 else "RATE-LIMITED" if code == 429 else "WAF/FORBIDDEN" if code == 403 else "UNAUTHORISED" if code == 401 else "SERVER ERROR (likely crash)" if code == 500 else "MALFORMED REQUEST" if code == 400 else "METHOD NOT ALLOWED" if code == 405 else "BAD GATEWAY (likely crash)" if code == 502 else "Other"
             print(f" Status {code} ({label}): {count}")
         
         if status_counts.get(200, 0) == num_reqs:

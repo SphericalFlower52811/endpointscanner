@@ -1,6 +1,8 @@
 '''
 This file contains the two functions to identify the JS Stack used by the website.
+identify_javascript_type() detects through the html, identify_javascript_type_two() detects using the JavaScript files
 '''
+import re
 
 def identify_javascript_type(html, headers=None, current_stack=None):
     if current_stack is None:
@@ -8,13 +10,13 @@ def identify_javascript_type(html, headers=None, current_stack=None):
     html_lower = html.lower() if html else ""
         
     # Next.js
-    if any(term in html for term in ['data-next-head', 'script id="__NEXT_DATA__"', 'next-head-count', '_next/', '_next/data']):
+    if re.search(r'(?:src|href)=["\'](?:[^"\']*\/)?_next\/(?:static|data|image)[^"\']*["\']', html_lower) or any(term in html_lower for term in ['data-next-head', 'script id="__next_data__"', 'next-head-count']):
         if "Next.js" not in current_stack: current_stack.append("Next.js")
     # React
     if 'data-reactroot' in html or 'react-dom' in html_lower:
         if "React" not in current_stack: current_stack.append("React")
     # Vue / Angular / Nuxt
-    if 'v-bind' in html: 
+    if any(term in html_lower for term in [' v-bind', ' v-on', ' v-model', '__vue_app__']): 
         if "Vue.js" not in current_stack: current_stack.append("Vue.js")
     if 'id="__nuxt"' in html or 'window.__NUXT__' in html: 
         if "Nuxt.js (Vue)" not in current_stack: current_stack.append("Nuxt.js (Vue)")
@@ -31,13 +33,15 @@ def identify_javascript_type(html, headers=None, current_stack=None):
     if 'window.__remixcontext' in html_lower:
         if "Remix" not in current_stack: current_stack.append("Remix")
     #Svelte
-    if 'data-sveltekit-preload-data' in html_lower:
+    if re.search(r'<(?:div|span|img)\b[^>]*\bsvelte-[a-z0-9]{6}\b', html_lower):
         if "Svelte" not in current_stack: current_stack.append("Svelte")
-        if "Sveltekit (Svelte)" not in current_stack: 
-            current_stack.append("Sveltekit (Svelte)")
+    #SvelteKit    
+    if 'data-sveltekit-preload-data' in html_lower or 'window.__sveltekit' in html_lower:
+        if "Svelte" not in current_stack: current_stack.append("Svelte")
+        if "Sveltekit (Svelte)" not in current_stack: current_stack.append("Sveltekit (Svelte)")
         
     # jQuery
-    if any(term in html_lower for term in ['jquery.min', 'jquery-', '/jquery/']):
+    if re.search(r'jquery-\d+\.\d+\.\d+(?:\.\d+)?\.min\.js', html_lower) or any(term in html_lower for term in ['jquery.min.js', 'jquery.js', '(window.jquery);' '/jquery/']):
         if "jQuery" not in current_stack: current_stack.append("jQuery")
     # Alpine.js
     if 'alpine.min.js' in html_lower or 'x-data=' in html_lower:
@@ -88,8 +92,7 @@ def identify_javascript_type(html, headers=None, current_stack=None):
 
 def identify_javascript_type_two(javascript_content, current_stack):
     js_lower = javascript_content.lower() if javascript_content else ""
-    
-    if any(term in js_lower for term in ['__reactfiber', '__reactevents', 'Symbol.for("react.transitional.element")', 'Symbol.for("react.lazy")']):
+    if any(term in javascript_content for term in ['Symbol.for("react.transitional.element")', 'Symbol.for("react.element")', 'Symbol.for("react.lazy")', '__REACT_DEVTOOLS_GLOBAL_HOOK__']) or any(term in js_lower for term in ['__reactfiber$','__reactevents$', 'window.__reactrouterversion']):
         if "React" not in current_stack: current_stack.append("React")
     if 'window.__vue__' in js_lower or '__vue_app__' in js_lower or 'vue_vue_type_script_setup_true_lang-' in js_lower:
         if "Vue.js" not in current_stack: current_stack.append("Vue.js")
@@ -105,7 +108,7 @@ def identify_javascript_type_two(javascript_content, current_stack):
         if "SolidJS" not in current_stack: current_stack.append("SolidJS")
     if 'alpine.' in js_lower or 'alpine:init' in js_lower:
         if "Alpine.js" not in current_stack: current_stack.append("Alpine.js")
-    if 'fn.jquery' in js_lower:
+    if any(term in js_lower for term in ['(window.jquery);', '$.fn.jquery', 'jquery.fn.extend']) or ('expando:' in js_lower and r'Math.random()).replace(/\D/g, "")' in javascript_content):
         if "jQuery" not in current_stack: current_stack.append("jQuery")
     # Backbone & Ember
     if 'backbone.model.extend' in js_lower or 'backbone.view.extend' in js_lower:
@@ -114,12 +117,12 @@ def identify_javascript_type_two(javascript_content, current_stack):
         if "Ember.js" not in current_stack: current_stack.append("Ember.js")
         
     #Redux
-    if any(term in js_lower for term in ['createStore', 'combineReducers', '@@redux/']):
+    if any(term in js_lower for term in ['@@redux/', '@redux.js/']):
         if "Redux" not in current_stack: current_stack.append("Redux")
 
     if 'data-astro-' in js_lower or '/_astro/' in js_lower:
         if "Astro" not in current_stack: current_stack.append("Astro")
-    if '___gatsby' in js_lower or '__gatsby' in js_lower:
+    if '__gatsby' in js_lower:
         if "Gatsby" not in current_stack: current_stack.append("Gatsby")
     if '_next/static/chunks' in js_lower:
         if "Next.js" not in current_stack: current_stack.append("Next.js")
@@ -127,7 +130,7 @@ def identify_javascript_type_two(javascript_content, current_stack):
         if "Remix" not in current_stack: current_stack.append("Remix")
 
     # BuildTools
-    if any(term in js_lower for term in ['__vite__', '__vite_plugin_react_preamble_installed__']):
+    if any(term in js_lower for term in ['__vite__', '__vite_plugin_react_preamble_installed__']) or any(term in javascript_content for term in ['new Event(`vite:preloadError`', 'new Event("vite:preloadError"', "new Event('vite:preloadError'"]):
         if "Vite" not in current_stack: current_stack.append("Vite")
     if 'webpackjsonp' in js_lower or '__webpack_require__' in js_lower:
         if "Webpack" not in current_stack: current_stack.append("Webpack")

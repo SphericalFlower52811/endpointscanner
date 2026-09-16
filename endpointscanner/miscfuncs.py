@@ -7,6 +7,8 @@ Functions:
 - checking uptime of the target
 - Testing the HTTP protocol of the target, 
 - and for external script loaders (only relevant if -esl is passed)
+
+and more functions.
 '''
 
 from urllib.parse import urljoin, urlparse
@@ -16,6 +18,64 @@ import argparse
 from colorama import init, Fore, Style
 from curl_cffi import requests
 from .headerconfig import HEADER
+import sys
+import platform
+
+def timeout_input(prompt, timeout=90, default='y', auto_input_enabled=True):
+    if not auto_input_enabled:
+        try:
+            val = input(prompt)
+            return val.strip() if val is not None else ""
+        except (KeyboardInterrupt, SystemExit):
+            print("\n[!] Scan cancelled by user.")
+            sys.exit(0)
+
+    if platform.system().lower() != 'windows':
+        import select
+        print(prompt, end='', flush=True)
+        try:
+            ready, _, _ = select.select([sys.stdin], [], [], timeout)
+            if ready:
+                val = sys.stdin.readline()
+                return val.strip() if val is not None else default
+            else:
+                print() # Drop cursor down cleanly
+                if default == "RAISE_INTERRUPT":
+                    raise KeyboardInterrupt
+                return default
+        except (KeyboardInterrupt, SystemExit):
+            raise KeyboardInterrupt
+
+    else:
+        import threading
+        user_data = {'input': None, 'interrupted': False}
+        
+        def read_input():
+            try:
+                raw_val = input(prompt)
+                if raw_val is not None:
+                    user_data['input'] = raw_val.strip()
+            except (KeyboardInterrupt, SystemExit):
+                user_data['interrupted'] = True
+            except:
+                user_data['input'] = default
+
+        input_thread = threading.Thread(target=read_input)
+        input_thread.daemon = True
+        input_thread.start()
+        
+        input_thread.join(timeout)
+        
+        if input_thread.is_alive():
+            print()
+            if default == "RAISE_INTERRUPT":
+                raise KeyboardInterrupt
+            return default
+            
+        if user_data['interrupted']:
+            raise KeyboardInterrupt
+            
+        return user_data['input'] if user_data['input'] is not None else default
 
 def check_if_local(target_url):
     try:
@@ -34,16 +94,27 @@ def check_if_local(target_url):
         pass
         return False
     
-def checktime(st, at):
+def checktime(st, at, als, auto_input_enabled=True):
     global start_test_time
     ct = time.perf_counter()
     em = (ct - st) / 60
     if em >= at:
+        if als == "s":
+            return "STOP", "s"
+        elif als == "e":
+            return "EXTEND", "e"
         print(f"Scan has reached your chosen time limit of {at} minutes.")
-        choice = input('Continue scan for another 5 minutes? (y/n):').strip().lower()
+        choice = timeout_input(
+            prompt="Continue scan for another 5 minutes? (y/n): ",
+            timeout=90, 
+            default='n', 
+            auto_input_enabled=auto_input_enabled
+        )
+        choice = choice.strip().lower()
         if choice in ['y', 'yes']:
             print('Time limit extended for 5 minutes. Continuing scan...')
-            return "EXTEND"
+            als = "e"
+            return "EXTEND", als
         else:
             if choice in ['n', 'no']:
                 print('Scan stopped. Any data found in the time window will be printed.')
@@ -52,8 +123,9 @@ def checktime(st, at):
                 print('Choice not recognised, and will be defaulted to no.')
                 print('Scan stopped. Any data found in the time window will be printed.')
                 print('Sensitive endpoints like ".git/config" will be automatically skipped.')
-            return "STOP"
-    return "CONTINUE"
+            als = "s"
+            return "STOP", als
+    return "CONTINUE", "c"
 
 #arguments/flag
 def startcodeargs():
@@ -77,19 +149,34 @@ def startcodeargs():
     parser.add_argument("-oo", "--only-original", action="store_true", help="Only show the original version of the flag instead of it being replaced with a 1. Will also affect show prog.")
     parser.add_argument("-ss", "--show-source", action="store_true", help="Print the source of each endpoint during progress, like printing out which file it found the endpoint from.")
     parser.add_argument("-st", "--scan-timeout", type=float, default=None, help="Stop scan completely after given number of minutes and print/save any results found in that time window. Will leave unsorted endpoints in a section labelled 'UNSORTED', and will leave out sensitive endpoints. Will NOT interrupt rate limiting test.")
-    parser.add_argument("-ro", "--raw-output", action="store_true", help="Do not sort out endpoints after finding them. Will leave out sensitive endpoints whether they are exposed or not.")
+    parser.add_argument("-ro", "--raw-output", action="store_true", help="Do not sort out endpoints after finding them. Will leave out sensitive endpoints whether they are exposed or not. Also means media will be shown regardless of -m, inaccessible will be shown regardless of -s, and so on.")
     parser.add_argument("-rh", "--ratelimit-header", type=str, default=None, help="Custom headers. Must be seperated by a pipe(|), or newlines. Example use: Cookies: {ExampleCookie: example} | Accept: application/json, text/plain, */*. If the custom header contains double quotes, please use single quotes instead of double quotes to pass this flag.")
     parser.add_argument("-nd", "--no-duplicate-prog", action="store_true", help="If --show-progress is passed, duplicate endpoints in progress will not be shown.")
     parser.add_argument("-l", "--local", action="store_true", help="Necessary flag if the site being tested on is a local site like a localhost or 127.0.0.1:port.")
     parser.add_argument("-ndc", "--no-detect-captcha", action="store_true", help="Flag to disable captcha detection function, in case it returns false positives and did not actually get blocked but thinks it did.")
     parser.add_argument("-esl", "--external-script-loader", action="append", default=[], help="Add external domains used for loading script files into the website itself so that their code files will also be scanned for endpoints.")
     parser.add_argument("-aep", "--all-esl-protocol", type=str, default=None, choices=['https', 'http'], help="Flag to automatically add https/http to every single external script loader that is not defined at the start. Does nothing if -esl is not passed.")
-    parser.add_argument("-eH", "--extra-header", action="append", default=[], help="Add extra headers you want for the website like cookies or authorization etc.")
-    parser.add_argument("-nhb", "--no-headless-browser", action="store_true", help="Playwright browser used will not be headless, serves as a debug function.")
+    parser.add_argument("-eH", "--extra-header", action="append", default=[], help="Add extra headers you want for the website like cookies or authorization etc. Also applies to rate limit test if -orlt is passed.")
+    parser.add_argument("-nh", "--no-headless", action="store_true", help="Playwright browser used will not be headless, serves as a debug function.")
     parser.add_argument("-dse", "--disable-sensitive-endpoint", action="store_true", help="Flag to disable testing the 23 sensitive endpoints, allowing the tool to send less requests.")
-    parser.add_argument("-ssi", "--still-show-invalid", action='store_true', help='Show endpoints that were flagged as invalid.') #holy ssti reference bro
-
+    parser.add_argument("-ssi", "--still-show-invalid", action='store_true', help='Show endpoints that were flagged as invalid.') 
+    parser.add_argument("-orlt", "--only-ratelimit-test", action='store_true', help="Make the scanner only test for rate limiting.")
+    parser.add_argument("-rat", "--ratelimit-await-time", type=int, default=50, help="Adjust rate limiting test await time for small or extremely large request quantities. Default is 50. Time is in seconds.")
+    parser.add_argument("-p", "--pipeable", action='store_true', help="Make the tool pipeable by automatically passing other arguments.")
+    parser.add_argument("-ps", "--path-sub", type=str, default='1', help="Change the default path normalization replacement from 1 to a custom string.")
+    parser.add_argument("-os", "--only-sub", action='store_true', help="Make the tool only output subdomains.")
+    parser.add_argument("-oe", "--only-endpoints", action='store_true', help="Make the tool only output endpoints. Does not include assets, services/apis.")
+    parser.add_argument("-oea", "--only-endpoints-all", action='store_true', help="Make the tool only output endpoints, assets, services/apis, paths from other files.")
+    parser.add_argument("-oc", "--only-comms", action='store_true', help="Make the tool only output communications used like emails and phone numbers.")
+    parser.add_argument("-de", "--depth", type=int, default=None, help="How deep the recursive scanning for both js and xml files can go. Defaults to infinite.")
+    parser.add_argument("-pz", "--parse-zip", action='store_true', help="Allow the tool to expand .zip and .gz files (e.g. sitemap.xml.gz) and scrape from them.")
+    parser.add_argument("-nai", "--no-auto-input", action='store_true', help="Disable automatic input after 1.5 min.")
     args = parser.parse_args()
+
+    if args.pipeable:
+        args.raw_output, args.only_res, args.tidy_all = True, True, True
+    if args.raw_output:
+        args.disable_sensitive_endpoint = True
 
     github_link = "https://github.com/SphericalFlower52811/endpointscanner"
     docs_link = "https://sphericalflower52811.github.io/endpointscanner/"
@@ -101,12 +188,19 @@ def startcodeargs():
         print(f"{Style.BRIGHT}Endpointscanner {Fore.LIGHTMAGENTA_EX}v7.4.0")
         print()
         print(f"Made by: {Fore.LIGHTMAGENTA_EX}SphericalFlower52811")
-        print("(I was too lazy to make a 3D ASCII banner.)")
+        print("(I was too lazy to make a 3D ASCII banner, nor do I want one.)")
         print()
         print(f"{Fore.LIGHTBLUE_EX}GitHub: {Fore.RESET}{Style.BRIGHT}{github_link}")
         print(f"{Fore.LIGHTBLUE_EX}Docs:   {Fore.RESET}{Style.BRIGHT}{docs_link}")
         print("-" * 65)
         print()
+
+    if args.only_ratelimit_test:
+        if not args.ratelimit:
+            print("--ratelimit flag not passed but -orlt was passed. Exiting script...")
+            sys.exit(1)
+        args.disable_sensitive_endpoint = True
+        args.disable_extra_files = True
     if args.no_duplicate_prog and not args.show_prog:
         print("-nd was passed but -sp wasn't passed. -nd will be deactivated as it is only for progress.")
         args.no_duplicate_prog = False
@@ -118,7 +212,11 @@ def startcodeargs():
         if args.ratelimit_header: passedrateargs.append("-rh")
         if args.ratelimit_type: passedrateargs.append("-rt")
         print(f"Arguments {', '.join(passedrateargs)} were passed, but --ratelimit was not passed.")
-        user_input = input("How many requests do you want to send for this rate limiting test? Press Enter to skip.\n >>> ")
+        user_input = timeout_input("How many requests do you want to send for this rate limiting test? Press Enter to skip.\n >>> ",
+                                   timeout=90,
+                                   default='',
+                                   auto_input_enabled=(not args.no_auto_input))
+        user_input = user_input.strip()
         try:
             user_input = int(user_input)
             args.ratelimit = user_input
@@ -150,19 +248,24 @@ def startcodeargs():
                 print("This can easily cause a Denial of Service in a website if it is not properly guarded.")
                 print("It is highly recommended a lower number of requests is chosen to avoid causing a DoS, and to test for rate limiting with a non-GET HTTP method.")
                 print("Scan will not be executed. In order to run the script with this number of requests, the --force flag must be passed.")
-                exit(1)
+                sys.exit(1)
         else:
-            print(f"\nYou are requesting to run a rate limit test of {args.ratelimit} requests that are not GET requests.")
-            print("This may cause the server to slow down if it is not properly guarded and exhaust it.")
-            proceed = input("Do you wish to continue running the script and run the test after the scan? [y/n]\n\n >>> ").lower()
-            if proceed not in ['y', 'yes']:
-                print('Script cancelled.')
-                exit(0)
+            if not args.force:
+                print(f"\nYou are requesting to run a rate limit test of {args.ratelimit} requests that are not GET requests.")
+                print("This may cause the server to slow down if it is not properly guarded and exhaust it.")
+                proceed = timeout_input("Do you wish to continue running the script and run the test after the scan? [y/n]\n\n >>> ",
+                                        timeout=90,
+                                        default='n',
+                                        auto_input_enabled=args.no_auto_input)
+                proceed = proceed.lower()
+                if proceed not in ['y', 'yes']:
+                    print('Script cancelled.')
+                    sys.exit(0)
     if args.ratelimit:
         if args.ratelimit_var and not args.ratelimit_body:
             print("\nA rate limit test payload variable was defined, but no payload was provided.")
             print("Scan will not be executed. Please specify a request payload with -rb if you would like to use the rate limit variable.\n")
-            exit(1)
+            sys.exit(1)
             
         if args.ratelimit_body and args.ratelimit_var:
             # bracket escaping, so if someone puts {{X}} or X, it will end up as {X}.
@@ -173,7 +276,7 @@ def startcodeargs():
                 print(f"Payload body is missing the expected placeholder: {expected_bracket_token}")
                 print("Example usage: -rb '{\"account_id\": \"{X}\"}' -rv 'X'")
                 print("Scan will not be executed. Please correct your payload string syntax and re-run.\n")
-                exit(1)
+                sys.exit(1)
     args.disable_og = True if args.only_original == True else args.disable_og
     #tests for new flags
     #args.show_prog = True #comment out later, for testing.
@@ -209,15 +312,16 @@ def checkserveruptime(target, HEADER, impersonate_settings, args):
                 print("Server is slow.")
             else:
                 print("Server is very slow.")
+        return round(restime, 2)
     except requests.exceptions.Timeout:
         print("Server did not respond after 10 seconds.")
         print("Quitting script...")
-        exit(1)
+        sys.exit(1)
 
 def testhttpprotocol(target, HEADER, impersonate_settings, args):
     try:
         response = requests.get(target, headers=HEADER, timeout=5, impersonate=impersonate_settings)
-    except requests.exceptions.SSLError or requests.exceptions.Timeout:
+    except requests.exceptions.SSLError:
         if target.startswith("https://"):
             print('HTTPS SSL Error. Trying HTTP...') #becuase some sites may use http instead of https
             target = target.replace("https://", "http://")
@@ -226,12 +330,16 @@ def testhttpprotocol(target, HEADER, impersonate_settings, args):
                     response = requests.get(target, headers=HEADER, timeout=5, impersonate=impersonate_settings)
             except Exception as e:
                 print(f'Target unreachable on HTTP: {e}')
-                exit(1)
+                sys.exit(1)
+    except requests.exceptions.Timeout:
+        print("Server did not respond after 10 seconds.")
+        print("Quitting script...")
+        sys.exit(1)
     except Exception as e:
         print(f'Target unreachable: {e}')
         if "127.0.0.1" in target or "localhost" in target:
             print("\nRecommended to use the -l flag for localhosts.")
-        exit(1)
+        sys.exit(1)
         
     return target
 
@@ -246,7 +354,7 @@ def verifyeacheslprotocol(listofesl, all_esl_protocol=None):
             else:
                 print(f"HTTP protocol for external script loader {domain} is not defined. Script will not be ran.\n")
                 print(f"To solve this in the future, either manually add https:// or http:// to every single url, or pass the -aep flag along with your intended protocol.")
-                exit(1)
+                sys.exit(1)
         else:
             cleanedesllist.append(domain)
     return list(set(cleanedesllist))

@@ -15,6 +15,4 @@ If the Issue lacks details, I may ask you to provide more details like the error
 
 ### Additional Details
 
-Pull requests are not allowed.
-
-Proper punctuation or formatting is not even necessary. I don't care if you put everything in lowercase or make jokes in your Issue. As long as it provides enough details for me to know what to fix and the Issue is understandable, I will work on it.
+Pull requests are not allowed

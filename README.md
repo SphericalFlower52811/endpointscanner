@@ -1,21 +1,27 @@
 # EndpointScanner: Website Endpoint Scanner and Rate Limit Tester (Version 7.4)
 
-A fast automated website reconnaissance tool that extracts endpoints, files, and even external links from websites. Automates IDOR and broken access control vulnerability testing through replacing variables with 1 in endpoints. Has a built in rate limit tester that can test on any endpoint, and can bypass simple WAFs/captchas and client-side SPAs.
+**Source code at: [EndpointScanner Repository](https://github.com/SphericalFlower52811/endpointscanner)**
 
-For Installation, please go to the Installation section below!
+**Note: endpoints and paths in this documentation mean the same thing.**
+
+A fast automated website reconnaissance tool for red teaming in cybersecurity that extracts paths, endpoints, files, subdomains, and even external links from websites. Automated IDOR and broken access control vulnerability testing through replacing variables with 1 in endpoints/paths. Has a built in rate limit tester that can test on any endpoint with 4 HTTP methods, and can bypass simple WAFs/captchas and SPAs.
+
+**For Installation, please go to the [Installation section](#installation) below!**
+
+**Feel free to contact me at `sphericalflower@gmail.com` to ask for help on how to use the tool or to leave feedback.**
 
 ## How it works
 
-- Uses curl_cffi and playwright-stealth to bypass simple captchas
+- Uses curl_cffi to bypass simple captchas via TLS/JA3 fingerperint impersonation
+- Uses playwright-stealth browser instead of usual Playwright to remove giveaways in the browser. (more details about playwright near the bottom of the README)
+- Scans extra map files like `robots.txt` and `sitemap.xml` for more paths
 - Uses a fake path to test which are real paths and which are shells. (websites like SPAs give a lot of trouble to current tools)
 - Scrapes all `.js` and `.xml` files and `<script>` tags inside the html with a regex to find paths
 - Has a hardcoded set of paths that should never exist in a website to test. (e.g. .env.local, .git/config)
 - Differentiates paths by website endpoints, assets, redirects etc.
-- Autofills {id} variables in endpoints as '1' to test the endpoints (can reveal potential IDORs)
+- Replaces {example} variables in paths with a custom string to be able to test the paths, and can also test for broken access control.
 - Checks server uptime and prints out JS Stack of the website
-- Has a rate limit tester by sending n requests to a certain endpoint
-- Can scan extra files like robots.txt for more endpoints
-- Also scans for assets like images with a flag to disable showing them
+- Has a rate limit tester by sending `n` number requests to a certain endpoint with 4 HTTP methods, custom headers, body, variable in request body.
 
 ## How to run
 
@@ -50,7 +56,7 @@ Command to run after installing **(For installation, look for the 'Installation'
 | `--external-script-loader`     | `-esl`     | Add external domains used for loading script files into the website itself so that their code files will also be scanned for endpoints.                                                                                                                                        |
 | `--all-esl-protocol`           | `-aep`     | Flag to automatically add https/http to every single external script loader that is not defined at the start. Does nothing if -esl is not passed.                                                                                                                              |
 | `--extra-header`               | `-eH`      | Add extra headers you want for the website like cookies or authorization etc.                                                                                                                                                                                                  |
-| `--no-headless-browser`        | `-nhb`     | Playwright browser used will not be headless, serves as a debug function.                                                                                                                                                                                                      |
+| `--no-headless-browser`        | `-nh`      | Playwright browser used will not be headless, serves as a debug function.                                                                                                                                                                                                      |
 | `--disable-sensitive-endpoint` | `-dse`     | Flag to disable testing the 23 sensitive endpoints, allowing the tool to send less requests.                                                                                                                                                                                   |
 | `--still-show-invalid`         | `-ssi`     | Show endpoints that were flagged as invalid.                                                                                                                                                                                                                                   |
 
@@ -60,93 +66,37 @@ You can install EndpointScanner via PyPI.
 
 ### Installation via PyPI (or pip)
 
+#### Main Package
+
 You MUST have python 3.9 or above to use this tool!
 To install the official [endpointscanner Python package](https://pypi.org/project/endpointscanner/):
-Command for MacOS/Linux:
+
+##### Command for MacOS/Linux:
 
 ```bash
 python3 -m pip install endpointscanner
 ```
 
-Command for Windows Command Prompt:
+##### Command for Windows Command Prompt:
 
 ```text
 py -m pip install endpointscanner
 ```
 
+#### Playwright Installation
+
 After that, install chromium on playwright (playwright will be installed when you install endpointscanner):
-Command for MacOS/Linux:
+
+##### Command for MacOS/Linux:
 
 ```bash
 playwright install chromium
 ```
 
-Command for Windows Command Prompt:
+##### Command for Windows Command Prompt:
 
 ```text
 py -m playwright install chromium
-```
-
-### You may need to create a virtual environment if PEP 668 blocks you. (For the endpointscanner installation, not playwright install chromium.) Windows users do not need this step as they will not face the PEP 668 restriction.
-
-To create a virtual environment named 'myvenv':
-
-```bash
-python3 -m venv myvenv
-```
-
-To activate virtual environment:
-
-```bash
-source myvenv/bin/activate
-```
-
-#### Alternative for Virtual Environment (Not Recommended)
-
-If you do not want to create a virtual environment, you can run:
-
-```bash
-python3 -m pip install endpointscanner --break-system-packages
-```
-
-to install it without PEP 668.
-
-**Warning**: Using `--break-system-packages` may corrupt your OS-managed python environment. Proceed entirely at your own risk. The author is not liable for any system damage if you run this.
-
-#### Troubleshooting Windows "Command Not Found" Error:
-
-If you are on Windows (especially a non-admin account) and get an 'command not recognised' error when typing `endpointscanner` or `playwright`, run this command **on PowerShell** (not Command Prompt) to fix user environmental paths automatically:
-
-```powershell
-$pDir = (py -c "import sys, os; print(os.path.dirname(sys.executable))"); if ($pDir) { $s = "$pDir\Scripts"; $p = [Environment]::GetEnvironmentVariable("Path", "User"); if ($p -notlike "*$s*") { [Environment]::SetEnvironmentVariable("Path", "$p;$s", "User") } }
-```
-
-What the PowerShell command does:
-Checks the current version of python being used, and adds that python version as an environmental variable in the computer so you can run `endpointscanner` as a standalone command. Does not require admin privileges.
-
-**Requirements for this command:** Python must already be installed.
-
-**Note:** You MUST close the terminal (not minimise) and open a new one for the changes to work.
-
-#### Updating script
-
-To update the script, you can run:
-MacOS and Linux Command:
-
-```bash
-python3 -m pip install --upgrade endpointscanner
-```
-
-Windows Command:
-
-```bash
-py -m pip install --upgrade endpointscanner
-```
-
-After that, you will need to install chromium on playwright for the headless browser:
-
-```bash
-playwright install chromium
 ```
 
 ## Example Commands
@@ -185,64 +135,73 @@ Example command to only show the original endpoint, only print endpoints and out
 endpointscanner example.com -oo -or -o examplescan.txt
 ```
 
-## Release notes
+## Details of EndpointScanner
 
-### New features in update 7.4
+This section of the README contains full details of the tool, like elaboration on the output.
 
-- CAPTCHA detection if it the script is blocked by an anti-bot software. List of CAPTCHAs that can be detected:
-  - HUMAN (PerimeterX)
-  - Cloudflare
-  - Kasada
-  - Imperva Incapsula
-  - Akamai Bot Manager
-  - Amazon WAF
-  - Google reCAPTCHA
-  - SiteGround
-  - BotDetect (bd) CAPTCHA
-- -`ndc` flag in case the script returns a false positive for CAPTCHA detection. If `-ndc` is passed, the script will ignore the false positive.
-- `-nhb` flag to disable the browser, serves as a debug flag.
-- `-eH` flag to add extra headers to be used in every single request, including the playwright browser.
-- `-esl` flag for external script loaders, for websites that use other urls to load their scripts, and `-aep` flag for convenient http protocol definition.
-- Seperating functions into different Python files so that the code is more organised.
-- `-dse` flag to disable testing the hardcoded sensitive endpoints.
-- New Invalidated Endpoints section in the scan summary.
-- `-ssi` flag to show endpoints that were invalidated (as it may produce false positives)
+## Release notes for Update 7.5
+
+### New features in update 7.5
+
+- `-rat`/`--ratelimit-await-time` flag, as th default is 50s and for a PoC with 50-100 requests 50 seconds is way too long.
+- `-p`/`--pipeable` flag to make the output of the tool pipeable into other automated payload testing tools. (E.g. sqlmap)
+- `-ps`/`--path-sub` flag to change the automated path normalization from replacing variables to 1 to any custom string. Defaults to 1.
+- Merged `asset-manifest.json`, `web-manifest.json`, `manifest.json` into one loop.
+- added `-de`/`--depth` flag
+- added `-ps`/`--path-sub` flag
+- Added flags to only print parts of the output
+  - `-oe`/`--only-endpoints` flag
+    - Only output endpoints
+  - `-oea`/`--only-endpoints-all` flag
+    - Only print endpoints + assets + inaccessible endpoints
+- Made the sitemap loop (which previous only scanned `.xml` files) be able to scan `.xml, .txt, .rss, .atom` files.
+  - Able to scan `.gz` and `.zip` files if the flag `-pz`/`--parse-zip` is passed. (Detects based off the file extension)
+- Added endpoints to the `SENSITIVE_ENDPOINT` set like actuator endpoints and swagger ui
+- Added automatic input where if you don't answer input questions after a set time (e.g. do you want to sort endpoints). Can be disabled via the `-nai/--no-auto-input` flag.
+- Fixed a bug in the rate-limiting tester where the rate limit testing function would crash if the number of requests was too high by using a queue.
+- Replace `/*` paths in robots.txt with '1' as \* means everything, showing you the original path. This will also be affected by the -ps and -oo flag.
+- Added a section to the sorted endpoints which are 'protected endpoints', for endpoints that return 401/403 or other status codes showing it exists but is protected.
+- Let the scanner scan `.mjs` and `.cjs` files besides just `.js`
+- Allow text files for the -esl flag
 
 ### Bug Fixes/Code improvements
 
-- Fixed a sitemap bug because it didn't scan all the urls properly (added xhtml)
-- Fixed bug where outputting to a file with raw output did not work
-- Improved `CONTRIBUTING.md` and `llms.txt`
-- More realistic scrolling with playwright browser as previously it teleported, making it more obvious for anti-bot software to detect it, and more realistic mouse movements.
-- False positive where URL encoded false positives could show up in the code, like `/%3E%3C/svg%3E`.
-- Removed get_apex() function for more accuracy.
-- Update detecting Vue.js, changing `createapp(` to `vue_vue_type_script_setup_true_lang-` for improved accuracy.
+- Fixed regex problems in the map file check for:
+  - `openid-configuration`
+  - `asset-manifest.json`
+  - `web-manifest.json`
+  - `manifest.json`
+  - `sw.js`
+  - `service-worker.js`
+- Changed `-nhb`/`--no-headless-browser` to `-nh`/`--no-headless` as `-nhb` was misleading.
+- Fixed an issue where the scraping would find data MIME types (e.g. application/x-javascript) and mistake them for real endpoints
+- Fixed a scope bug in the tool
+- Improve regex.
 
 ## Plans for next version and the future
 
-Version 7.5:
+Version 7.6:
 
 - Fixing a URL parameter problem in the tool
-- Optimisation to make sorting of endpoints faster
-- Flag for recursive scanning, --depth
 
 Future plans (May be added in the next version):
 
-- Allowing for wordlist for payloads to test with -rv flag in the async rate limiting tester
-- Allowing for wordlists for external script loaders.
-- Flags to:
-  - Only output endpoints
-  - Only output source code files
-  - Only output subdomains
-- More status codes in sorting algorithm.
+none right now
 
 ## Weaknesses
 
 - If there is a login page, the script will either show that all of the pages require login, or label all of them as 403.
 - If there are shells (e.g. React SPA shells) in the page, it may give false positives for sensitive endpoints. If you see sensitive endpoints in the scan, they may not actually be exposed on the website if the website has a shell. (E.g. .gitignore, .env.local)
-- The rate limit test is more susceptible to captchas as it uses a module (httpx, not curl_cffi) that is not built to specifically pass through firewalls/captchas. This is as the httpx module for requests is better for asynchronous functions for rate limit testing on websites.
+- The rate limit test is more susceptible to captchas as it uses a module (httpx, not curl_cffi) that is not built to specifically pass through firewalls/captchas. This is as the underlying library used to build curl_cffi, libcurl, recommends you not to use more than 15 max connections (see at [curlmopt_max_total_connections docs](https://curl.se/libcurl/c/CURLMOPT_MAX_TOTAL_CONNECTIONS.html)). Httpx was hence used instead of curl_cffi.
+  - **This information is accurate as of 11 August 2026.**
 
 ai assisted code btw
+
+## Playwright details:
+
+Playwright is an automated browser which means it launches a browser from the cli that does not load a GUI when in headless mode, which is the mode EndpointScanner uses unless the flag to turn off the headless mode is passed. see more at [Playwright Python module documentation](https://playwright.dev/python/docs/api/class-playwright).
+
+EndpointScanner uses playwright-stealth, playwright-stealth at [Playwright-stealth docs](https://pypi.org/project/playwright-stealth/)
 
 # Legal Disclaimer
 

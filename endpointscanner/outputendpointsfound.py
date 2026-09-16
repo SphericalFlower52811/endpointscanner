@@ -5,16 +5,16 @@ Output all the sorted endpoints, or output the raw results into the terminal and
 def display_and_save_results(
     args, show_dead, target,
     results_200, results_services, results_ext, results_subd,
-    results_frameworks, results_30x, results_fromotherfiles,
+    results_frameworks, results_30x, results_protected,
     results_assets, results_dead, unsorted,
     assets_suffix, dead_suffix, invalidated_suffix,
-    js_files, xml_files, e_files,
+    all_scanned_sources,
     unsorted_paths, invalidated_count,
     invalidated_endpoints, SENSITIVE_ENDPOINT
 ):
     if not results_assets:
-        asset_suffix = ""
-    if not results_dead and not args.disable_sensitive_endpoint:
+        assets_suffix = ""
+    if not results_dead and not results_protected and not args.disable_sensitive_endpoint:
         dead_suffix = "\nWARNING: There should never be no inaccessble paths on a website.\nThis is most likely a false positive a fault on the script's end.\nReport this to the owner of the script immediately, whether it has found endpoints or not, and what site the script has been tested on."
     if not invalidated_endpoints:
         invalidated_suffix = ""
@@ -23,7 +23,13 @@ def display_and_save_results(
             print("\n---- ENDPOINTS FOUND ----")
             print("\n".join(f"  {p}" for p in results_200))
         else:
-            print("\n----NO ENDPOITNS FOUND----")
+            print("\n----NO ENDPOINTS FOUND----")
+
+        if results_protected:
+            print("\n----PROTECTED ENDPOINTS----")
+            print("\n".join(f"  {p}" for p in results_protected))
+        else:
+            print("\n----NO PROTECTED ENDPOINTS----")
             
         if results_services:
             print("\n----SERVICES/APIS USED----")
@@ -54,15 +60,6 @@ def display_and_save_results(
             print("\n".join(f"  {p}" for p in results_30x))
         else:
             print("\n----NO REDIRECTS FOUND----")
-            
-        if not args.disable_extra_files:
-            if results_fromotherfiles:
-                print("\n---- EXTRA PATHS FROM OTHER FILES ----")
-                print("\n".join(f"  {p}" for p in results_fromotherfiles))
-            else:
-                print("\n----NO EXTRA PATHS FOUND FROM OTHER FILES----")
-        else:
-            pass
             
         if args.show_assets:
             if results_assets:
@@ -113,9 +110,7 @@ def display_and_save_results(
             
         if args.show_source:
             print("\n----Files Scanned----")
-            if js_files:   print("\n".join(f" - {s}" for s in sorted(set(js_files))))
-            if xml_files:  print("\n".join(f" - {x}" for x in sorted(set(xml_files))))
-            if e_files:    print("\n".join(f" - {e}" for e in sorted(set(e_files))))
+            if all_scanned_sources: print("\n".join(f" - {f}" for f in sorted(set(all_scanned_sources))))
                 
         if args.output_file:
             try:
@@ -127,6 +122,12 @@ def display_and_save_results(
                         f.write("\n".join(f"  {p}" for p in results_200) + "\n")
                     else: 
                         f.write("  ----NO ENDPOINTS FOUND----\n")
+
+                    if results_protected:
+                        print("\n----PROTECTED ENDPOINTS----\n")
+                        print("\n".join(f"  {p}" for p in results_protected) + "\n")
+                    else:
+                        print("\n----NO PROTECTED ENDPOINTS----\n")
 
                     if results_services:
                         f.write("\n----SERVICES/APIS USED----\n")
@@ -157,13 +158,6 @@ def display_and_save_results(
                         f.write("\n".join(f"  {p}" for p in results_30x) + "\n")
                     else: 
                         f.write("  ----NO REDIRECTS FOUND----\n")
-
-                    if not args.disable_extra_files:
-                        if results_fromotherfiles:
-                            f.write("\n---- PATHS FROM OTHER FILES ----\n")
-                            f.write("\n".join(f"  {p}" for p in results_fromotherfiles) + "\n")
-                        else: 
-                            f.write("  ----NO EXTRA PATHS FOUND FROM OTHER FILES----\n")
 
                     if args.show_assets:
                         if results_assets:
@@ -198,9 +192,7 @@ def display_and_save_results(
                         
                     if args.show_source:
                         f.write(f"\n\n----Files Scanned----\n")
-                        if js_files:   f.write("\n".join(f" - {s}" for s in sorted(set(js_files))) + "\n")
-                        if xml_files:  f.write("\n".join(f" - {x}" for x in sorted(set(xml_files))) + "\n")
-                        if e_files:    f.write("\n".join(f" - {e}" for e in sorted(set(e_files))) + "\n")
+                        if all_scanned_sources: f.write("\n".join(f" - {f}" for f in sorted(set(all_scanned_sources))) + "\n")
                     
                 print(f"\nResults successfully written to '{args.output_file}'!")
             except Exception as e:
@@ -219,9 +211,7 @@ def display_and_save_results(
             
         if args.show_source:
             print(f"\n\n----Files Scanned----")
-            if js_files:   print("\n".join(f" - {s}" for s in sorted(set(js_files))))
-            if xml_files:  print("\n".join(f" - {x}" for x in sorted(set(xml_files))))
-            if e_files:    print("\n".join(f" - {e}" for e in sorted(set(e_files))))
+            if all_scanned_sources: print("\n".join(f" - {f}" for f in sorted(set(all_scanned_sources))))
 
         if not args.only_res:
             print(f"\nInvalidated Endpoints: {invalidated_count}{invalidated_suffix}")
@@ -238,9 +228,7 @@ def display_and_save_results(
                         
                     if args.show_source:
                         fi.write(f"\n\n----Files Scanned----\n")
-                        if js_files:   fi.write("\n".join(f" - {s}" for s in sorted(set(js_files))) + "\n")
-                        if xml_files:  fi.write("\n".join(f" - {x}" for x in sorted(set(xml_files))) + "\n")
-                        if e_files:    fi.write("\n".join(f" - {e}" for e in sorted(set(e_files))) + "\n")
+                        if all_scanned_sources: fi.write("\n".join(f" - {f}" for f in sorted(set(all_scanned_sources))) + "\n")
                     if not args.only_res:
                         fi.write(f"\nInvalidated Endpoints: {invalidated_count}{invalidated_suffix}" + "\n")
                 print(f"\nRaw results successfully written to '{args.output_file}'")

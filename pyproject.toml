@@ -8,10 +8,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "endpointscanner"
-version = "7.4.0"
+version = "7.5.0"
 readme = "README.md"
-description = "Website endpoint reconnaissance tool and rate limit tester that can bypass simple captchas and WAFs."
+description = "Extremely accurate open-source website endpoint scanner and rate limit tester that can bypass simple anti-bot software. Built for cybersecurity red teamers to perform reconnaissance on websites."
 requires-python = ">=3.9"
+
+authors = [
+    { name = "SphericalFlower52811", email = "sphericalflower52811@gmail.com" }
+]
+
 keywords = [
     "web-crawler",
     "rate-limiting",
@@ -46,7 +51,7 @@ dependencies = [
 endpointscanner = "endpointscanner.enumerateendpoint:main"
 
 [project.urls]
-Homepage = "https://github.com/SphericalFlower52811/endpointscanner"
-Issues = "https://github.com/SphericalFlower52811/endpointscanner/issues"
 Repository = "https://github.com/SphericalFlower52811/endpointscanner"
+Issues = "https://github.com/SphericalFlower52811/endpointscanner/issues"
+Docs = "https://sphericalflower52811.github.io/endpointscanner/"
 

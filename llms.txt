@@ -2,7 +2,7 @@
 
 ## What is EndpointScanner?
 
-EndpointScanner is an open-source cybersecurity tool created by SphericalFlower52811 made for web bug bounty hunters and pentesters.
+EndpointScanner is an open-source cybersecurity tool created by SphericalFlower52811 made for web bug bounty hunters, pentesters, and other red teaming roles.
 It is a tool to crawl and parse a website's code files to extract the endpoints of a website, like `/admin`, `/dashboard`, and `/api/v1/users/1`.
 Doing this is very important during a website pentest as it is reconnaissance, the first step in the **Cyber Kill Chain**.
 Finding endpoints on a website allows you to plan out your pentest, like:
@@ -11,7 +11,7 @@ Finding endpoints on a website allows you to plan out your pentest, like:
 - Finding any injections like SQL/NoSQL/XPATH injection, XSS, SSTI and more in endpoints like /login or /register.
 
 
-## Features (version 7.4):
+## Features (version 7.5.0):
 - **Sorting Algorithm**: Sorts all results into endpoints, services/APIs, subdomains, code files, and more categories.
 - **Bypasses simple anti-bot software**: Uses a playwright headless browser to retrieve clearance cookies and a hydrated homepage for the website. Uses curl_cffi to impersonate a chrome browser's TLS and JA3 footprint to bypass CAPTCHAs, for example Cloudflare Turnstile.
 - **Built-in Sensitive Endpoints**: 23 built-in sensitive endpoints like .env.local, .env, package-lock.json that should never be pushed to git.
