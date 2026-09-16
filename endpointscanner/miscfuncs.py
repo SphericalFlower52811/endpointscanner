@@ -145,7 +145,7 @@ def startcodeargs():
     parser.add_argument("-do", "--disable-og", action="store_true", help="Disable code from showing the original endpoint with variables. Keeps output tidier. Will NOT remove original tag from progress if the --show-prog flag is present.")
     parser.add_argument("-ti", "--tidy", action="store_true", help="Script will not show where it got extra endpoints from, and will not show if it is a client side route and requires login, or react shell. Will also not show if an endpoint is a potential service.")
     parser.add_argument("-ta", "--tidy-all", action="store_true", help="Flags --disable-og and --tidy combsined.")
-    parser.add_argument("-or", "--only-res", action="store_true", help="Only show summarised endpoints, and not print out extra information. Has an exception if number of endpoints exceeds 3000, and if external script loaders are not given https/http protocol.")
+    parser.add_argument("-ed", "--extra-details", action="store_true", help="Print out extra info that may not be directly related to the endpoints")
     parser.add_argument("-oo", "--only-original", action="store_true", help="Only show the original version of the flag instead of it being replaced with a 1. Will also affect show prog.")
     parser.add_argument("-ss", "--show-source", action="store_true", help="Print the source of each endpoint during progress, like printing out which file it found the endpoint from.")
     parser.add_argument("-st", "--scan-timeout", type=float, default=None, help="Stop scan completely after given number of minutes and print/save any results found in that time window. Will leave unsorted endpoints in a section labelled 'UNSORTED', and will leave out sensitive endpoints. Will NOT interrupt rate limiting test.")
@@ -173,6 +173,7 @@ def startcodeargs():
     parser.add_argument("-nai", "--no-auto-input", action='store_true', help="Disable automatic input after 1.5 min.")
     args = parser.parse_args()
 
+    args.only_res = not args.extra_details
     if args.pipeable:
         args.raw_output, args.only_res, args.tidy_all = True, True, True
     if args.raw_output:
@@ -181,11 +182,11 @@ def startcodeargs():
     github_link = "https://github.com/SphericalFlower52811/endpointscanner"
     docs_link = "https://sphericalflower52811.github.io/endpointscanner/"
 
-    if not args.only_res:
+    if not args.pipeable:
         init(autoreset=True)
         print()
         print("-" * 65)
-        print(f"{Style.BRIGHT}Endpointscanner {Fore.LIGHTMAGENTA_EX}v7.4.0")
+        print(f"{Style.BRIGHT}Endpointscanner {Fore.LIGHTMAGENTA_EX}v7.5.0 ({Fore.RED}DEBUG{Fore.RESET})")
         print()
         print(f"Made by: {Fore.LIGHTMAGENTA_EX}SphericalFlower52811")
         print("(I was too lazy to make a 3D ASCII banner, nor do I want one.)")

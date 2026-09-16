@@ -1043,7 +1043,7 @@ def main():
             dead_suffix = "" if args.show_404s else " (Hidden, use --show-404s or -s to show)"
             invalidated_suffix = "" if args.still_show_invalid else " (Hidden, use --still-show-invalid or -ssi to show)"
             if not args.raw_output:
-                if not args.only_res:
+                if not args.pipeable:
                     print(f"Total paths to test: {len(found_paths)} (Scraped: {len(found_paths) - len(SENSITIVE_ENDPOINT)} | Built-in: {len(SENSITIVE_ENDPOINT)})")
                     print("Testing paths...")
                 
@@ -1090,7 +1090,7 @@ def main():
                         print("\nScan cancelled by user.")
                         return
             else:
-                if not args.only_res: print(f"Endpoints Found: {len(found_paths) - len(SENSITIVE_ENDPOINT)}")
+                if not args.pipeable: print(f"Endpoints Found: {len(found_paths) - len(SENSITIVE_ENDPOINT)}")
 
             invalidated_count = 0        
             S_HEADER = HEADER.copy()

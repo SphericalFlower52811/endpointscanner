@@ -1,6 +1,8 @@
-# EndpointScanner: Website Endpoint Scanner and Rate Limit Tester (Version 7.4)
+# EndpointScanner: Website Endpoint Scanner and Rate Limit Tester (Version 7.5.0 DEBUG)
 
 **Source code at: [EndpointScanner Repository](https://github.com/SphericalFlower52811/endpointscanner)**
+
+Dev branch hosts new features that may not be the full update, main branch will only contain stable updates to install.
 
 **Note: endpoints and paths in this documentation mean the same thing.**
 
@@ -135,9 +137,9 @@ Example command to only show the original endpoint, only print endpoints and out
 endpointscanner example.com -oo -or -o examplescan.txt
 ```
 
-## Details of EndpointScanner
+## Comparison against the industry standard
 
-This section of the README contains full details of the tool, like elaboration on the output.
+For comparisons against the industry standard, go to the [comparison file](COMPARISON.md)
 
 ## Release notes for Update 7.5
 
@@ -163,6 +165,7 @@ This section of the README contains full details of the tool, like elaboration o
 - Added a section to the sorted endpoints which are 'protected endpoints', for endpoints that return 401/403 or other status codes showing it exists but is protected.
 - Let the scanner scan `.mjs` and `.cjs` files besides just `.js`
 - Allow text files for the -esl flag
+- Changed the `-or` flag to the `-ed` flag, now you have to pass `-ed` for the extra details, instead of extra details being shown by default (for example, JS Stack detected). Things like found path count will still be shown.
 
 ### Bug Fixes/Code improvements
 
@@ -179,6 +182,14 @@ This section of the README contains full details of the tool, like elaboration o
 - Improve regex.
 
 ## Plans for next version and the future
+
+Continuing 7.5:
+
+- Allow user to add an entire domain, or only one file as an external script loader (e.g. `examplegiganticcdn.com/example.js`)
+- Moving large loops like map files into `mapfiles.py`, `scrapefiles.py`, and `filtersort.py`
+- Optimise the sorting loop by making it asynchronous
+- Properly update `README.md`
+- Add `openapi.json` to map files and move it out of `SENSITIVE_ENDPOINT`
 
 Version 7.6:
 
