@@ -46,9 +46,9 @@ and will not include:
 | **Gobuster**                     | `gobuster dir -u https://[TARGET] -w common.txt`     | 0 ⚠️            | 1.503                   |
 | **FFuF**                         | `time ffuf -u [TARGET]/FUZZ -w common.txt`           | 4614 ⚠️         | 23.992                  |
 | **Feroxbuster**                  | `time feroxbuster -u https://[TARGET] -w common.txt` | 5               | 59.632                  |
-| **EndpointScanner**              | `time endpointscanner [TARGET] -dse -d`              | 190             | 13.765                  |
+| **EndpointScanner**              | `time endpointscanner [TARGET] -dse -d`              | **190**         | **13.765**              |
 
-⚠️: Gobuster printed nothing as it found out the target was an SPA and it automtically stopped the code to not flood the temrinal. FFuF outputted all 4614 paths from the wordlist as the target was an SPA.
+> ⚠️: Gobuster printed nothing as it found out the target was an SPA and it automtically stopped the code to not flood the temrinal. FFuF outputted all 4614 paths from the wordlist as the target was an SPA. Since it is an SPA, blacklisting the length of the response will blacklist every response.
 
 ### Full Comparison
 
@@ -316,8 +316,6 @@ katana -u https://[TARGET] -d 5 -jc  0.33s user 0.09s system 2% cpu 15.845 total
 
 #### Result from Gobuster on website 1
 
-Warning: since this is an SPA, excluding this specific length will also make it return 0 endpoints.
-
 <details>
 <summary><b>Click to open Gobuster's result:</b></summary>
 
@@ -347,7 +345,7 @@ gobuster dir -u https://[TARGET] -w common.txt  0.01s user 0.02s system 2% cpu 1
 
 #### Result from FFuF on website 1
 
-Warning: All 4614 endpoints from common.txt were outputted as the target is an SPA, and FFuF got tricked by the SPA shells returning all of the endpoints as valid. Full output will not be provided as it is too long, it will be truncated.
+> Warning: All 4614 endpoints from common.txt were outputted as the target is an SPA, and FFuF got tricked by the SPA shells returning all of the endpoints as valid. Full output will not be provided as it is too long, it will be truncated.
 
 <details>
 <summary><b>Click to open FFuF's result:</b></summary>
@@ -472,9 +470,9 @@ and will not include:
 | **Gobuster**                     | `gobuster dir -u https://[TARGET] -w common.txt`     | 0 ⚠️            | 0.827                   |
 | **FFuF**                         | `time ffuf -u [TARGET]/FUZZ -w common.txt`           | 4614 ⚠️         | 23.992                  |
 | **Feroxbuster**                  | `time feroxbuster -u https://[TARGET] -w common.txt` | 3               | 70.18                   |
-| **EndpointScanner**              | `endpointscanner https://[TARGET] -p -dse -oo`       | 128             | 13.765                  |
+| **EndpointScanner**              | `endpointscanner https://[TARGET] -p -dse -oo`       | **128**         | **13.765**              |
 
-⚠️: Gobuster printed nothing as it found out the target was an SPA and it automtically stopped the code to not flood the temrinal. FFuF outputted all 4614 paths from the wordlist as the target was an SPA.
+> ⚠️: Gobuster printed nothing as it found out the target was an SPA and it automtically stopped the code to not flood the temrinal. FFuF outputted all 4614 paths from the wordlist as the target was an SPA. Since it is an SPA, blacklisting the length of the response will blacklist every response.
 
 ---
 
@@ -662,8 +660,6 @@ katana -u https://[TARGET] -jc  0.15s user 0.08s system 1% cpu 12.103 total
 
 #### Gobuster's result for website 2
 
-Warning: since this is an SPA, excluding this specific length will also make it return 0 endpoints.
-
 <details><summary><b>Click to open Gobuster's result:</b></summary>
 ```text
 ===============================================================
@@ -690,7 +686,7 @@ gobuster dir -u https://[TARGET] -w common.txt  0.02s user 0.01s system 3% cpu 0
 
 #### FFuF's result for website 2
 
-Warning: All 4614 endpoints from common.txt were outputted as the target is an SPA, and FFuF got tricked by the SPA shells returning all of the endpoints as valid. Full output will not be provided as it is too long, it will be truncated.
+> Warning: All 4614 endpoints from common.txt were outputted as the target is an SPA, and FFuF got tricked by the SPA shells returning all of the endpoints as valid. Full output will not be provided as it is too long, it will be truncated.
 
 <details><summary><b>Click to open FFuF's result:</b></summary>
 
