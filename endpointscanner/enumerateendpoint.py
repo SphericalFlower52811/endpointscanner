@@ -1081,16 +1081,16 @@ def main():
                         )
                         userawoutput = userawoutput.strip()
                         if userawoutput.lower() in ['y', 'yes']:
-                            print("Endpoints will not be sorted.")
+                            print("Paths will not be sorted.")
                             args.raw_output = True
                         else:
-                            print("Endpoints will still be sorted.")
+                            print("Paths will still be sorted.")
                             args.raw_output = False
                     except (KeyboardInterrupt, SystemExit):
                         print("\nScan cancelled by user.")
                         return
             else:
-                if not args.pipeable: print(f"Endpoints Found: {len(found_paths) - len(SENSITIVE_ENDPOINT)}")
+                if not args.pipeable: print(f"Total paths found: {len(found_paths)}")
 
             invalidated_count = 0        
             S_HEADER = HEADER.copy()
