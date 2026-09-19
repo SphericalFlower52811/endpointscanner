@@ -592,8 +592,8 @@ def main():
 
 
             patterns = [
-                r'["\'`](/[a-zA-Z0-9_\-\./{}:~%]*)["\'`]', 
-                r'(?<![a-zA-Z0-9_\-])(?:path|href|to|post|get|patch|put|delete|head|options|query)[\s]*[:=\(\|]+[\s]*["\'`](/?[a-zA-Z0-9_\-\./{}:\$~%]*[\./][a-zA-Z0-9_\-\./{}:\$~%]*)["\'`]',
+                r'["\'`](/[a-zA-Z0-9_\-\./{}:~%]*?)["\'`]', 
+                r'(?<![a-zA-Z0-9_\-])(?:path|href|to|post|get|patch|put|delete|head|options|query)[\s]*[:=\(\|]+[\s]*["\'`](/?[a-zA-Z0-9_\-\./{}:\$~%]*[\./][a-zA-Z0-9_\-\./{}:\$~%]*?)["\'`]',
                 r'["\'`](https?://[a-zA-Z0-9_\-\./{}:\$~%]+)["\'`]'
             ]
             checktimestatusalready = None

@@ -186,7 +186,7 @@ def startcodeargs():
         init(autoreset=True)
         print()
         print("-" * 65)
-        print(f"{Style.BRIGHT}Endpointscanner {Fore.LIGHTMAGENTA_EX}v7.5.0 ({Fore.RED}DEBUG{Fore.RESET})")
+        print(f"{Style.BRIGHT}Endpointscanner {Fore.LIGHTMAGENTA_EX}v7.5.0 {Fore.RED}(DEBUG){Fore.RESET}")
         print()
         print(f"Made by: {Fore.LIGHTMAGENTA_EX}SphericalFlower52811")
         print("(I was too lazy to make a 3D ASCII banner, nor do I want one.)")

@@ -189,7 +189,6 @@ Continuing 7.5:
 - Moving large loops like map files into `mapfiles.py`, `scrapefiles.py`, and `filtersort.py`
 - Optimise the sorting loop by making it asynchronous
 - Properly update `README.md`
-- Add `openapi.json` to map files and move it out of `SENSITIVE_ENDPOINT`
 
 Version 7.6:
 
