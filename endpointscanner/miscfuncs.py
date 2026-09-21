@@ -138,7 +138,7 @@ def startcodeargs():
     parser.add_argument("--force", action="store_true", help="Mandatory flag to pass if doing a rate limit test with over 2500 requests using a non-GET HTTP method. Has no short form flag.")
     parser.add_argument("-t", "--testpath", nargs='?', const='/', type=str, help="Endpoint to test for rate limiting.")
     parser.add_argument("-s", "--show-404s", action="store_true", help="Show endpoints tested that returned a 404 or an SPA shell.")
-    parser.add_argument("-d", "--disable-extra-files", action="store_true", help="Disable scanning of extra structural mapping files (robots, sitemaps, manifests, etc.)")
+    parser.add_argument("-dm", "--disable-map-files", action="store_true", help="Disable scanning of mapping files (robots, sitemaps, manifests, etc.)")
     parser.add_argument("-m", "--show-media", action="store_true", help="Include assets/media like images and fonts and videos in scan results")
     parser.add_argument("-sp", "--show-prog", action="store_true", help="Print endpoints to the terminal one by one in real-time as they are found. Warning: Progress will show duplicate paths if endpoints are defined multiple times in the code. Use the flag -nd to remove duplicates from progress. Results will not contain duplicates.")
     parser.add_argument("-o", "--output-file", type=str, default=None, help="Save formatted results directly to a local text file.")
@@ -149,7 +149,7 @@ def startcodeargs():
     parser.add_argument("-oo", "--only-original", action="store_true", help="Only show the original version of the flag instead of it being replaced with a 1. Will also affect show prog.")
     parser.add_argument("-ss", "--show-source", action="store_true", help="Print the source of each endpoint during progress, like printing out which file it found the endpoint from.")
     parser.add_argument("-st", "--scan-timeout", type=float, default=None, help="Stop scan completely after given number of minutes and print/save any results found in that time window. Will leave unsorted endpoints in a section labelled 'UNSORTED', and will leave out sensitive endpoints. Will NOT interrupt rate limiting test.")
-    parser.add_argument("-ro", "--raw-output", action="store_true", help="Do not sort out endpoints after finding them. Will leave out sensitive endpoints whether they are exposed or not. Also means media will be shown regardless of -m, inaccessible will be shown regardless of -s, and so on.")
+    parser.add_argument("-so", "--sort-output", action="store_true", help="Sort out endpoints.")
     parser.add_argument("-rh", "--ratelimit-header", type=str, default=None, help="Custom headers. Must be seperated by a pipe(|), or newlines. Example use: Cookies: {ExampleCookie: example} | Accept: application/json, text/plain, */*. If the custom header contains double quotes, please use single quotes instead of double quotes to pass this flag.")
     parser.add_argument("-nd", "--no-duplicate-prog", action="store_true", help="If --show-progress is passed, duplicate endpoints in progress will not be shown.")
     parser.add_argument("-l", "--local", action="store_true", help="Necessary flag if the site being tested on is a local site like a localhost or 127.0.0.1:port.")
@@ -172,6 +172,8 @@ def startcodeargs():
     parser.add_argument("-pz", "--parse-zip", action='store_true', help="Allow the tool to expand .zip and .gz files (e.g. sitemap.xml.gz) and scrape from them.")
     parser.add_argument("-nai", "--no-auto-input", action='store_true', help="Disable automatic input after 1.5 min.")
     args = parser.parse_args()
+
+    args.raw_output = not args.sort_output
 
     args.only_res = not args.extra_details
     if args.pipeable:
@@ -201,7 +203,7 @@ def startcodeargs():
             print("--ratelimit flag not passed but -orlt was passed. Exiting script...")
             sys.exit(1)
         args.disable_sensitive_endpoint = True
-        args.disable_extra_files = True
+        args.disable_map_files = True
     if args.no_duplicate_prog and not args.show_prog:
         print("-nd was passed but -sp wasn't passed. -nd will be deactivated as it is only for progress.")
         args.no_duplicate_prog = False

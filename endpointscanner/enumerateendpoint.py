@@ -145,7 +145,7 @@ def main():
     scanned_xmls = set()
     scanned_js = set()
 
-    if not args.disable_extra_files:
+    if not args.disable_map_files:
         if not args.only_res:
             print("\nFinding paths from extra files. (If they exist)")
         # no 304.
@@ -859,7 +859,7 @@ def main():
                 js_idx += 1
 
             # right before recursive xml loop
-            if not args.disable_extra_files:
+            if not args.disable_map_files:
                 target_netloc = urlparse(target if "://" in target else f"https://{target}").netloc.lower()
                 target_apex = '.'.join(target_netloc.split('.')[-2:]) if len(target_netloc.split('.')) >= 2 else target_netloc
                 SITEMAP_EXTENSIONS = ('.xml', '.txt', '.rss', '.atom', '.gz', '.zip')
@@ -1361,6 +1361,7 @@ def main():
                             test_path = "/"
                     except:
                         test_path = "/"
+                if not args.pipeable: print(f"Path to test rate-limiting: {test_path}")
 
                 asyncio.run(async_rate_test(
                     url=urljoin(target, test_path), 
@@ -1391,7 +1392,7 @@ def main():
                             test_path = "/"
                     except:
                         test_path = "/"
-
+                if not args.pipeable: print(f"Path to test rate-limiting: {test_path}")
                 asyncio.run(async_rate_test(
                     url=urljoin(target, test_path), 
                     num_reqs=num,
