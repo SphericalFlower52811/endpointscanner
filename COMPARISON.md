@@ -6,7 +6,7 @@ This file will provide a comparison of EndpointScanner against other popular web
 
 This information is updated as of 16 September 2026.
 
-## Nagivation Links for websites
+## Navigation Links for websites
 
 - [Website 1](#website-1)
 - [Website 2](#website-2)
@@ -17,7 +17,7 @@ This information is updated as of 16 September 2026.
 
 I have not asked for permission to publicly disclose what this website is, so this website will remain anonymous. Files like index-[HASH].js will have the hash censored for privacy purposes.
 
-### Nagivation Links for scanners
+### Navigation Links for scanners
 
 - [Jump to EndpointScanner's result](#result-from-endpointscanner-on-website-1)
 - [Jump to Katana's result](#result-from-katana-by-projectdiscovery-on-website-1)
