@@ -6,7 +6,7 @@ The dev branch hosts new features that may not be the full update, main branch w
 
 **Note: endpoints and paths in this documentation mean the same thing.**
 
-A fast automated website reconnaissance tool for red teaming in cybersecurity that extracts paths, endpoints, files, subdomains, and even external links from websites. Automated IDOR and broken access control vulnerability testing through replacing variables with 1 in endpoints/paths. Has a built in rate limit tester that can test on any endpoint with 4 HTTP methods, and can bypass simple WAFs/captchas and SPAs.
+A fast automated website reconnaissance tool for red teaming in cybersecurity that extracts paths, endpoints, files, subdomains, and even external links from modern websites. Automated IDOR and broken access control vulnerability testing through replacing variables with 1 in endpoints/paths. Has a built in rate limit tester that can test on any endpoint with 4 HTTP methods, and can bypass simple WAFs/captchas and SPAs.
 
 **For Installation, please go to the [Installation section](#installation) below!**
 
@@ -18,11 +18,11 @@ A fast automated website reconnaissance tool for red teaming in cybersecurity th
 - Uses playwright-stealth browser instead of usual Playwright to remove giveaways in the browser. (more details about playwright near the bottom of the README)
 - Scans extra map files like `robots.txt` and `sitemap.xml` for more paths
 - Uses a fake path to test which are real paths and which are shells. (websites like SPAs give a lot of trouble to current tools)
-- Scrapes all `.js` and `.xml` files and `<script>` tags inside the html with a regex to find paths
+- Scrapes all JavaScript, HTML and XML files to find paths in the website.
 - Has a hardcoded set of paths that should never exist in a website to test. (e.g. .env.local, .git/config)
 - Differentiates paths by website endpoints, assets, redirects etc.
 - Replaces {example} variables in paths with a custom string to be able to test the paths, and can also test for broken access control.
-- Checks server uptime and prints out JS Stack of the website
+- Checks server uptime and prints out JS Stack of the website (these are extra details, a flag is needed to show the extra details.)
 - Has a rate limit tester by sending `n` number requests to a certain endpoint with 4 HTTP methods, custom headers, body, variable in request body.
 
 ## How to run
@@ -200,8 +200,9 @@ none right now
 
 ## Weaknesses
 
+- On Server-Side Rendered websites like PHP websites, there are literally no frontend code files for EndpointScanner to scan hence it will fail on those types of websites. It will work perfectly on modern websites though.
 - If there is a login page, the script will either show that all of the pages require login, or label all of them as 403.
-- If there are shells (e.g. React SPA shells) in the page, it may give false positives for sensitive endpoints. If you see sensitive endpoints in the scan, they may not actually be exposed on the website if the website has a shell. (E.g. .gitignore, .env.local)
+- If there are shells (e.g. React SPA shells) in the page, it may give false positives for sensitive endpoints. If you see sensitive endpoints in the scan, they may not actually be exposed on the website if the website has a shell. (E.g. .gitignore, .env.local). This will be fixed in update 7.5.1
 - The rate limit test is more susceptible to captchas as it uses a module (httpx, not curl_cffi) that is not built to specifically pass through firewalls/captchas. This is as the underlying library used to build curl_cffi, libcurl, recommends you not to use more than 15 max connections (see at [curlmopt_max_total_connections docs](https://curl.se/libcurl/c/CURLMOPT_MAX_TOTAL_CONNECTIONS.html)). Httpx was hence used instead of curl_cffi.
   - **This information is accurate as of 11 August 2026.**
 

@@ -29,7 +29,7 @@ Finding endpoints on a website allows you to plan out your pentest, like:
 ### Brute Forcing Tools
 
 #### Flaws of other Tools
-Brute forcing tools like Gobuster, FFuF, Feroxbuster, and Dirbuster rely on a wordlist, and send thousands of request to a server. 
+Brute forcing tools like Gobuster, FFuF, Feroxbuster, and Dirbuster rely on a wordlist, and send thousands of request to a server, and this approach fails on modern web applications.
 Flaws with brute-forcing:
 - Easily triggers anti-bot software
 - Sends many requests, can trigger rate-limiting
