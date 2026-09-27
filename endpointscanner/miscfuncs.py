@@ -174,6 +174,9 @@ def startcodeargs():
     args = parser.parse_args()
 
     args.raw_output = not args.sort_output
+    #for ppl who think i made -o cli
+    if args.output_file.lower() == "cli":
+        args.output_file = None
 
     args.only_res = not args.extra_details
     if args.pipeable:
