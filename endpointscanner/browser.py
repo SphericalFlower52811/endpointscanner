@@ -12,6 +12,7 @@ from playwright_stealth import Stealth #ensure strict firewalls do not block the
 import time
 import sys
 from .headerconfig import HEADER
+from colorama import init, Style, Fore
 
 #move mouse like a human for playwright stealth.
 def human_mouse_move(page, start_x, start_y, end_x, end_y, steps=20):
@@ -94,75 +95,90 @@ def isthere_captcha(response, playwright_html=None):
 
     return False, ""
 
-def gethtmlafterload(url, debugbrowser, initial_response=None):
-    with sync_playwright() as p:
-        try:
-            extra_headers = {k: v for k, v in HEADER.items() if k.lower() != "user-agent"}
-            browser = p.chromium.launch(
-                headless=(not debugbrowser),
-                args=[
-                    "--disable-blink-features=AutomationControlled",
-                    "--no-sandbox",
-                    "--disable-infobars"
-                ])
-        except Exception as e:
-            error_msg = str(e).lower()
-            error_type = type(e).__name__
+def gethtmlafterload(args, url, debugbrowser, initial_response=None):
+    mainhtml = initial_response.text if initial_response else ""
+    cookies = {}
 
-            # Instructions to install if people do not read instructions the first time
-            if "error" in error_type.lower() and ("executable" in error_msg.lower() or "install" in error_msg.lower()):
-                print("\nPlaywright installations are missing.")
-                print("Please read the installation instructions in the README of the repository.")
-                print("README link: https://github.com/SphericalFlower52811/endpointscanner/blob/main/README.md")
-                sys.exit(1)
-            else:
-                print("Unexpected Issue:", e)
-            return "", {}
-    
-        context = browser.new_context(
-            user_agent=HEADER['User-Agent'], 
-            viewport={'width': 1920, 'height': 1080},
-            has_touch=True,
-            extra_http_headers=extra_headers
-            )
-        page = context.new_page()
-        Stealth().apply_stealth_sync(page) #stealth
+    if not args.no_headless_browser:
+        with sync_playwright() as p:
+            try:
+                extra_headers = {k: v for k, v in HEADER.items() if k.lower() != "user-agent"}
+                browser = p.chromium.launch(
+                    headless=(not debugbrowser),
+                    args=[
+                        "--disable-blink-features=AutomationControlled",
+                        "--no-sandbox",
+                        "--disable-infobars"
+                    ])
+            except Exception as e:
+                error_msg = str(e).lower()
+                error_type = type(e).__name__
 
-        #go to page and get code, using stealth to bypass captchas
-        try:
-            page.goto(url, wait_until="domcontentloaded", timeout=60000) #wait for page content to download
-            # Start from a natural default position
-            start_x, start_y = random.randint(100, 300), random.randint(100, 300)
-            page.mouse.move(start_x, start_y)
-            time.sleep(random.uniform(0.2, 0.5)) # pause when page is loading, but a random pause.
-            
-            next_x, next_y = random.randint(400, 700), random.randint(400, 600)
-            human_mouse_move(page, start_x, start_y, next_x, next_y, steps=random.randint(15, 25))
-            time.sleep(random.uniform(0.1, 0.3)) # micropause
-            
-            final_x, final_y = random.randint(200, 500), random.randint(200, 400)
-            human_mouse_move(page, next_x, next_y, final_x, final_y, steps=random.randint(12, 22))
+                # Instructions to install if people do not read instructions the first time
+                if "error" in error_type.lower() and ("executable" in error_msg.lower() or "install" in error_msg.lower()):
+                    print(f"\n{Fore.RED}Playwright chromium installation is missing.")
+                    print(f"{Fore.RESET}Please read the installation instructions in the README of the repository.")
+                    print(f"README link: https://github.com/SphericalFlower52811/endpointscanner/blob/main/README.md")
+                    print(f"\nUsing raw request instead.\n")
+                    
+                    is_blocked, waf_name = isthere_captcha(initial_response, mainhtml)
+                    if is_blocked:
+                        print(f"WARNING!!! Scan is blocked by a captcha.\nCaptcha Detected: {waf_name}")
+                    return mainhtml, {}, {"blocked": is_blocked, "waf": waf_name if is_blocked else None}
+                else:
+                    print("Unexpected Issue:", e)
+                return mainhtml, {}
+        
+            context = browser.new_context(
+                user_agent=HEADER['User-Agent'], 
+                viewport={'width': 1920, 'height': 1080},
+                has_touch=True,
+                extra_http_headers=extra_headers
+                )
+            page = context.new_page()
+            Stealth().apply_stealth_sync(page) #stealth
 
-            start_time = time.time()
-            while (time.time() - start_time) < 5: #only 5 second later ppl impatient
+            #go to page and get code, using stealth to bypass captchas
+            try:
+                page.goto(url, wait_until="domcontentloaded", timeout=60000) #wait for page content to download
+                # Start from a natural default position
+                start_x, start_y = random.randint(100, 300), random.randint(100, 300)
+                page.mouse.move(start_x, start_y)
+                time.sleep(random.uniform(0.2, 0.5)) # pause when page is loading, but a random pause.
+                
+                next_x, next_y = random.randint(400, 700), random.randint(400, 600)
+                human_mouse_move(page, start_x, start_y, next_x, next_y, steps=random.randint(15, 25))
+                time.sleep(random.uniform(0.1, 0.3)) # micropause
+                
+                final_x, final_y = random.randint(200, 500), random.randint(200, 400)
+                human_mouse_move(page, next_x, next_y, final_x, final_y, steps=random.randint(12, 22))
+
+                start_time = time.time()
+                while (time.time() - start_time) < 5: #only 5 second later ppl impatient
+                    mainhtml = page.content()
+                    # check if there are actually scripts loaded into the html yet
+                    if ".js" in mainhtml.lower() or "<script" in mainhtml.lower():
+                        break
+                    time.sleep(0.2)
+                
+                page.wait_for_timeout(5000) #wait for page to load downloaded content, and cookie
                 mainhtml = page.content()
-                # check if there are actually scripts loaded into the html yet
-                if ".js" in mainhtml.lower() or "<script" in mainhtml.lower():
-                    break
-                time.sleep(0.2)
-             
-            page.wait_for_timeout(5000) #wait for page to load downloaded content, and cookie
-            mainhtml = page.content()
-            is_blocked, waf_name = isthere_captcha(initial_response, mainhtml)
-            if is_blocked:
-                print(f"WARNING!!! Scan is blocked by a captcha.\nCaptcha Detected: {waf_name}")
-                browser.close()
-                return mainhtml, {}, {"blocked":True, "waf":waf_name}
-            cookies = {c['name']: c['value'] for c in context.cookies()}
+                is_blocked, waf_name = isthere_captcha(initial_response, mainhtml)
+                if is_blocked:
+                    print(f"WARNING!!! Scan is blocked by a captcha.\nCaptcha Detected: {waf_name}")
+                    browser.close()
+                    return mainhtml, {}, {"blocked":True, "waf":waf_name}
+                cookies = {c['name']: c['value'] for c in context.cookies()}
 
-        except Exception as e:
-            print("Unexpected Error:", e)
-            mainhtml, cookies = "", {}
+            except Exception as e:
+                print("Unexpected Error:", e)
+                mainhtml, cookies = "", {}
 
-        browser.close()
-        return mainhtml, cookies, {"blocked":False, "waf":None}
+            browser.close()
+            return mainhtml, cookies, {"blocked":False, "waf":None}
+    else:
+        is_blocked, waf_name = isthere_captcha(initial_response, mainhtml)
+        cookies = None
+        if is_blocked:
+            print(f"WARNING!!! Scan is blocked by a captcha.\nCaptcha Detected: {waf_name}")
+        return mainhtml, cookies, {"blocked":is_blocked, "waf":None}

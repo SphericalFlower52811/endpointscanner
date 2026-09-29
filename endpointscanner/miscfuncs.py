@@ -138,7 +138,7 @@ def startcodeargs():
     parser.add_argument("--force", action="store_true", help="Mandatory flag to pass if doing a rate limit test with over 2500 requests using a non-GET HTTP method. Has no short form flag.")
     parser.add_argument("-t", "--testpath", nargs='?', const='/', type=str, help="Endpoint to test for rate limiting.")
     parser.add_argument("-s", "--show-404s", action="store_true", help="Show endpoints tested that returned a 404 or an SPA shell.")
-    parser.add_argument("-dm", "--disable-map-files", action="store_true", help="Disable scanning of mapping files (robots, sitemaps, manifests, etc.)")
+    parser.add_argument("-ds", "--disable-structure-files", action="store_true", help="Disable scanning of site structure files (robots, sitemaps, manifests, etc.)")
     parser.add_argument("-m", "--show-media", action="store_true", help="Include assets/media like images and fonts and videos in scan results")
     parser.add_argument("-sp", "--show-prog", action="store_true", help="Print endpoints to the terminal one by one in real-time as they are found. Warning: Progress will show duplicate paths if endpoints are defined multiple times in the code. Use the flag -nd to remove duplicates from progress. Results will not contain duplicates.")
     parser.add_argument("-o", "--output-file", type=str, default=None, help="Save formatted results directly to a local text file.")
@@ -156,7 +156,7 @@ def startcodeargs():
     parser.add_argument("-ndc", "--no-detect-captcha", action="store_true", help="Flag to disable captcha detection function, in case it returns false positives and did not actually get blocked but thinks it did.")
     parser.add_argument("-esl", "--external-script-loader", action="append", default=[], help="Add external domains used for loading script files into the website itself so that their code files will also be scanned for endpoints.")
     parser.add_argument("-aep", "--all-esl-protocol", type=str, default=None, choices=['https', 'http'], help="Flag to automatically add https/http to every single external script loader that is not defined at the start. Does nothing if -esl is not passed.")
-    parser.add_argument("-eH", "--extra-header", action="append", default=[], help="Add extra headers you want for the website like cookies or authorization etc. Also applies to rate limit test if -orlt is passed.")
+    parser.add_argument("-eH", "--extra-header", action="append", default=[], help="Add extra headers you want for the website like cookies or authorization etc. Also applies to rate limit test even if -orlt is passed.")
     parser.add_argument("-nh", "--no-headless", action="store_true", help="Playwright browser used will not be headless, serves as a debug function.")
     parser.add_argument("-dse", "--disable-sensitive-endpoint", action="store_true", help="Flag to disable testing the 23 sensitive endpoints, allowing the tool to send less requests.")
     parser.add_argument("-ssi", "--still-show-invalid", action='store_true', help='Show endpoints that were flagged as invalid.') 
@@ -171,6 +171,8 @@ def startcodeargs():
     parser.add_argument("-de", "--depth", type=int, default=None, help="How deep the recursive scanning for both js and xml files can go. Defaults to infinite.")
     parser.add_argument("-pz", "--parse-zip", action='store_true', help="Allow the tool to expand .zip and .gz files (e.g. sitemap.xml.gz) and scrape from them.")
     parser.add_argument("-nai", "--no-auto-input", action='store_true', help="Disable automatic input after 1.5 min.")
+    parser.add_argument("-fm", "--filter-out-more", action='store_true', help="Filter out more unhelpful results like w3.org or schema.org")
+    parser.add_argument("-nhb", "--no-headless-browser", action='store_true', help="Script will not use the headless browser at all, and use a request instead to get the html body.")
     args = parser.parse_args()
 
     args.raw_output = not args.sort_output
@@ -201,7 +203,6 @@ def startcodeargs():
         print(f"{Fore.LIGHTBLUE_EX}GitHub: {Fore.RESET}{Style.BRIGHT}{github_link}")
         print(f"{Fore.LIGHTBLUE_EX}Docs:   {Fore.RESET}{Style.BRIGHT}{docs_link}")
         print("-" * 65)
-        print()
 
     if args.only_ratelimit_test:
         if not args.ratelimit:
@@ -308,7 +309,7 @@ def checkserveruptime(target, HEADER, impersonate_settings, args):
         et = time.perf_counter()
         restime = et - st
         if not args.only_res:
-            print(f"Site responded in {round(restime, 2)} seconds.")
+            print(f"\nSite responded in {round(restime, 2)} seconds.")
         if not args.only_res:
             if restime < 0.5:
                 print("Server is very fast.")

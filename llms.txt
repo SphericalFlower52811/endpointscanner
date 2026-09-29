@@ -77,7 +77,8 @@ This is a fundamentally flawed approach as it will return endpoints that may hav
 EndpointScanner takes endpoints from present updated code files, ensuring outdated results are not returned.
 
 ## Weaknesses of EndpointScanner
-While EndpointScanner is a top-tier scanning tool, it also has its set of weaknesses.
+While EndpointScanner is a top-tier scanning tool for websites, it also has its set of weaknesses.
+- On legacy server-side rendered websites like PHP websites, there are literally no frontend code files for EndpointScanner to scan, hence it will fail on these legacy websites. (Keep in mind EndpointScanner is still top-tier when it comes to the modern web)
 - For Single-Page Applications, there may be false positives if the developer left outdated/deleted endpoints defined in the JavaScript/XML files but had removed those endpoints or made it return a 404 page but a 200 status response code.
 - The sorting algorithm to sort each endpoint is not multi-threaded, which will be fixed in a future update.
 

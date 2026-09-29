@@ -199,7 +199,7 @@ def display_and_save_results(
                 print(f"\nFailed to write file: {e}")
 
     else:
-        if not args.only_res:
+        if not args.pipeable:
             print("\nEndpoints will not be sorted. Sensitive endpoints like '.git/config' will be automatically skipped.\n")
             print('----Raw Results----\n')
         clean_found_paths = [p for p in unsorted_paths if p not in SENSITIVE_ENDPOINT]
@@ -213,17 +213,17 @@ def display_and_save_results(
             print(f"\n\n----Files Scanned----")
             if all_scanned_sources: print("\n".join(f" - {f}" for f in sorted(set(all_scanned_sources))))
 
-        if not args.only_res:
+        if not args.pipeable:
             print(f"\nInvalidated Endpoints: {invalidated_count}{invalidated_suffix}")
         if args.output_file:
             try:
                 with open(args.output_file, 'w', encoding='utf-8') as fi:
-                    if not args.only_res:
+                    if not args.pipeable:
                         fi.write('----Raw Results----\n\n')
                     if clean_found_paths:
                         fi.write("\n".join(clean_found_paths) + "\n")
                     if args.still_show_invalid:
-                        fi.write('----Invalidated (-ssi passed)----\n\n')
+                        if not args.pipeable: fi.write('----Invalidated (-ssi passed)----\n\n')
                         fi.write("\n".join(f"  {p}" for p in invalidated_endpoints) + "\n")
                         
                     if args.show_source:
@@ -231,6 +231,7 @@ def display_and_save_results(
                         if all_scanned_sources: fi.write("\n".join(f" - {f}" for f in sorted(set(all_scanned_sources))) + "\n")
                     if not args.only_res:
                         fi.write(f"\nInvalidated Endpoints: {invalidated_count}{invalidated_suffix}" + "\n")
-                print(f"\nRaw results successfully written to '{args.output_file}'")
+                if not args.pipeable:
+                    print(f"\nRaw results successfully written to '{args.output_file}'")
             except Exception as e:
                 print(f'\nFailed to write raw results to file: {e}')

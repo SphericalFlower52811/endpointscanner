@@ -39,7 +39,7 @@ Command to run after installing **(For installation, look for the 'Installation'
 | `--force`                      | `NIL`      | Mandatory flag to pass if doing a rate limit test with over 2500 requests using a non-GET HTTP method. Has no short form flag.                                                                                                                                                 |
 | `--testpath`                   | `-t`       | Endpoint to test for rate limiting.                                                                                                                                                                                                                                            |
 | `--show-404s`                  | `-s`       | Show endpoints tested that returned a 404 or an SPA shell.                                                                                                                                                                                                                     |
-| `--disable-map-files`          | `-dm`      | Disable scanning of mapping files (robots, sitemaps, manifests, etc.)                                                                                                                                                                                                          |
+| `--disable-structure-files`    | `s`        | Disable scanning of site structure files (robots, sitemaps, manifests, etc.)                                                                                                                                                                                                   |
 | `--show-media`                 | `-m`       | Include assets/media like images and fonts and videos in scan results                                                                                                                                                                                                          |
 | `--show-prog`                  | `-sp`      | Print endpoints to the terminal one by one in real-time as they are found. Warning: Progress will show duplicate paths if endpoints are defined multiple times in the code. Use the flag -nd to remove duplicates from progress. Results will not contain duplicates.          |
 | `--output-file`                | `-o`       | Save formatted results directly to a local text file.                                                                                                                                                                                                                          |
@@ -151,11 +151,6 @@ For comparisons against the industry standard, go to the [comparison file](COMPA
 - Merged `asset-manifest.json`, `web-manifest.json`, `manifest.json` into one loop.
 - added `-de`/`--depth` flag
 - added `-ps`/`--path-sub` flag
-- Added flags to only print parts of the output
-  - `-oe`/`--only-endpoints` flag
-    - Only output endpoints
-  - `-oea`/`--only-endpoints-all` flag
-    - Only print endpoints + assets + inaccessible endpoints
 - Made the sitemap loop (which previous only scanned `.xml` files) be able to scan `.xml, .txt, .rss, .atom` files.
   - Able to scan `.gz` and `.zip` files if the flag `-pz`/`--parse-zip` is passed. (Detects based off the file extension)
 - Added endpoints to the `SENSITIVE_ENDPOINT` set like actuator endpoints and swagger ui
@@ -166,6 +161,9 @@ For comparisons against the industry standard, go to the [comparison file](COMPA
 - Let the scanner scan `.mjs` and `.cjs` files besides just `.js`
 - Allow text files for the -esl flag
 - Changed the `-or` flag to the `-ed` flag, now you have to pass `-ed` for the extra details, instead of extra details being shown by default (for example, JS Stack detected). Things like found path count will still be shown.
+- Added `-nhb/--no-headless-browser` flag to completely disable the headless browser and use a simple GET request instead.
+- Added `-fm` flag, `--filter-more`. Will filter stuff like `www.w3.org` if passed as results like `http://www.w3.org/2000/svg` are present in almost all websites.
+- Added `-orlt` flag to only perform a rate-limiting test.
 
 ### Bug Fixes/Code improvements
 
@@ -176,10 +174,13 @@ For comparisons against the industry standard, go to the [comparison file](COMPA
   - `manifest.json`
   - `sw.js`
   - `service-worker.js`
-- Changed `-nhb`/`--no-headless-browser` to `-nh`/`--no-headless` as `-nhb` was misleading.
+- Changed `-nhb`/`--no-headless-browser` to `-nh`/`--no-headless` as `-nhb` was misleading. (`-nhb` became a diff flag)
 - Fixed an issue where the scraping would find data MIME types (e.g. application/x-javascript) and mistake them for real endpoints
 - Fixed a scope bug in the tool
 - Improve regex.
+- Remove a function removing trailing slashes in paths, as some are directories.
+- Added `-o cli` for people who don't realise it prints to CLI by default.
+- Changed `-d` to `-ds` flag
 
 ## Plans for next version and the future
 
@@ -189,6 +190,11 @@ Continuing 7.5:
 - Moving large loops like map files into `mapfiles.py`, `scrapefiles.py`, and `filtersort.py`
 - Optimise the sorting loop by making it asynchronous
 - Properly update `README.md`
+- Add flags to only print parts of the output
+  - `-oe`/`--only-endpoints` flag
+    - Only output endpoints
+  - `-oea`/`--only-endpoints-all` flag
+    - Only print endpoints + assets + inaccessible endpoints
 
 Version 7.6:
 
@@ -200,7 +206,7 @@ none right now
 
 ## Weaknesses
 
-- On Server-Side Rendered websites like PHP websites, there are literally no frontend code files for EndpointScanner to scan hence it will fail on those types of websites. It will work perfectly on modern websites though.
+- On Server-Side Rendered websites like PHP websites, there are literally no frontend code files for EndpointScanner to scan hence it will fail on those types of websites. (Keep in mind EndpointScanner is still top-tier when it comes to the modern web)
 - If there is a login page, the script will either show that all of the pages require login, or label all of them as 403.
 - If there are shells (e.g. React SPA shells) in the page, it may give false positives for sensitive endpoints. If you see sensitive endpoints in the scan, they may not actually be exposed on the website if the website has a shell. (E.g. .gitignore, .env.local). This will be fixed in update 7.5.1
 - The rate limit test is more susceptible to captchas as it uses a module (httpx, not curl_cffi) that is not built to specifically pass through firewalls/captchas. This is as the underlying library used to build curl_cffi, libcurl, recommends you not to use more than 15 max connections (see at [curlmopt_max_total_connections docs](https://curl.se/libcurl/c/CURLMOPT_MAX_TOTAL_CONNECTIONS.html)). Httpx was hence used instead of curl_cffi.

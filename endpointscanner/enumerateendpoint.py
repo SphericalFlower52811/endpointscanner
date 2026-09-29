@@ -22,36 +22,31 @@ from .miscfuncs import checktime, check_if_local, startcodeargs, testhttpprotoco
 from .outputendpointsfound import display_and_save_results
 from .headerconfig import HEADER
 
-USELESSSTUFF = {
-        "localhost", "127.0.0.1", "0.0.0.0", 
-        "w3.org", "schema.org", "xml.org", "://microsoft.com", "/../",
-        "schemas.microsoft.com", "schemas.openxmlformats.org"
-    }
-#jspdf 
-JSPDF_SIGNATURE_KEYS = {
-    "/ASCII85Decode", "/ASCII85Encode", "/ASCIIHexDecode", "/ASCIIHexEncode", 
-    "/Annot", "/Btn", "/CIDSystemInfo", "/Ch", "/FlateDecode", "/FlateEncode", 
-    "/Form", "/I", "/Image", "/Outlines", "/Pattern", "/Sig", "/Tx", "/Widget", "/XObject"
-}
-
-#pyodide emscripten vfs, as it will be confused. Especially if SPA>
-PYODIDE_VFS_PRECISION_PATTERNS = [
-    r'^/tmp/?$',
-    r'^/dev/(null|tty\d*|urandom|random|stdin|stdout|stderr)(?:/|$)',
-    r'^/dev/shm(?:/tmp)?$',
-    r'^/proc(/self(/fd(/\d+)?)?)?$',
-    r'^/home/(web_user|pyodide)(?:/|$)',
-    r'^/lib/python\d+\.\d+(?:/|$)',
-    r'^/lib/python\d+\.zip$'
-]
-
 def main():
+    #jspdf 
+    JSPDF_SIGNATURE_KEYS = {
+        "/ASCII85Decode", "/ASCII85Encode", "/ASCIIHexDecode", "/ASCIIHexEncode", 
+        "/Annot", "/Btn", "/CIDSystemInfo", "/Ch", "/FlateDecode", "/FlateEncode", 
+        "/Form", "/I", "/Image", "/Outlines", "/Pattern", "/Sig", "/Tx", "/Widget", "/XObject"
+    }
+
+    #pyodide emscripten vfs, as it will be confused. Especially if SPA>
+    PYODIDE_VFS_PRECISION_PATTERNS = [
+        r'^/tmp/?$',
+        r'^/dev/(null|tty\d*|urandom|random|stdin|stdout|stderr)(?:/|$)',
+        r'^/dev/shm(?:/tmp)?$',
+        r'^/proc(/self(/fd(/\d+)?)?)?$',
+        r'^/home/(web_user|pyodide)(?:/|$)',
+        r'^/lib/python\d+\.\d+(?:/|$)',
+        r'^/lib/python\d+\.zip$'
+    ]
     unsorted_paths = []
     e_files = []
     unique_progress_paths = set()
     start_test_time = None
     #define args
     args = startcodeargs()
+    #External Script Loaders
     if args.extra_header:
         for item in args.extra_header:
             if ":" in item:
@@ -79,8 +74,10 @@ def main():
                                     unpacked_esls.append(cleanesl)
                     except FileNotFoundError:
                         print(f"File {cleaneslitem} not found, is the path correct?")
+                        sys.exit(1)
                     except Exception as e:
                         print(f"Error opening file: {e}")
+                        sys.exit(1)
                 else:
                     unpacked_esls.append(cleaneslitem)  
     esl_domains = []
@@ -117,6 +114,18 @@ def main():
     impersonate_settings = None if (check_if_local(target) or args.local) else "chrome120" #chrome120 will not work on localhosts.
     target = testhttpprotocol(target, HEADER, impersonate_settings, args)
 
+    print(f"\nScanning {target}...")
+    # Define useless stuff
+    USELESSSTUFF = {"localhost", "127.0.0.1", "0.0.0.0", "/../"}
+    if args.filter_out_more:
+        USELESSSTUFF.update({
+            "www.w3.org", "schema.org", "xml.org", 
+            "schemas.microsoft.com", "schemas.openxmlformats.org"
+        })
+        
+    if impersonate_settings == None: #if the target is a localhost
+        USELESSSTUFF.discard("localhost")
+        USELESSSTUFF.discard("127.0.0.1")
     #server uptime
     serveruptime = checkserveruptime(target, HEADER, impersonate_settings, args)
     start_test_time = time.perf_counter()
@@ -145,9 +154,9 @@ def main():
     scanned_xmls = set()
     scanned_js = set()
 
-    if not args.disable_map_files:
-        if not args.only_res:
-            print("\nFinding paths from extra files. (If they exist)")
+    if not args.disable_structure_files:
+        if not args.pipeable:
+            print("\nFinding paths from website structure files.")
         # no 304.
         E_HEADER = HEADER.copy()
         E_HEADER["Cache-Control"] = "no-cache"
@@ -182,7 +191,7 @@ def main():
                                 _local_payload = _local_parts[1].strip()
                                 
                                 if _local_directive in ["disallow", "allow", "llms.txt"]:
-                                    if _local_payload and _local_payload not in ["/", "/*", "*"]:
+                                    if _local_payload and _local_payload not in ["/", "//", "///", "/.", "/..", "/...", "/./", "/*", "*"]:
                                         
                                         if "://" in _local_payload:
                                             clean_payload = _local_payload
@@ -350,7 +359,7 @@ def main():
                                 if not clean_manifest_path.startswith('/'):
                                     clean_manifest_path = '/' + clean_manifest_path
 
-                            if not clean_manifest_path or clean_manifest_path in ["/", "//", "///"]:
+                            if not clean_manifest_path or clean_manifest_path in ["/", "//", "///", "/.", "/..", "/...", "/./", "/ "]:
                                 continue
 
                             if clean_manifest_path not in found_paths:
@@ -396,7 +405,7 @@ def main():
                                 if not cleanpath.startswith('/'):
                                     cleanpath = '/' + cleanpath
 
-                            if not cleanpath or cleanpath in ["/", "//", "///"]:
+                            if not cleanpath or cleanpath in ["/", "//", "///", "/.", "/..", "/...", "/./", "/ "]:
                                 continue
                             if cleanpath not in found_paths:
                                 found_paths.add(cleanpath)
@@ -445,7 +454,7 @@ def main():
                             if not clean_oidc_path.startswith('/'):
                                 clean_oidc_path = '/' + clean_oidc_path
                                 
-                        if not clean_oidc_path or clean_oidc_path in ["/", "//", "///"]:
+                        if not clean_oidc_path or clean_oidc_path in ["/", "//", "///", "/.", "/..", "/...", "/./", "/ "]:
                             continue
                             
                         if clean_oidc_path not in found_paths:
@@ -473,13 +482,16 @@ def main():
         )
         import secrets
         fake_path = f"/very-fake-page-123456123456abcdefg_{secrets.token_hex(16)}"
-        if not args.only_res:
+        if not args.pipeable:
             if args.no_headless:
-                print(f"\nStarting browser to bypass captchas and detect shells with a fake path.\nFake path used: {fake_path}")
+                print(f"\nStarting browser to bypass captchas and detect shells with a fake path.\nFake path used: {fake_path}\n")
+            elif args.no_headless_browser:
+                print(f"\nDetecting shells with a fake path.\nFake path used: {fake_path}\n")
             else:
-                print(f"\nStarting headless browser to bypass captchas and detect shells with a fake path.\nFake path used: {fake_path}")
+                print(f"\nStarting headless browser to bypass captchas and detect shells with a fake path.\nFake path used: {fake_path}\n")
         try:
             main_html, session_cookies, scan_status = gethtmlafterload(
+                                                                    args,
                                                                     target, 
                                                                     args.no_headless,
                                                                     initial_response=base_res
@@ -512,8 +524,11 @@ def main():
         except:
             shell_content = ""
         if not args.only_res:
-            print("\nHeadless browser & fake path test finished.")
-            print(f"Starting scan on {target}.\n")
+            if args.no_headless_browser:
+                print("Fake path test finished.\n")
+            else:
+                print("\nHeadless browser & fake path test finished.\n")
+            print("Scraping files...")
         try:
             soup = BeautifulSoup(main_html, 'html.parser')
             esl_domains = [urlparse(url).netloc.lower() for url in listofallowedesls if url]
@@ -603,7 +618,7 @@ def main():
                 respo = main_html
             else:
                 try:
-                    respo = requests.get(target, headers=HEADER, timeout=5, impersonate=impersonate_settings).text
+                    respo = requests.get(target, headers=HEADER, cookies=session_cookies, timeout=5, impersonate=impersonate_settings).text
                 except:
                     respo = ""
             for p in patterns:
@@ -714,6 +729,11 @@ def main():
                     DOWNLOAD_HEADERS["Pragma"] = "no-cache"
                     DOWNLOAD_HEADERS["If-None-Match"] = ""
                     DOWNLOAD_HEADERS["If-Modified-Since"] = ""
+
+                    current_script_domain = urlparse(js_url).netloc.lower()
+                    base_target_domain = urlparse(target).netloc.lower()
+                    
+                    active_download_cookies = session_cookies if current_script_domain == base_target_domain else None
 
                     js_res = requests.get(js_url, headers=DOWNLOAD_HEADERS, cookies=session_cookies, timeout=5, impersonate=impersonate_settings)
                     
@@ -859,7 +879,7 @@ def main():
                 js_idx += 1
 
             # right before recursive xml loop
-            if not args.disable_map_files:
+            if not args.disable_structure_files:
                 target_netloc = urlparse(target if "://" in target else f"https://{target}").netloc.lower()
                 target_apex = '.'.join(target_netloc.split('.')[-2:]) if len(target_netloc.split('.')) >= 2 else target_netloc
                 SITEMAP_EXTENSIONS = ('.xml', '.txt', '.rss', '.atom', '.gz', '.zip')
@@ -916,7 +936,11 @@ def main():
                         DOWNLOAD_XML_HEADERS["Pragma"] = "no-cache"
                         
                         target_xml_url = xmlfile if "://" in xmlfile else urljoin(target, xmlfile)
-                        x_res = requests.get(target_xml_url, headers=DOWNLOAD_XML_HEADERS, impersonate=impersonate_settings, timeout=4)
+                        current_xml_domain = urlparse(target_xml_url).netloc.lower()
+                        base_target_domain = urlparse(target).netloc.lower()
+
+                        active_xml_cookies = session_cookies if current_xml_domain == base_target_domain else None
+                        x_res = requests.get(target_xml_url, headers=DOWNLOAD_XML_HEADERS, cookies=active_xml_cookies, impersonate=impersonate_settings, timeout=4)
 
 
                         if x_res.status_code == 200:
@@ -1034,9 +1058,12 @@ def main():
             if not args.only_res:
                 print(f"\nDetected JS Stack: {' + '.join(js_stack) if js_stack else 'Unknown JS Stack'}\n")
             if emscripten_vfs_detected:
-                found_paths = list({i.rstrip('/') for i in found_paths if i != '/dev' and i != '/dev/' and not i.startswith('/tmp/')})
+                found_paths = list({
+                        i.strip() for i in found_paths 
+                        if i.strip() not in ["/dev", "/dev/"] and not i.strip().startswith('/tmp/')
+                    })
             else:
-                found_paths = list({i.rstrip('/') for i in found_paths}) 
+                found_paths = found_paths = list({path.strip() for path in found_paths if path.strip()})
             unsorted = []
             
             assets_suffix = "" if args.show_assets else " (Hidden, use --show-media or -m to show)"
@@ -1331,6 +1358,7 @@ def main():
                         display_path = display_path.split(" [Original:")[0]
                     unsorted_paths.append(display_path)
 
+            #printing when its a set is faster
             found_paths_set = set(found_paths)
             #return extra paths
 
