@@ -139,7 +139,7 @@ def main():
             "/etc/passwd", "/.DS_Store", "/.git/logs/HEAD", "/dump.sql", "/database.sqlite", "/db.sql", "/backup.sql",
             "/actuator/env", "/actuator/heapdump", "/openapi.json", "/etc/shadow", "/.htaccess", "/.htpasswd", "/.hta",
             "/.ssh/id_rsa", "/.ssh/id_ed25519", "/.bash_history", "/.ssh/authorized_keys", "/swagger-ui.html",
-            "/swagger.json", "/swagger-ui/"
+            "/swagger.json", "/swagger-ui/", "/health", "/docs", "/docs/oauth2-redirect"
         }
     else:
         SENSITIVE_ENDPOINT = {}
@@ -484,11 +484,17 @@ def main():
         fake_path = f"/very-fake-page-123456123456abcdefg_{secrets.token_hex(16)}"
         if not args.pipeable:
             if args.no_headless:
-                print(f"\nStarting browser to bypass captchas and detect shells with a fake path.\nFake path used: {fake_path}\n")
+                print("\nStarting browser to bypass captchas and detect shells with a fake path.")
+                if not args.only_res:
+                    print(f"Fake path used: {fake_path}\n")
             elif args.no_headless_browser:
-                print(f"\nDetecting shells with a fake path.\nFake path used: {fake_path}\n")
+                print(f"\nDetecting shells with a fake path.")
+                if not args.only_res:
+                    print(f"Fake path used: {fake_path}\n")
             else:
-                print(f"\nStarting headless browser to bypass captchas and detect shells with a fake path.\nFake path used: {fake_path}\n")
+                print(f"\nStarting headless browser to bypass captchas and detect shells with a fake path.")
+                if not args.only_res:
+                    print(f"Fake path used: {fake_path}\n")
         try:
             main_html, session_cookies, scan_status = gethtmlafterload(
                                                                     args,
@@ -1117,7 +1123,7 @@ def main():
                         print("\nScan cancelled by user.")
                         return
             else:
-                if not args.pipeable: print(f"Total paths found: {len(found_paths)}")
+                if not args.pipeable: print(f"Sensitive endpoints like '.git/config' will be automatically skipped as sorting is not enabled. \nThis will be fixed in 7.5.1 to verify all sensitive files.\n\nTotal paths found: {len(found_paths)}")
 
             invalidated_count = 0        
             S_HEADER = HEADER.copy()
