@@ -39,7 +39,7 @@ def timeout_input(prompt, timeout=90, default='y', auto_input_enabled=True):
                 val = sys.stdin.readline()
                 return val.strip() if val is not None else default
             else:
-                print() # Drop cursor down cleanly
+                print()
                 if default == "RAISE_INTERRUPT":
                     raise KeyboardInterrupt
                 return default

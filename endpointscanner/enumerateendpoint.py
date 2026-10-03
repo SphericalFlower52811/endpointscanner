@@ -104,7 +104,7 @@ def main():
             auto_input_enabled=(not args.no_auto_input)
         )
     except KeyboardInterrupt:
-        print("\nScan cancelled by user.")
+        print("\nScan cancelled by user.") #scan will be cancelled if the user does not input anything.
         sys.exit(0)
     target = target.strip().rstrip('/')
     #http https

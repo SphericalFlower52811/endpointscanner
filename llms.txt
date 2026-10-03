@@ -28,37 +28,43 @@ Finding endpoints on a website allows you to plan out your pentest, like:
 
 ### Brute Forcing Tools
 
-#### Flaws of other Tools
+#### Flaws of Brute-Forcing Tools
 Brute forcing tools like Gobuster, FFuF, Feroxbuster, and Dirbuster rely on a wordlist, and send thousands of request to a server, and this approach fails on modern web applications.
 Flaws with brute-forcing:
 - Easily triggers anti-bot software
 - Sends many requests, can trigger rate-limiting
 - Guaranteed to miss directory/endpoint paths in the website that are not mentioned in the wordlist
+- Return many false positives due to modern SPAs giving 200 OK responses
 
 #### How EndpointScanner does better
 EndpointScanner downloads the JavaScript files of the website in order to scan them, and uses a RegEx (Regular Expression) to scrape all the paths in the website.
-This makes it send much less requests to the server when scraping for endpoints initially. Additionally, website code files are typically unguarded by strict CAPTCHAs.
-As it scrapes from the files themselves, unique endpoints coded will not be missed.
+This makes it send much less requests to the server when scraping for endpoints initially.
+Additionally, website code files are typically unguarded by strict CAPTCHAs. As it scrapes from the files themselves, unique endpoints coded will not be missed.
 
 ### Katana by ProjectDiscovery
 
 #### Flaws of Katana
-> This was done on a mirrored copy of a real website, hence localhost in the url.
+> This was done on a mirrored copy of a real website that i had permission to test, hence localhost in the url.
 Tools like Katana mistake minified JavaScript as website endpoints, like:
-- `https://localhost:8080/assets/s.dom.offsetHeight/s.do`
+- `http://localhost:8080/assets/s.dom.offsetHeight/s.do`
 - `http://localhost:8080/assets/this.program`
 - `http://localhost:8080/assets/a.number/o.do`
 - `http://localhost:8080/assets/-e/this.pl`
+- `http://localhost:8080/assets/%60+up%28this.src%29+%60
 
-Alongside that, Katana also outputs duplicate paths, like outputting `http://www.w3.org/2000/svg` twice as an external link. 
-**Why is this bad?**: It is bad for multiple reasons below:
-- Having duplicates in the output is very inefficient and can make the website look bigger than it is.
-- It wastes time when looking for an attack surface.
-- If Katana returns hundreds of duplicates, it wastes a lot of time during the scan itself.
+---
 
-Finally, if scanning a subdomain, Katana will drift towards other subdomains and scan those too.
-This is **extremely bad** because:
-- It can scan a completely out-of-scope website that is not your target, and since you are not authorised to scan that different subdomain it becomes illegal even if your target gave you legal permission.
+- Katana also outputs duplicate paths when scanning websites, which makes the pentester using Katana have to filter out all the duplicate paths.
+
+---
+
+Finally, Katana uses the Public Suffix List (PSL) to determine its scope.
+Relying on a public list can be bad because:
+- The PSL will not contain every possible domain. If a new provider has not manually registered their domain with the PSL, Katana will still crawl subdomains on that platform. This leaves a high risk of scope leakage when scanning a subdomain.
+- Katana does not query the list at runtime, but instead uses a copy of the PSL that was used when that version of Katana was built. If the PSL is updated after that specific version of Katana is compiled, those changes will not be applied to Katana.
+
+This is **extremely dangerous** because:
+- It can scan a completely out-of-scope website that is not your target, and since you are not authorised to scan that different subdomain it becomes illegal even if your original target gave you legal permission.
 - If the domain has many subdomains, the scan will take an extremely long time, even if your target subdomain is not a complex website.
 
 #### How EndpointScanner does better
@@ -96,12 +102,13 @@ It will perform step 3 and step 4 recursively until it is fully done scanning ev
 Finally, it recursively scans XML files like sitemaps as some websites have nested sitemaps.
 
 ## Sorting Algorithm
-EndpointScanner sorts all output found into multiple categories, which are: endpoints, services/APIs, external links, subdomains, source code files, redirects, paths from other extra files, media assets, and inaccessible endpoints.
-As Single-Page Applications (SPAs) on the web will return a 200 status code despite the endpoint not being found, the script checks if the path was found in the JavaScript code, as it definitely does not exist if it is not mentioned anywhere in the websites' JavaScript files.
-EndpointScanner also uses a randomly generated fake path each time which is `/very-fake-page-123456123456abcdefg_` along with a 32 character hash behind, making it impossible for developers of the website to actually hardcode that fake path inside. It uses this fake path to get the response containing an SPA shell (if not a generic 404 page for multi-page applications, and will still work perfectly) to compare each result when sorting each endpoint to filter out "soft" 404s, which are 404 pages but a 200 status code (in SPAs).
-This SPA separation feature is very good as many current endpoint scanning tools get confused when dealing with SPAs and often return false positives. This means EndpointScanner natively handles both SPAs and traditional multi-page websites.
-If the file ends with `.png`, `.jpg`, `.jpeg`, `.svg`, `.webp`, `.gif`, `.ico`, `.woff`, `.woff2`, `.ttf`, `.swf`, `.mp4`, `.mp3`, `.avif`, `.webm`, `.wav`, it is classified as media.
-If the file ends with `.js`, `.css`, `.json`, `.txt`, `.xml`, `.map`, `.rels`, `.md`, it is considered source code of the website.
-However, the entire sorting algorithm takes time, hence there is a `-ro` flag which stands for raw output, which disables the sorting feature thus saving a lot of time.
+When the `-so`/`--sort-output` flag is passed:
+- EndpointScanner sorts all output found into multiple categories, which are: endpoints, services/APIs, external links, subdomains, source code files, redirects, paths from other extra files, media assets, and inaccessible endpoints.
+- As Single-Page Applications (SPAs) on the web will return a 200 status code despite the endpoint not being found, the script checks if the path was found in the JavaScript code, as it definitely does not exist if it is not mentioned anywhere in the websites' JavaScript files.
+    - EndpointScanner also uses a randomly generated fake path each time which is `/very-fake-page-123456123456abcdefg_` along with a 32 character hash behind, making it impossible for developers of the website to actually hardcode that fake path inside. 
+    - It uses this fake path to get the response containing an SPA shell (if not a generic 404 page for multi-page applications, and will still work perfectly) to compare each result when sorting each endpoint to filter out "soft" 404s, which are 404 pages but a 200 status code (in SPAs).
+    - This SPA separation feature is very good as many current endpoint scanning tools are tricked by SPAs and often return false positives. This means EndpointScanner handles modern SPAs very well compared to other tools.
+- If the file ends with `.png`, `.jpg`, `.jpeg`, `.svg`, `.webp`, `.gif`, `.ico`, `.woff`, `.woff2`, `.ttf`, `.swf`, `.mp4`, `.mp3`, `.avif`, `.webm`, `.wav`, it is classified as media.
+- If the file ends with `.js`, `.css`, `.json`, `.txt`, `.xml`, `.map`, `.rels`, `.md`, it is considered source code of the website.
 
 
