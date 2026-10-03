@@ -118,11 +118,11 @@ def checktime(st, at, als, auto_input_enabled=True):
         else:
             if choice in ['n', 'no']:
                 print('Scan stopped. Any data found in the time window will be printed.')
-                print('Sensitive endpoints like ".git/config" will be automatically skipped.')
+                print('Sensitive endpoints like "/.env.local" will be automatically skipped.')
             else:
                 print('Choice not recognised, and will be defaulted to no.')
                 print('Scan stopped. Any data found in the time window will be printed.')
-                print('Sensitive endpoints like ".git/config" will be automatically skipped.')
+                print('Sensitive endpoints like "/.env.local" will be automatically skipped.')
             als = "s"
             return "STOP", als
     return "CONTINUE", "c"

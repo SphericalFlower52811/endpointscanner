@@ -14,6 +14,7 @@ import time
 import json
 import random
 from colorama import Fore, Style, init
+from difflib import SequenceMatcher
 import secrets
 #imports from other files
 from .browser import gethtmlafterload
@@ -1126,7 +1127,7 @@ def main():
                         print("\nScan cancelled by user.")
                         return
             else:
-                if not args.pipeable: print(f"Sensitive endpoints like '.git/config' will be automatically skipped as sorting is not enabled. \nThis will be fixed in 7.5.1 to verify all sensitive files.\n\nTotal paths found: {len(found_paths)}")
+                if not args.pipeable: print(f"\nTotal paths found: {len(found_paths)}")
 
             invalidated_count = 0        
             S_HEADER = HEADER.copy()
@@ -1140,7 +1141,6 @@ def main():
                 '"', '<', '>', backslash, '^', '`', '{', '|', '}', '[', ']', "'"
             }
             if not args.raw_output:
-                from difflib import SequenceMatcher
                 # get the base domain (efg.hijk from abcd.efg.hijk)
                 def get_base(domain):
                     parts = domain.split('.')
@@ -1398,7 +1398,7 @@ def main():
                             test_path = "/"
                     except:
                         test_path = "/"
-                if not args.pipeable: print(f"Path to test rate-limiting: {test_path}")
+                if not args.pipeable: print(f"\nPath to test rate-limiting: {test_path}")
 
                 asyncio.run(async_rate_test(
                     url=urljoin(target, test_path), 
@@ -1429,7 +1429,7 @@ def main():
                             test_path = "/"
                     except:
                         test_path = "/"
-                if not args.pipeable: print(f"Path to test rate-limiting: {test_path}")
+                if not args.pipeable: print(f"\nPath to test rate-limiting: {test_path}")
                 asyncio.run(async_rate_test(
                     url=urljoin(target, test_path), 
                     num_reqs=num,
