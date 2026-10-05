@@ -97,14 +97,20 @@ def main():
     nd = args.no_duplicate_prog
     show_dead = args.show_404s
     try:
+        user_exits = True
         target = args.target if args.target else timeout_input(
             prompt="Target website not found.\nEnter website (e.g. https://example.com): ",
             timeout=90,
-            default="RAISE_INTERRUPT",
+            default="TARGET_NOT_INPUTTED",
             auto_input_enabled=(not args.no_auto_input)
         )
-    except KeyboardInterrupt:
-        print("\nScan cancelled by user.") #scan will be cancelled if the user does not input anything.
+        if target == "TARGET_NOT_INPUTTED":
+            print("Target not input after 1.5min, exiting script.")
+            user_exits = False
+            sys.exit(1)
+    except (KeyboardInterrupt, SystemExit):
+        if user_exits:
+            print("\nScan cancelled by user.")
         sys.exit(0)
     target = target.strip().rstrip('/')
     #http https
@@ -500,6 +506,7 @@ def main():
                 if not args.only_res:
                     print(f"Fake path used: {fake_path}\n")
         try:
+            user_exits = True
             main_html, session_cookies, scan_status = gethtmlafterload(
                                                                     args,
                                                                     target, 
@@ -511,18 +518,19 @@ def main():
                     print("Exiting script as captcha was detected.")
                     print("It is recommended to use the -nh flag to see what is happening in the headless browser to see if it is actually blocked by a captcha and if it was a false positive.")
                     print("If this was a false positive, use the -ndc (--no-detect-captcha) flag to disable exiting.")
-                    sys.exit(1)
+                    user_exits = False; sys.exit(1)
                 else:
                     print("Script will not be exited, as --no-detect-captcha flag was passed. Script will continue.")
         except (KeyboardInterrupt, SystemExit):
-            print("Scan stopped by user.")
+            if user_exits:
+                print("Scan stopped by user.")
             sys.exit(0)
         except Exception as e:
             if "TargetClosedError" in type(e).__name__:
                 print("Scan cancelled by user.") #for web version
                 sys.exit(0)
             print(f"Error starting up headless browser. Using base request to scan {target}")
-            main_html = base_res
+            main_html = base_res.text
         cprs = args.path_sub #custom path normalization replacement string
         #identify js stacks.
         js_stack = []
@@ -533,7 +541,7 @@ def main():
             shell_content = fake_res.text
         except:
             shell_content = ""
-        if not args.only_res:
+        if not args.pipeable:
             if args.no_headless_browser:
                 print("Fake path test finished.\n")
             else:
@@ -544,7 +552,6 @@ def main():
             esl_domains = [urlparse(url).netloc.lower() for url in listofallowedesls if url]
             target_netloc = urlparse(target).netloc.lower()
             js_files = []
-
 
             for s in soup.find_all('script'):
                 src = s.get('src')
@@ -696,7 +703,7 @@ def main():
             emscripten_vfs_detected = False
             for path in list(found_paths):
                 # check for js, html, and htm (htm is a older version that still exists in many sites)
-                if path.lower().endswith(('.js', '.html', '.htm', '.mjs', '.cjs')):
+                if path.lower().endswith(('.js', '.html', '.htm', '.mjs', '.cjs')) and path not in ['sw.js', 'service-worker.js']:
                     target_asset_url = urljoin(target, path)
                     asset_netloc = urlparse(target_asset_url).netloc.lower()
                     target_netloc = urlparse(target if "://" in target else f"https://{target}").netloc.lower()
@@ -835,7 +842,7 @@ def main():
                                     clean_m_stripped = m_clean.lstrip('/')
                                     if clean_m_stripped in ['http:', 'https:']:
                                         continue
-                                    if clean_m_stripped.lower().startswith(('http://', 'https://')) and len(clean_m_stripped) < 11:
+                                    if clean_m_stripped.lower().startswith(('http://', 'https://')) and (len(clean_m_stripped) < 11 or "." not in clean_m_stripped):
                                         continue
                                             
                                     if not m_clean.lower().endswith(ignored_extensions):
