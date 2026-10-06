@@ -94,7 +94,7 @@ def check_if_local(target_url):
         pass
         return False
     
-def checktime(st, at, als, auto_input_enabled=True):
+def checktime(st, at, als, auto_input_enabled=True, auto_input_timeout=90):
     global start_test_time
     ct = time.perf_counter()
     em = (ct - st) / 60
@@ -106,7 +106,7 @@ def checktime(st, at, als, auto_input_enabled=True):
         print(f"Scan has reached your chosen time limit of {at} minutes.")
         choice = timeout_input(
             prompt="Continue scan for another 5 minutes? (y/n): ",
-            timeout=90, 
+            timeout=auto_input_timeout, 
             default='n', 
             auto_input_enabled=auto_input_enabled
         )
@@ -170,9 +170,10 @@ def startcodeargs():
     parser.add_argument("-oc", "--only-comms", action='store_true', help="Make the tool only output communications used like emails and phone numbers.")
     parser.add_argument("-de", "--depth", type=int, default=None, help="How deep the recursive scanning for both js and xml files can go. Defaults to infinite.")
     parser.add_argument("-pz", "--parse-zip", action='store_true', help="Allow the tool to expand .zip and .gz files (e.g. sitemap.xml.gz) and scrape from them.")
-    parser.add_argument("-nai", "--no-auto-input", action='store_true', help="Disable automatic input after 1.5 min.")
+    parser.add_argument("-nai", "--no-auto-input", action='store_true', help="Disable automatic input after a set amount of time.")
     parser.add_argument("-fm", "--filter-out-more", action='store_true', help="Filter out more unhelpful results like w3.org or schema.org")
     parser.add_argument("-nhb", "--no-headless-browser", action='store_true', help="Script will not use the headless browser at all, and use a request instead to get the html body.")
+    parser.add_argument("-ait", "--auto-input-time", type=float, default=90, help="Customise amount of time taken for automatic input if you don't answer in seconds. Default 90 seconds.")
     args = parser.parse_args()
 
     args.raw_output = not args.sort_output
@@ -222,7 +223,7 @@ def startcodeargs():
         if args.ratelimit_type: passedrateargs.append("-rt")
         print(f"Arguments {', '.join(passedrateargs)} were passed, but --ratelimit was not passed.")
         user_input = timeout_input("How many requests do you want to send for this rate limiting test? Press Enter to skip.\n >>> ",
-                                   timeout=90,
+                                   timeout=args.autoinput_time,
                                    default='',
                                    auto_input_enabled=(not args.no_auto_input))
         user_input = user_input.strip()
@@ -263,7 +264,7 @@ def startcodeargs():
                 print(f"\nYou are requesting to run a rate limit test of {args.ratelimit} requests that are not GET requests.")
                 print("This may cause the server to slow down if it is not properly guarded and exhaust it.")
                 proceed = timeout_input("Do you wish to continue running the script and run the test after the scan? [y/n]\n\n >>> ",
-                                        timeout=90,
+                                        timeout=args.auto_input_time,
                                         default='n',
                                         auto_input_enabled=args.no_auto_input)
                 proceed = proceed.lower()
@@ -362,7 +363,8 @@ def verifyeacheslprotocol(listofesl, all_esl_protocol=None):
                 cleanedesllist.append(domain)
             else:
                 print(f"HTTP protocol for external script loader {domain} is not defined. Script will not be ran.\n")
-                print(f"To solve this in the future, either manually add https:// or http:// to every single url, or pass the -aep flag along with your intended protocol.")
+                print("To solve this in the future, either manually add https:// or http:// to every single url, or pass the -aep flag along with your intended protocol.")
+                print(f"For example, -esl {domain} -aep https, -esl https://{domain} or -esl http://{domain} (if your external script loader does not support HTTPS)")
                 sys.exit(1)
         else:
             cleanedesllist.append(domain)

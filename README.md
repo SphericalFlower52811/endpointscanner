@@ -154,7 +154,7 @@ For comparisons against the industry standard, go to the [comparison file](COMPA
 - Made the sitemap loop (which previous only scanned `.xml` files) be able to scan `.xml, .txt, .rss, .atom` files.
   - Able to scan `.gz` and `.zip` files if the flag `-pz`/`--parse-zip` is passed. (Detects based off the file extension)
 - Added endpoints to the `SENSITIVE_ENDPOINT` set like actuator endpoints and swagger ui
-- Added automatic input where if you don't answer input questions after a set time (e.g. do you want to sort endpoints). Can be disabled via the `-nai/--no-auto-input` flag.
+- Added automatic input where if you don't answer input questions after a set time (default 90 seconds) (e.g. an input where you must say if you want to sort endpoints or not). Can be disabled via the `-nai/--no-auto-input` flag.
 - Fixed a bug in the rate-limiting tester where the rate limit testing function would crash if the number of requests was too high by using a queue.
 - Replace `/*` paths in robots.txt with '1' as \* means everything, showing you the original path. This will also be affected by the -ps and -oo flag.
 - Added a section to the sorted endpoints which are 'protected endpoints', for endpoints that return 401/403 or other status codes showing it exists but is protected.

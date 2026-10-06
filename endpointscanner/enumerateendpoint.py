@@ -96,16 +96,17 @@ def main():
     listofallowedesls = verified_esl_domains + verified_esl_scripts
     nd = args.no_duplicate_prog
     show_dead = args.show_404s
+    autoinput_timeout = args.auto_input_time
     try:
         user_exits = True
         target = args.target if args.target else timeout_input(
             prompt="Target website not found.\nEnter website (e.g. https://example.com): ",
-            timeout=90,
+            timeout=autoinput_timeout,
             default="TARGET_NOT_INPUTTED",
             auto_input_enabled=(not args.no_auto_input)
         )
         if target == "TARGET_NOT_INPUTTED":
-            print("Target not input after 1.5min, exiting script.")
+            print(f"Target not input after {autoinput_timeout}s, exiting script.")
             user_exits = False
             sys.exit(1)
     except (KeyboardInterrupt, SystemExit):
@@ -641,7 +642,7 @@ def main():
             for p in patterns:
                 try:
                     if args.scan_timeout:
-                        ts, checktimestatusalready = checktime(start_test_time, args.scan_timeout, checktimestatusalready, (not args.no_auto_input)) #timer status
+                        ts, checktimestatusalready = checktime(start_test_time, args.scan_timeout, checktimestatusalready, (not args.no_auto_input), autoinput_timeout) #timer status
                         if ts == "STOP":
                             break
                         elif ts == "EXTEND":
@@ -733,7 +734,7 @@ def main():
                 current_depth = js_depths.get(js_url, 1)
                 
                 if args.scan_timeout:
-                    ts, checktimestatusalready = checktime(start_test_time, args.scan_timeout, checktimestatusalready, (not args.no_auto_input)) #timer status
+                    ts, checktimestatusalready = checktime(start_test_time, args.scan_timeout, checktimestatusalready, (not args.no_auto_input), autoinput_timeout) #timer status
                     if ts == "STOP":
                         break
                     elif ts == "EXTEND":
@@ -941,7 +942,7 @@ def main():
                         continue
                     
                     if args.scan_timeout:
-                        ts, checktimestatusalready = checktime(start_test_time, args.scan_timeout, checktimestatusalready, (not args.no_auto_input))
+                        ts, checktimestatusalready = checktime(start_test_time, args.scan_timeout, checktimestatusalready, (not args.no_auto_input), autoinput_timeout)
                         if ts == "STOP":
                             break
                         elif ts == "EXTEND":
@@ -1119,7 +1120,7 @@ def main():
                     try:
                         userawoutput = timeout_input(
                             prompt="Would you like to use the raw output instead? (No sorting at all) [y/n]: ", 
-                            timeout=90,
+                            timeout=autoinput_timeout,
                             default='y',
                             auto_input_enabled=(not args.no_auto_input)
                         )
@@ -1341,7 +1342,7 @@ def main():
                     except: continue
 
                     if args.scan_timeout:
-                        ts, checktimestatusalready = checktime(start_test_time, args.scan_timeout, checktimestatusalready, (not args.no_auto_input)) #timer status
+                        ts, checktimestatusalready = checktime(start_test_time, args.scan_timeout, checktimestatusalready, (not args.no_auto_input), autoinput_timeout) #timer status
                         if ts == "STOP":
                             current_position = sorted(found_paths).index(path)
                             unsorted = sorted(found_paths)[current_position:]

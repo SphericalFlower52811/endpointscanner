@@ -88,7 +88,7 @@ def display_and_save_results(
             print("\n".join(f"  {p}" for p in unsorted))
         else:
             if args.scan_timeout:
-                if not args.only_res:
+                if not args.pipeable:
                     print("\nAll paths sorted out.")
         
         
@@ -182,7 +182,7 @@ def display_and_save_results(
                         f.write("\n".join(f"  {p}" for p in unsorted) + "\n")
                     else:
                         if args.scan_timeout:
-                            if not args.only_res:
+                            if not args.pipeable:
                                 f.write("All paths sorted out.\n")
 
                     f.write(f"\n--- Scan Summary ---\n")
@@ -214,7 +214,8 @@ def display_and_save_results(
             if all_scanned_sources: print("\n".join(f" - {f}" for f in sorted(set(all_scanned_sources))))
 
         if not args.pipeable:
-            print(f"\nInvalidated Endpoints: {invalidated_count}{invalidated_suffix}")
+            if invalidated_count > 0:
+                print(f"\nInvalidated Endpoints: {invalidated_count}{invalidated_suffix}")
         if args.output_file:
             try:
                 with open(args.output_file, 'w', encoding='utf-8') as fi:
@@ -229,8 +230,9 @@ def display_and_save_results(
                     if args.show_source:
                         fi.write(f"\n\n----Files Scanned----\n")
                         if all_scanned_sources: fi.write("\n".join(f" - {f}" for f in sorted(set(all_scanned_sources))) + "\n")
-                    if not args.only_res:
-                        fi.write(f"\nInvalidated Endpoints: {invalidated_count}{invalidated_suffix}" + "\n")
+                    if not args.pipeable:
+                        if invalidated_count > 0:
+                            fi.write(f"\nInvalidated Endpoints: {invalidated_count}{invalidated_suffix}" + "\n")
                 if not args.pipeable:
                     print(f"\nRaw results successfully written to '{args.output_file}'")
             except Exception as e:
