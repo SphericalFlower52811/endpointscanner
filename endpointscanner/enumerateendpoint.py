@@ -550,85 +550,60 @@ def main():
             print("Scraping files...")
         try:
             soup = BeautifulSoup(main_html, 'html.parser')
-            esl_domains = [urlparse(url).netloc.lower() for url in listofallowedesls if url]
             target_netloc = urlparse(target).netloc.lower()
             js_files = []
 
-            for s in soup.find_all('script'):
-                src = s.get('src')
-                if src:
-                    src = src.strip()
-                    if src.lower().startswith(('data:', 'blob:', 'javascript:')):
-                        continue
-                    if src.startswith('//'):
-                        src = f"https:{src}"
-                    full_src_url = urljoin(target, src)
-                    src_netloc = urlparse(full_src_url).netloc.lower()
-                    if not src_netloc or src_netloc == target_netloc or src_netloc in esl_domains:
-                        js_files.append(full_src_url)
+            allowed_esl_netlocs = {urlparse(d).netloc.lower() for d in verified_esl_domains if d}
 
-            for script_tag in soup.find_all('script'):
-                src = script_tag.get('src')
-                if src:
-                    src_clean = src.strip()
-                    
-                    if src_clean.lower().startswith(('data:', 'blob:', 'javascript:')):
-                        continue
-                        
-                    if src_clean.startswith('//'):
-                        src_clean = f"https:{src_clean}"
-                        
-                    parsed_src = urlparse(src_clean)
-                    src_netloc = parsed_src.netloc.lower()
-                    src_path = parsed_src.path.strip()
-                    
-                    if any(char in src_netloc or char in src_path for char in [';', ':', ' ', ',', '(', ')', '{', '}']):
-                        continue
-                        
-                    if not src_netloc or src_netloc == target_netloc:
-                        if src_path and src_path != "/":
-                            clean_path = '/' + src_path.lstrip('/')
-                            found_paths.add(clean_path)
-                    elif src_netloc in esl_domains:
-                        if src_path and src_path != "/":
-                            clean_path = '/' + src_path.lstrip('/')
-                            found_paths.add(clean_path)
+            def is_allowed_external_asset(asset_url):
+                parsed_asset = urlparse(asset_url)
+                asset_domain = parsed_asset.netloc.lower()
+                
+                if asset_domain in allowed_esl_netlocs:
+                    return True
+                if any(asset_url.lower().startswith(s.lower()) for s in verified_esl_scripts if s):
+                    return True
+                return False
 
-            targetthings = ['stylesheet', 'modulepreload', 'preload', 'prefetch', 'icon', 'shortcut icon', 'manifest']
-            
-            for link_tag in soup.find_all('link', rel=targetthings):
-                href = link_tag.get('href')
-                if href:
-                    href_clean = href.strip()
+            for tag in soup.find_all(True): 
+                raw_asset = tag.get('src') or tag.get('href')
+                if not raw_asset:
+                    continue
                     
-                    if href_clean.lower().startswith(('data:', 'blob:', 'javascript:')):
-                        continue
-                        
-                    if href_clean.startswith('//'):
-                        href_clean = f"https:{href_clean}"
-                        
-                    parsed_href = urlparse(href_clean)
-                    href_netloc = parsed_href.netloc.lower()
-                    href_path = parsed_href.path.strip()
+                asset_clean = raw_asset.strip()
+                if asset_clean.lower().startswith(('data:', 'blob:', 'javascript:')):
+                    continue
+                if asset_clean.startswith('//'):
+                    asset_clean = f"https:{asset_asset}"
                     
-                    if any(char in href_netloc or char in href_path for char in [';', ':', ' ', ',', '(', ')', '{', '}']):
-                        continue
-                        
-                    if not href_netloc or href_netloc == target_netloc:
-                        if href_path and href_path != "/":
-                            clean_path = '/' + href_path.lstrip('/')
-                            found_paths.add(clean_path)
-                    elif href_netloc in esl_domains:
-                        if href_path and href_path != "/":
-                            clean_path = '/' + href_path.lstrip('/')
-                            found_paths.add(clean_path)
+                full_asset_url = urljoin(target, asset_clean)
+                parsed_asset = urlparse(full_asset_url)
+                asset_domain = parsed_asset.netloc.lower()
+                asset_path = parsed_asset.path.strip()
+                
+                if any(char in asset_domain for char in [' ', ',', '(', ')', '{', '}']):
+                    continue
+                if any(char in asset_path for char in [' ', ',', '(', ')', '{', '}']):
+                    continue
+                    
+                is_internal = not asset_domain or asset_domain == target_netloc
+                is_allowed_asset = is_internal or is_allowed_external_asset(full_asset_url)
+                
+                if is_allowed_asset:
+                    if asset_clean.lower().endswith(('.js', '.mjs', '.cjs', '.wxs')):
+                        if full_asset_url not in js_files:
+                            js_files.append(full_asset_url)
+                    
+                    if asset_path and asset_path != "/":
+                        clean_path = '/' + asset_path.lstrip('/')
+                        found_paths.add(clean_path)
 
 
             patterns = [
                 r'["\'`](/[a-zA-Z0-9_\-\./{}:~%]*?)["\'`]', 
                 r'(?<![a-zA-Z0-9_\-])(?:path|href|to|post|get|patch|put|delete|head|options|query)[\s]*[:=\(\|]+[\s]*["\'`](/?[a-zA-Z0-9_\-\./{}:\$~%]*[\./][a-zA-Z0-9_\-\./{}:\$~%]*?)["\'`]',
                 r'["\'`](https?://[a-zA-Z0-9_\-\./{}:\$~%]+)["\'`]'
-            ]
+            ] #shld the first pattern find <> too 
             checktimestatusalready = None
             current_filename = "raw HTML"
             #HTML loop
@@ -700,19 +675,22 @@ def main():
                 except: continue
 
             # JS loop
+            allowed_domain_netlocs = {urlparse(d).netloc.lower() for d in verified_esl_domains if d}
             js_depths = {}
             emscripten_vfs_detected = False
             for path in list(found_paths):
                 # check for js, html, and htm (htm is a older version that still exists in many sites)
-                if path.lower().endswith(('.js', '.html', '.htm', '.mjs', '.cjs')) and path not in ['sw.js', 'service-worker.js']:
+                if path.lower().endswith(('.js', '.html', '.htm', '.mjs', '.cjs')) and path.lower() not in ['sw.js', 'service-worker.js']:
                     target_asset_url = urljoin(target, path)
                     asset_netloc = urlparse(target_asset_url).netloc.lower()
                     target_netloc = urlparse(target if "://" in target else f"https://{target}").netloc.lower()
                     
                     is_safe_asset = False
-                    if asset_netloc in listofallowedesls:
+                    if asset_netloc == target_netloc:
                         is_safe_asset = True
-                    elif asset_netloc == target_netloc:
+                    elif asset_netloc in allowed_domain_netlocs:
+                        is_safe_asset = True
+                    elif any(target_asset_url.lower().startswith(s.lower()) for s in verified_esl_scripts if s):
                         is_safe_asset = True
                     
                     if is_safe_asset and target_asset_url not in js_files:
@@ -752,8 +730,7 @@ def main():
                     base_target_domain = urlparse(target).netloc.lower()
                     
                     active_download_cookies = session_cookies if current_script_domain == base_target_domain else None
-
-                    js_res = requests.get(js_url, headers=DOWNLOAD_HEADERS, cookies=session_cookies, timeout=5, impersonate=impersonate_settings)
+                    js_res = requests.get(js_url, headers=DOWNLOAD_HEADERS, cookies=active_download_cookies, timeout=5, impersonate=impersonate_settings)
                     
                     if js_res.status_code == 200:
                         current_filename = js_url
@@ -766,35 +743,58 @@ def main():
                             
                         if js_url.lower().endswith(('.html', '.htm')):
                             local_soup = BeautifulSoup(js_res.text, 'html.parser')
+
+                            for tag in local_soup.find_all(True):
+                                raw_src_or_href = tag.get('src') or tag.get('href')
+                                if not raw_src_or_href:
+                                    continue
+                                    
+                                clean_src = raw_src_or_href.strip()
+                                if clean_src.lower().startswith(('data:', 'blob:', 'javascript:')):
+                                    continue
+                                if clean_src.startswith('//'):
+                                    clean_src = f"https:{clean_src}"
+                                    
+                                nested_asset_url = urljoin(js_url, clean_src)
+                                parsed_nested = urlparse(nested_asset_url)
+                                nested_netloc = parsed_nested.netloc.lower()
+                                nested_path = parsed_nested.path.strip()
                                 
-                            for tag in local_soup.find_all(['script', 'link']):
-                                src_or_href = tag.get('src') or tag.get('href')
-                                if src_or_href:
-                                    clean_src = src_or_href.strip()
-                                    if clean_src.lower().endswith(('.js', '.css', '.html', '.htm', '.mjs', '.cjs')):
-                                        nested_asset_url = urljoin(js_url, clean_src)
-                                        nested_netloc = urlparse(nested_asset_url).netloc.lower()
-                                        
-                                        nested_safe = False
-                                        if nested_netloc in esl_domains:
-                                            nested_safe = True
-                                        if nested_netloc == target_netloc:
-                                            nested_safe = True
-                                            
-                                        if nested_safe and nested_asset_url not in js_files:
+                                if any(char in nested_netloc for char in [' ', ',', '(', ')', '{', '}']):
+                                    continue
+                                if any(char in nested_path for char in [' ', ',', '(', ')', '{', '}']):
+                                    continue
+                                    
+                                if "://" in clean_src:
+                                    rel_path = clean_src
+                                else:
+                                    rel_path = '/' + nested_path.lstrip('/') if nested_path else '/'
+
+                                if rel_path not in discovered_in_js:
+                                    discovered_in_js[rel_path] = rel_path
+                                    found_paths.add(rel_path)
+                                    if args.show_prog and (not nd or rel_path not in unique_progress_paths):
+                                        print(f"Found: {rel_path}")
+                                        unique_progress_paths.add(rel_path)
+                                        if args.show_source: print(f"  └─ Source File: {current_filename}")
+
+                                nested_safe = False
+                                if nested_netloc == target_netloc:
+                                    nested_safe = True
+                                elif nested_netloc in allowed_domain_netlocs:
+                                    nested_safe = True
+                                    
+                                esl_prefix_check = any(nested_asset_url.lower().startswith(s.lower()) for s in verified_esl_scripts if s)
+                                if esl_prefix_check:
+                                    nested_safe = True
+                                    
+                                if nested_safe:
+                                    if clean_src.lower().endswith(('.js', '.css', '.html', '.htm', '.mjs', '.cjs', '.wxs')):
+                                        if nested_asset_url not in js_files:
                                             if can_crawl_deeper:
                                                 js_files.append(nested_asset_url)
                                                 js_depths[nested_asset_url] = current_depth + 1
-                                        
-                                        rel_path = urlparse(nested_asset_url).path
-                                        found_paths.add(rel_path)
-                                        if rel_path not in discovered_in_js:
-                                            discovered_in_js[rel_path] = rel_path
-                                            if args.show_prog and (not nd or rel_path not in unique_progress_paths):
-                                                print(f"Found: {rel_path}")
-                                                unique_progress_paths.add(rel_path)
-                                                if args.show_source: print(f"  └─ Source File: {current_filename}")
-                                
+
                             for inline_tag in local_soup.find_all('script'):
                                 if inline_tag.string:
                                     inline_chunks = re.findall(r'["\'](/?[a-zA-Z0-9_\-\./]*\.js)["\']', inline_tag.string)
@@ -802,15 +802,29 @@ def main():
                                         clean_c = c if c.startswith('/') else '/' + c
                                         nested_inline_url = urljoin(js_url, clean_c)
                                         nested_netloc = urlparse(nested_inline_url).netloc.lower()
-                                        safe_nested_netloc = False
-                                        if nested_netloc in listofallowedesls:
-                                            safe_nested_netloc = True
+                                        safe_nested_url = False
+
                                         if nested_netloc == target_netloc:
-                                            safe_nested_netloc = True
-                                        if safe_nested_netloc and nested_inline_url not in js_files:
-                                            js_files.append(nested_inline_url)
+                                            safe_nested_url = True
+                                        elif nested_netloc in allowed_domain_netlocs:
+                                            safe_nested_url = True
+                                        elif any(nested_inline_url.lower().startswith(s.lower()) for s in verified_esl_scripts if s):
+                                            safe_nested_url = True
+                                            
+                                        if safe_nested_url and nested_inline_url not in js_files:
+                                            if can_crawl_deeper:
+                                                js_files.append(nested_inline_url)
+                                                js_depths[nested_inline_url] = current_depth + 1
+                                        
                                         found_paths.add(clean_c)
-                                        discovered_in_js[clean_c] = clean_c                      
+                                        if clean_c not in discovered_in_js:
+                                            discovered_in_js[clean_c] = clean_c
+                                            if args.show_prog and (not nd or clean_c not in unique_progress_paths):
+                                                print(f"Found: {clean_c}")
+                                                unique_progress_paths.add(clean_c)
+                                                if args.show_source: print(f"  └─ Source File: {current_filename}")
+
+
                         #identify js stack (2)
                         else:
                             identify_javascript_type_two(javascript_content=js_res.text, current_stack=js_stack)
@@ -823,23 +837,31 @@ def main():
                                     matches = [m for m in matches if m not in JSPDF_SIGNATURE_KEYS]
                                 for m in matches:
                                     m_clean = re.sub(r'(\$\{.*?\}|:[a-zA-Z0-9_\-]+|\{[^{}]*\}|<[^<>]*>)', cprs, m).strip()
-                                    m_display = f"{m_clean} [Original: {m}]" if m_clean != m else m_clean
                                     m_clean = m_clean.strip()
-                                    
                                     if m_clean.startswith('//'):
                                         m_clean = f"https:{m_clean}"
-                                        
+                                    m_display = f"{m_clean} [Original: {m}]" if m_clean != m else m_clean
                                     is_external_link = False
                                     if "://" in m_clean:
                                         m_netloc = urlparse(m_clean).netloc.lower()
-                                        if m_netloc != target_netloc and m_netloc not in esl_domains and m_netloc not in listofallowedesls:
+                                        allowed_reg_netlocs = {urlparse(d).netloc.lower() for d in verified_esl_domains if d}
+                                        
+                                        is_allowed_reg_asset = False
+                                        if m_netloc == target_netloc:
+                                            is_allowed_reg_asset = True
+                                        elif m_netloc in allowed_reg_netlocs:
+                                            is_allowed_reg_asset = True
+                                        elif any(m_clean.lower().startswith(s.lower()) for s in verified_esl_scripts if s):
+                                            is_allowed_reg_asset = True
+                                            
+                                        if not is_allowed_reg_asset:
                                             is_external_link = True
                                             
                                     if not is_external_link and "://" not in m_clean and not m_clean.startswith('/'): 
                                         m_clean = '/' + m_clean
                                         if m_clean != m: 
                                             m_display = '/' + m_display
-                                            
+
                                     clean_m_stripped = m_clean.lstrip('/')
                                     if clean_m_stripped in ['http:', 'https:']:
                                         continue
@@ -847,7 +869,7 @@ def main():
                                         continue
                                             
                                     if not m_clean.lower().endswith(ignored_extensions):
-                                        if m_clean.strip() in ["/", "//", "///", "/.", "/..", "/...", "/./", "/ "]: continue
+                                        if m_clean.strip() in ["/", "//", "///", "/.", "/..", "/...", "/./"]: continue
                                         if any(term in m_clean.lower() for term in USELESSSTUFF): continue
                                             
                                         if emscripten_vfs_detected:
@@ -858,20 +880,22 @@ def main():
                                                     break
                                             if is_fake_vfs_path: continue 
                                         
-                                        if not is_external_link and m_clean.lower().endswith(('.js', '.html', '.htm', '.mjs', '.cjs')):
+                                        if not is_external_link and m_clean.lower().endswith(('.js', '.html', '.htm', '.mjs', '.cjs', '.wxs')):
                                             check_nested_url = urljoin(target, m_clean)
                                             nested_netloc = urlparse(check_nested_url).netloc.lower()
                                             
                                             nested_safe = False
-                                            if nested_netloc in esl_domains or nested_netloc in listofallowedesls:
+                                            if nested_netloc == target_netloc:
                                                 nested_safe = True
-                                            elif nested_netloc == target_netloc:
+                                            elif nested_netloc in allowed_domain_netlocs:
                                                 nested_safe = True
-                                                    
+                                            elif any(check_nested_url.lower().startswith(s.lower()) for s in verified_esl_scripts if s):
+                                                nested_safe = True    
                                             if nested_safe and check_nested_url not in js_files:
                                                 if can_crawl_deeper:
                                                     js_files.append(check_nested_url)
                                                     js_depths[check_nested_url] = current_depth + 1
+
                                         found_paths.add(m_clean)
                                         if m_clean not in discovered_in_js:
                                             discovered_in_js[m_clean] = m_display
@@ -902,32 +926,38 @@ def main():
                 target_apex = '.'.join(target_netloc.split('.')[-2:]) if len(target_netloc.split('.')) >= 2 else target_netloc
                 SITEMAP_EXTENSIONS = ('.xml', '.txt', '.rss', '.atom', '.gz', '.zip')
                 
+                allowed_xml_netlocs = {urlparse(d).netloc.lower() for d in verified_esl_domains if d}
+
                 for f in list(found_paths):
                     if f.lower().endswith(SITEMAP_EXTENSIONS):
                         if "http://" in f.lower() or "https://" in f.lower():
                             clean_f = f
-                            f_netloc = urlparse(f).netloc.lower()
+                            f_domain = urlparse(f).netloc.lower()
                         else:
                             clean_f = '/' + f.lstrip('/')
-                            f_netloc = target_netloc
+                            f_domain = target_netloc
                             
-                        is_valid_map_domain = False
-                        if f_netloc == target_netloc or f_netloc in esl_domains or f_netloc in listofallowedesls:
-                            is_valid_map_domain = True
-                        elif f_netloc.endswith('.' + target_apex):
-                            is_valid_map_domain = True
+                        is_valid_map_url = False
+                        if f_domain == target_netloc:
+                            is_valid_map_url = True
+                        elif f_domain in allowed_xml_netlocs:
+                            is_valid_map_url = True
+                        elif any(clean_f.lower().startswith(s.lower()) for s in verified_esl_scripts if s):
+                            is_valid_map_url = True
+                        elif f_domain.endswith('.' + target_apex):
+                            is_valid_map_url = True
                             
-                        if is_valid_map_domain:
+                        if is_valid_map_url:
                             if "://" in clean_f and urlparse(clean_f).netloc.lower() != target_netloc:
                                 store_f = clean_f
                             else:
                                 store_f = urlparse(clean_f).path if "://" in clean_f else clean_f
                                 store_f = '/' + store_f.lstrip('/')
-                            
                             if store_f not in xml_files:
                                 xml_files.append(store_f)
                                 if store_f not in xml_depths:
                                     xml_depths[store_f] = 1
+
 
                 # recursive xml loop
                 xml_index = 0
@@ -1148,6 +1178,7 @@ def main():
             disallowed_url_chars = {
                 '"', '<', '>', backslash, '^', '`', '{', '|', '}', '[', ']', "'"
             }
+
             if not args.raw_output:
                 # get the base domain (efg.hijk from abcd.efg.hijk)
                 def get_base(domain):
