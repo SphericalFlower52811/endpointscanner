@@ -164,6 +164,7 @@ For comparisons against the industry standard, go to the [comparison file](COMPA
 - Added `-nhb/--no-headless-browser` flag to completely disable the headless browser and use a simple GET request instead.
 - Added `-fm` flag, `--filter-more`. Will filter stuff like `www.w3.org` if passed as results like `http://www.w3.org/2000/svg` are present in almost all websites.
 - Added `-orlt` flag to only perform a rate-limiting test.
+- Changed scraper to scrape all `href` and `src` attributes instead of only looking for code/image files.
 
 ### Bug Fixes/Code improvements
 
