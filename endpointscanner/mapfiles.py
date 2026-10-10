@@ -26,7 +26,6 @@ def scrape_structure_files(args, target, HEADER, impersonate_settings, found_pat
                 is_legit_robots = any(sig in r_res.text.lower() for sig in ["user-agent:", "disallow:", "allow:", "sitemap:", "llms.txt:"])
                 
                 if is_legit_robots:
-                        
                     if '/robots.txt' not in e_files:
                         e_files.append('/robots.txt')
                         
