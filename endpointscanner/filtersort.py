@@ -162,7 +162,7 @@ def sort_endpoints(
                         elif is_framework_asset:
                             if is_shell or is_home_redirect:
                                 if not args.tidy:
-                                    results_dead.append(f"404 Not Found (React Shell Fake File): {path}{statag}")
+                                    results_dead.append(f"404 Not Found (React Shell): {path}{statag}")
                                 else:
                                     results_dead.append(f"404 Not Found: {path}{statag}")
                             else:
