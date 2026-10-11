@@ -281,7 +281,7 @@ def main():
             invalidated_suffix = "" if args.still_show_invalid else " (Hidden, use --still-show-invalid or -ssi to show)"
             if not args.raw_output:
                 if not args.pipeable:
-                    print(f"Total paths to test: {len(found_paths)} (Scraped: {len(found_paths) - len(SENSITIVE_ENDPOINT)} | Built-in: {len(SENSITIVE_ENDPOINT)})")
+                    print(f"\nTotal paths to test: {len(found_paths)} (Scraped: {len(found_paths) - len(SENSITIVE_ENDPOINT)} | Built-in: {len(SENSITIVE_ENDPOINT)})")
                     print("Testing paths...")
                 
                 if len(found_paths) >= 2000:
