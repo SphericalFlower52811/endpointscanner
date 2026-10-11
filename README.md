@@ -167,6 +167,7 @@ For comparisons against the industry standard, go to the [comparison file](COMPA
 - Changed scraper to scrape all `href` and `src` attributes instead of only looking for code/image files.
 - Moved structure file scraping into `mapfiles.py`
 - Moved code file scraping into `scrapefiles.py`
+- Moved path sorting into `filtersort.py`
 
 ### Bug Fixes/Code improvements
 
