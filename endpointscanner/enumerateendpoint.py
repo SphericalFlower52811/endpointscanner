@@ -6,14 +6,13 @@ Main python file used. When running the command, this is the file that runs.
 import asyncio
 from curl_cffi import requests
 import sys #used for sys.exit
-from bs4 import BeautifulSoup
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 import time
 import secrets
 #imports from other files
 from .browser import gethtmlafterload
 from .ratelimittester import async_rate_test
-from .identifyjs import identify_javascript_type, identify_javascript_type_two
+from .identifyjs import identify_javascript_type
 from .miscfuncs import checktime, check_if_local, startcodeargs, testhttpprotocol, checkserveruptime, verifyeacheslprotocol, timeout_input
 from .outputendpointsfound import display_and_save_results
 from .headerconfig import HEADER
@@ -100,7 +99,7 @@ def main():
             timeout=autoinput_timeout,
             default="TARGET_NOT_INPUTTED",
             auto_input_enabled=(not args.no_auto_input)
-        )
+        ).lower()
         if target == "TARGET_NOT_INPUTTED":
             print(f"Target not input after {autoinput_timeout}s, exiting script.")
             user_exits = False
@@ -209,7 +208,7 @@ def main():
             sys.exit(0)
         except Exception as e:
             if "TargetClosedError" in type(e).__name__:
-                print("Scan cancelled by user.") #for web version
+                print("Scan cancelled by user.") #for web version if i make it
                 sys.exit(0)
             print(f"Error starting up headless browser. Using base request to scan {target}")
             main_html = base_res.text
@@ -266,7 +265,7 @@ def main():
             )
 
             if not args.only_res:
-                print(f"\nDetected JS Stack: {' + '.join(js_stack) if js_stack else 'Unknown JS Stack'}\n")
+                print(f"\nDetected JS Stack: {' + '.join(js_stack) if js_stack else 'Unknown JS Stack'}")
             if emscripten_vfs_detected:
                 found_paths = list({
                         i.strip() for i in found_paths 

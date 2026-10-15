@@ -97,7 +97,7 @@ def isthere_captcha(response, playwright_html=None):
 
 def gethtmlafterload(args, url, debugbrowser, initial_response=None):
     mainhtml = initial_response.text if initial_response else ""
-    cookies = {}
+    cookies = None
 
     if not args.no_headless_browser:
         with sync_playwright() as p:
@@ -124,10 +124,10 @@ def gethtmlafterload(args, url, debugbrowser, initial_response=None):
                     is_blocked, waf_name = isthere_captcha(initial_response, mainhtml)
                     if is_blocked:
                         print(f"WARNING!!! Scan is blocked by a captcha.\nCaptcha Detected: {waf_name}")
-                    return mainhtml, {}, {"blocked": is_blocked, "waf": waf_name if is_blocked else None}
+                    return mainhtml, None, {"blocked": is_blocked, "waf": waf_name if is_blocked else None}
                 else:
                     print("Unexpected Issue:", e)
-                return mainhtml, {}
+                return mainhtml, None, {"blocked": False, "waf": None}
         
             context = browser.new_context(
                 user_agent=HEADER['User-Agent'], 
@@ -167,12 +167,13 @@ def gethtmlafterload(args, url, debugbrowser, initial_response=None):
                 if is_blocked:
                     print(f"WARNING!!! Scan is blocked by a captcha.\nCaptcha Detected: {waf_name}")
                     browser.close()
-                    return mainhtml, {}, {"blocked":True, "waf":waf_name}
-                cookies = {c['name']: c['value'] for c in context.cookies()}
+                    return mainhtml, None, {"blocked":True, "waf":waf_name}
+                raw_cookies = context.cookies()
+                cookies = {c['name']: c['value'] for c in raw_cookies} if raw_cookies else None
 
             except Exception as e:
                 print("Unexpected Error:", e)
-                mainhtml, cookies = "", {}
+                mainhtml, cookies = None, None
 
             browser.close()
             return mainhtml, cookies, {"blocked":False, "waf":None}

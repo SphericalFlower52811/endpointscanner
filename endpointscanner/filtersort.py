@@ -139,9 +139,9 @@ async def test_path_worker(
                 is_transport = any(p in request_route.lower() for p in ["socket.io", "engine.io", "/rpc", "/webhook", "/graphql"])
                 if (is_shell or is_home_redirect) and (is_framework_asset or is_media_asset or "." in request_route) and not is_transport:
                     if not args.tidy:
-                        results_dead.append(f"404 Not Found (React Shell): {request_route}{statag}")
+                        results_dead.append(f"404 Not Found (React Shell): {display_path}{statag}")
                     else:
-                        results_dead.append(f"404 Not Found: {request_route}{statag}")
+                        results_dead.append(f"404 Not Found: {display_path}{statag}")
                     return
                 if (is_shell or is_home_redirect) and not is_transport and not is_framework_asset and not is_media_asset:
                     if request_route in discovered_in_js:
@@ -151,9 +151,9 @@ async def test_path_worker(
                             results_200.append(f"{display_path}{statag}")
                     else:
                         if not args.tidy:
-                            results_dead.append(f"404 Not Found (React Shell): {request_route}{statag}")
+                            results_dead.append(f"404 Not Found (React Shell): {display_path}{statag}")
                         else:
-                            results_dead.append(f"404 Not Found: {request_route}{statag}")
+                            results_dead.append(f"404 Not Found: {display_path}{statag}")
                             
                 # service if it exists
                 elif is_machine_path:
@@ -177,9 +177,9 @@ async def test_path_worker(
                     elif is_framework_asset:
                         if is_shell or is_home_redirect:
                             if not args.tidy:
-                                results_dead.append(f"404 Not Found (React Shell): {path}{statag}")
+                                results_dead.append(f"404 Not Found (React Shell): {display_path}{statag}")
                             else:
-                                results_dead.append(f"404 Not Found: {path}{statag}")
+                                results_dead.append(f"404 Not Found: {display_path}{statag}")
                         else:
                             results_frameworks.append(f"{display_path}{statag}")
                     else:
@@ -302,3 +302,56 @@ def sort_endpoints(
             unsorted_paths.append(display_path)
 
     return start_test_time, checktimestatusalready, invalidated_count
+
+def filter_endpoints(
+    args, target, results_ext, results_subd, results_200, results_services, 
+    results_assets, results_frameworks, results_30x, results_protected, 
+    results_dead, invalidated_endpoints, unsorted_paths
+):
+    if not (args.only_endpoints or args.only_sub or args.only_external):
+        return None
+    all_endpoints = []
+    def get_base(domain):
+        parts = domain.split('.')
+        return ".".join(parts[-2:]) if len(parts) > 1 else domain
+    if args.raw_output:
+        target_netloc = urlparse(target if "://" in target else f"https://{target}").netloc.lower()
+        raw_ext, raw_subd, raw_endpoints = [], [], []
+        for path in unsorted_paths:
+            try:
+                parsed_path = urlparse(path)
+                if not parsed_path.netloc:
+                    raw_endpoints.append(path)
+                    continue
+
+                asset_domain = parsed_path.netloc.lower()
+                is_external = get_base(asset_domain) != get_base(target_netloc)
+
+                if is_external:
+                    raw_ext.append(path)
+                elif asset_domain != target_netloc:
+                    raw_subd.append(path)
+                else:
+                    raw_endpoints.append(path)
+            except:
+                raw_endpoints.append(path)
+        results_200.extend(raw_endpoints)
+        results_ext.extend(raw_ext)
+        results_subd.extend(raw_subd)
+    if args.only_external:
+        all_endpoints.extend(results_ext)
+    if args.only_sub:
+        all_endpoints.extend(results_subd)
+    if args.only_endpoints:
+        all_endpoints.extend(results_200)
+        all_endpoints.extend(results_protected)
+        all_endpoints.extend(results_services)
+        all_endpoints.extend(results_frameworks)
+        all_endpoints.extend(results_30x)
+        if args.show_media: all_endpoints.extend(results_assets)
+        if args.show_404s: all_endpoints.extend(results_dead)
+        if args.still_show_invalid: all_endpoints.extend(invalidated_endpoints)
+
+    return sorted(list(set(all_endpoints)))
+        
+        
