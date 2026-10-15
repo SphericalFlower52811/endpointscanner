@@ -1,4 +1,4 @@
-# EndpointScanner: Website Endpoint Scanner and Rate Limit Tester (Version 7.5.0 DEBUG)
+# EndpointScanner: Website Endpoint Scanner and Rate Limit Tester (Version 7.5)
 
 **Source code at: [EndpointScanner Repository](https://github.com/SphericalFlower52811/endpointscanner)**
 
@@ -8,7 +8,15 @@ The dev branch hosts new features that may not be the full update, main branch w
 
 A fast automated website reconnaissance tool for red teaming in cybersecurity that extracts paths, endpoints, files, subdomains, and even external links from modern websites. Automated IDOR and broken access control vulnerability testing through replacing variables with 1 in endpoints/paths. Has a built in rate limit tester that can test on any endpoint with 4 HTTP methods, and can bypass simple WAFs/captchas and SPAs.
 
-**For Installation, please go to the [Installation section](#installation) below!**
+## Navigation
+
+- [**Benchmark against popular tools**](COMPARISON.md)
+- [**How it works**](#how-it-works)
+- [**All flags**](#tool-flags)
+- [**Installation**](#installation)
+- [**Example Commands**](#example-commands)
+- [**Release Notes**](#release-notes)
+- [**Legal Disclaimer**](#legal-disclaimer)
 
 **Feel free to contact me at `sphericalflower@gmail.com` to ask for help on how to use the tool or to leave feedback.**
 
@@ -25,11 +33,11 @@ A fast automated website reconnaissance tool for red teaming in cybersecurity th
 - Checks server uptime and prints out JS Stack of the website (these are extra details, a flag is needed to show the extra details.)
 - Has a rate limit tester by sending `n` number requests to a certain endpoint with 4 HTTP methods, custom headers, body, variable in request body.
 
-## How to run
+## Tool flags
 
-Command to run after installing **(For installation, look for the 'Installation' section.)**:
+All passable flags for the tool:
 
-| Argument                       | Short Form | Description                                                                                                                                                                                                                                                                    |
+| Flag                           | Short Form | Description                                                                                                                                                                                                                                                                    |
 | :----------------------------- | :--------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `target`                       | `NIL`      | URL                                                                                                                                                                                                                                                                            |
 | `--ratelimit`                  | `-r`       | Number of requests to send during the rate limit test. Default is 100.                                                                                                                                                                                                         |
@@ -39,7 +47,7 @@ Command to run after installing **(For installation, look for the 'Installation'
 | `--force`                      | `NIL`      | Mandatory flag to pass if doing a rate limit test with over 2500 requests using a non-GET HTTP method. Has no short form flag.                                                                                                                                                 |
 | `--testpath`                   | `-t`       | Endpoint to test for rate limiting.                                                                                                                                                                                                                                            |
 | `--show-404s`                  | `-s`       | Show endpoints tested that returned a 404 or an SPA shell.                                                                                                                                                                                                                     |
-| `--disable-structure-files`    | `s`        | Disable scanning of site structure files (robots, sitemaps, manifests, etc.)                                                                                                                                                                                                   |
+| `--disable-structure-files`    | `-ds`      | Disable scanning of site structure files (robots, sitemaps, manifests, etc.)                                                                                                                                                                                                   |
 | `--show-media`                 | `-m`       | Include assets/media like images and fonts and videos in scan results                                                                                                                                                                                                          |
 | `--show-prog`                  | `-sp`      | Print endpoints to the terminal one by one in real-time as they are found. Warning: Progress will show duplicate paths if endpoints are defined multiple times in the code. Use the flag -nd to remove duplicates from progress. Results will not contain duplicates.          |
 | `--output-file`                | `-o`       | Save formatted results directly to a local text file.                                                                                                                                                                                                                          |
@@ -50,17 +58,31 @@ Command to run after installing **(For installation, look for the 'Installation'
 | `--only-original`              | `-oo`      | Only show the original version of the flag instead of it being replaced with a 1. Will also affect show prog.                                                                                                                                                                  |
 | `--show-source`                | `-ss`      | Print the source of each endpoint during progress, like printing out which file it found the endpoint from.                                                                                                                                                                    |
 | `--scan-timeout`               | `-st`      | Stop scan completely after given number of minutes and print/save any results found in that time window. Will leave unsorted endpoints in a section labelled 'UNSORTED', and will leave out sensitive endpoints. Will NOT interrupt rate limiting test.                        |
-| `--sort-output`                | `-so`      | Sort out endpoints                                                                                                                                                                                                                                                             |
+| `--sort-output`                | `-so`      | Sort out endpoints.                                                                                                                                                                                                                                                            |
 | `--ratelimit-header`           | `-rh`      | Custom headers. Must be seperated by a pipe(\|), or newlines. Example use: Cookies: {ExampleCookie: example} \| Accept: application/json, text/plain, \*/\*. If the custom header contains double quotes, please use single quotes instead of double quotes to pass this flag. |
 | `--no-duplicate-prog`          | `-nd`      | If --show-progress is passed, duplicate endpoints in progress will not be shown.                                                                                                                                                                                               |
 | `--local`                      | `-l`       | Necessary flag if the site being tested on is a local site like a localhost or 127.0.0.1:port.                                                                                                                                                                                 |
 | `--no-detect-captcha`          | `-ndc`     | Flag to disable captcha detection function, in case it returns false positives and did not actually get blocked but thinks it did.                                                                                                                                             |
 | `--external-script-loader`     | `-esl`     | Add external domains used for loading script files into the website itself so that their code files will also be scanned for endpoints.                                                                                                                                        |
 | `--all-esl-protocol`           | `-aep`     | Flag to automatically add https/http to every single external script loader that is not defined at the start. Does nothing if -esl is not passed.                                                                                                                              |
-| `--extra-header`               | `-eH`      | Add extra headers you want for the website like cookies or authorization etc.                                                                                                                                                                                                  |
-| `--no-headless-browser`        | `-nh`      | Playwright browser used will not be headless, serves as a debug function.                                                                                                                                                                                                      |
-| `--disable-sensitive-endpoint` | `-dse`     | Flag to disable testing the sensitive endpoints (like `.env.local` and `.git/config`), allowing the tool to send less requests.                                                                                                                                                |
+| `--extra-header`               | `-eH`      | Add extra headers you want for the website like cookies or authorization etc. Also applies to rate limit test even if -orlt is passed.                                                                                                                                         |
+| `--no-headless`                | `-nh`      | Playwright browser used will not be headless, serves as a debug function.                                                                                                                                                                                                      |
+| `--disable-sensitive-endpoint` | `-dse`     | Flag to disable testing sensitive endpoints, allowing the tool to send less requests.                                                                                                                                                                                          |
 | `--still-show-invalid`         | `-ssi`     | Show endpoints that were flagged as invalid.                                                                                                                                                                                                                                   |
+| `--only-ratelimit-test`        | `-orlt`    | Make the scanner only test for rate limiting.                                                                                                                                                                                                                                  |
+| `--ratelimit-await-time`       | `-rat`     | Adjust rate limiting test await time for small or extremely large request quantities. Default is 50. Time is in seconds.                                                                                                                                                       |
+| `--pipeable`                   | `-p`       | Make the tool pipeable by automatically passing other arguments.                                                                                                                                                                                                               |
+| `--path-sub`                   | `-ps`      | Change the default path normalization replacement from 1 to a custom string.                                                                                                                                                                                                   |
+| `--only-sub`                   | `-os`      | Make the tool only output subdomains.                                                                                                                                                                                                                                          |
+| `--only-external`              | `-ox`      | Make the tool only output external links.                                                                                                                                                                                                                                      |
+| `--only-endpoints`             | `-oe`      | Make the tool only output endpoints. Does not include assets, services/apis.                                                                                                                                                                                                   |
+| `--depth`                      | `-de`      | How deep the recursive scanning for both js and xml files can go. Defaults to infinite.                                                                                                                                                                                        |
+| `--parse-zip`                  | `-pz`      | Allow the tool to expand .zip and .gz files (e.g. sitemap.xml.gz) and scrape from them.                                                                                                                                                                                        |
+| `--no-auto-input`              | `-nai`     | Disable automatic input after a set amount of time.                                                                                                                                                                                                                            |
+| `--filter-out-more`            | `-fm`      | Filter out more unhelpful results like w3.org or schema.org                                                                                                                                                                                                                    |
+| `--no-headless-browser`        | `-nhb`     | Script will not use the headless browser at all, and use a request instead to get the html body.                                                                                                                                                                               |
+| `--auto-input-time`            | `-ait`     | Customise amount of time taken for automatic input if you don't answer in seconds. Default 90 seconds.                                                                                                                                                                         |
+|                                |
 
 ## Installation
 
@@ -76,13 +98,13 @@ To install the official [endpointscanner Python package](https://pypi.org/projec
 ##### Command for MacOS/Linux:
 
 ```bash
-python3 -m pip install endpointscanner
+pip install endpointscanner
 ```
 
 ##### Command for Windows Command Prompt:
 
 ```text
-py -m pip install endpointscanner
+pip install endpointscanner
 ```
 
 #### Playwright Installation
@@ -131,17 +153,13 @@ Priority: u=0
 Te: trailers'
 ```
 
-Example command to only show the original endpoint, only print endpoints and output to a file:
+Example command to only show the original endpoint without adjusting the variable and output to a file:
 
 ```bash
-endpointscanner example.com -oo -or -o examplescan.txt
+endpointscanner example.com -oo -o examplescan.txt
 ```
 
-## Comparison against the industry standard
-
-For comparisons against the industry standard, go to the [comparison file](COMPARISON.md)
-
-## Release notes for Update 7.5
+## Release notes
 
 ### New features in update 7.5
 
@@ -150,7 +168,6 @@ For comparisons against the industry standard, go to the [comparison file](COMPA
 - `-ps`/`--path-sub` flag to change the automated path normalization from replacing variables to 1 to any custom string. Defaults to 1.
 - Merged `asset-manifest.json`, `web-manifest.json`, `manifest.json` into one loop.
 - added `-de`/`--depth` flag
-- added `-ps`/`--path-sub` flag
 - Made the sitemap loop (which previous only scanned `.xml` files) be able to scan `.xml, .txt, .rss, .atom` files.
   - Able to scan `.gz` and `.zip` files if the flag `-pz`/`--parse-zip` is passed. (Detects based off the file extension)
 - Added endpoints to the `SENSITIVE_ENDPOINT` set like actuator endpoints and swagger ui
@@ -165,9 +182,12 @@ For comparisons against the industry standard, go to the [comparison file](COMPA
 - Added `-fm` flag, `--filter-more`. Will filter stuff like `www.w3.org` if passed as results like `http://www.w3.org/2000/svg` are present in almost all websites.
 - Added `-orlt` flag to only perform a rate-limiting test.
 - Changed scraper to scrape all `href` and `src` attributes instead of only looking for code/image files.
+- Allow user to add an entire domain, or only one file as an external script loader (e.g. `examplegiganticcdn.com/example.js`)
 - Moved structure file scraping into `mapfiles.py`
 - Moved code file scraping into `scrapefiles.py`
 - Moved path sorting into `filtersort.py`
+- Optimised sorting endpoints
+- Added `-oe`/`--only-endpoints`, `-ox`/`--only-external` and `-os`/`--only-sub` flag to only print endpoints, external links, and subdomains respectively
 
 ### Bug Fixes/Code improvements
 
@@ -178,7 +198,7 @@ For comparisons against the industry standard, go to the [comparison file](COMPA
   - `manifest.json`
   - `sw.js`
   - `service-worker.js`
-- Changed `-nhb`/`--no-headless-browser` to `-nh`/`--no-headless` as `-nhb` was misleading. (`-nhb` became a diff flag)
+- Changed previous `-nhb` flag from showing browser UI to `-nh`/`-no-headless` to be more clear
 - Fixed an issue where the scraping would find data MIME types (e.g. application/x-javascript) and mistake them for real endpoints
 - Fixed a scope bug in the tool
 - Improve regex.
@@ -188,23 +208,14 @@ For comparisons against the industry standard, go to the [comparison file](COMPA
 
 ## Plans for next version and the future
 
-Continuing 7.5:
-
-- Allow user to add an entire domain, or only one file as an external script loader (e.g. `examplegiganticcdn.com/example.js`)
-- Moving large loops like map files into `mapfiles.py`, `scrapefiles.py`, and `filtersort.py`
-- Optimise the sorting loop by making it asynchronous
-- Properly update `README.md`
-- Add flags to only print parts of the output
-  - `-oe`/`--only-endpoints` flag
-    - Only output endpoints
-  - `-oea`/`--only-endpoints-all` flag
-    - Only print endpoints + assets + inaccessible endpoints
-
 Version 7.6:
 
 - Fixing a URL parameter problem in the tool
+- Further improving regex
+- Scanning `openapi.json` for paths
+- properly checking sensitive endpoints
 
-Future plans (May be added in the next version):
+Future plans (May be added in the future version):
 
 none right now
 
@@ -213,8 +224,7 @@ none right now
 - On Server-Side Rendered websites like PHP websites, there are literally no frontend code files for EndpointScanner to scan hence it will fail on those types of websites. (Keep in mind EndpointScanner is still top-tier when it comes to the modern web)
 - If there is a login page, the script will either show that all of the pages require login, or label all of them as 403.
 - If there are shells (e.g. React SPA shells) in the page, it may give false positives for sensitive endpoints. If you see sensitive endpoints in the scan, they may not actually be exposed on the website if the website has a shell. (E.g. .gitignore, .env.local). This will be fixed in update 7.5.1
-- The rate limit test is more susceptible to captchas as it uses a module (httpx, not curl_cffi) that is not built to specifically pass through firewalls/captchas. This is as the underlying library used to build curl_cffi, libcurl, recommends you not to use more than 15 max connections (see at [curlmopt_max_total_connections docs](https://curl.se/libcurl/c/CURLMOPT_MAX_TOTAL_CONNECTIONS.html)). Httpx was hence used instead of curl_cffi.
-  - **This information is accurate as of 11 August 2026.**
+- The rate limit test is more susceptible to captchas as it uses a module (httpx, not curl_cffi) that is not built to specifically pass through firewalls/captchas.
 
 ai assisted code btw
 

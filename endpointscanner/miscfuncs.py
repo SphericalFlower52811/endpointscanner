@@ -158,7 +158,7 @@ def startcodeargs():
     parser.add_argument("-aep", "--all-esl-protocol", type=str, default=None, choices=['https', 'http'], help="Flag to automatically add https/http to every single external script loader that is not defined at the start. Does nothing if -esl is not passed.")
     parser.add_argument("-eH", "--extra-header", action="append", default=[], help="Add extra headers you want for the website like cookies or authorization etc. Also applies to rate limit test even if -orlt is passed.")
     parser.add_argument("-nh", "--no-headless", action="store_true", help="Playwright browser used will not be headless, serves as a debug function.")
-    parser.add_argument("-dse", "--disable-sensitive-endpoint", action="store_true", help="Flag to disable testing the 23 sensitive endpoints, allowing the tool to send less requests.")
+    parser.add_argument("-dse", "--disable-sensitive-endpoint", action="store_true", help="Flag to disable testing sensitive endpoints, allowing the tool to send less requests.")
     parser.add_argument("-ssi", "--still-show-invalid", action='store_true', help='Show endpoints that were flagged as invalid.') 
     parser.add_argument("-orlt", "--only-ratelimit-test", action='store_true', help="Make the scanner only test for rate limiting.")
     parser.add_argument("-rat", "--ratelimit-await-time", type=int, default=50, help="Adjust rate limiting test await time for small or extremely large request quantities. Default is 50. Time is in seconds.")
