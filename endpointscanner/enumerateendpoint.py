@@ -118,52 +118,52 @@ def main():
     impersonate_settings = None if (check_if_local(target) or args.local) else "chrome120" #chrome120 will not work on localhosts.
     target = testhttpprotocol(target, HEADER, impersonate_settings, args)
 
-    if not args.pipeable: print(f"\nScanning {target}...")
-    # Define useless stuff
-    USELESSSTUFF = {"localhost", "127.0.0.1", "0.0.0.0", "/../"}
-    if args.filter_out_more:
-        USELESSSTUFF.update({
-            "www.w3.org", "schema.org", "xml.org", 
-            "schemas.microsoft.com", "schemas.openxmlformats.org"
-        })
-        
-    if impersonate_settings == None: #if the target is a localhost
-        USELESSSTUFF.discard("localhost")
-        USELESSSTUFF.discard("127.0.0.1")
-    #server uptime
-    serveruptime = checkserveruptime(target, HEADER, impersonate_settings, args)
-    start_test_time = time.perf_counter()
-    #hardcoded dangerous endpoints to test, disabled by -dse
-    if not args.disable_sensitive_endpoint:
-        SENSITIVE_ENDPOINT = {
-            "/.env", "/.env.local", "/.env.production", "/.env.development", "/.env.dev",
-            "/.git/config", "/.git/HEAD", "/package.json", "/package-lock.json", "/.npmrc", "/.dockerenv",
-            "/.gitignore", "/api/health", "/config", "/.env.example", "/docker-compose.yml", "/.babelrc", 
-            "/.eslintrc.json", "/config.json", "/.aws/credentials", "/.git/index",
-            "/etc/passwd", "/.DS_Store", "/.git/logs/HEAD", "/dump.sql", "/database.sqlite", "/db.sql", "/backup.sql",
-            "/actuator/env", "/actuator/heapdump", "/openapi.json", "/etc/shadow", "/.htaccess", "/.htpasswd", "/.hta",
-            "/.ssh/id_rsa", "/.ssh/id_ed25519", "/.bash_history", "/.ssh/authorized_keys", "/swagger-ui.html", "/api/docs",
-            "/swagger.json", "/swagger-ui/", "/health", "/docs", "/docs/oauth2-redirect", "/id_rsa", "/.ssh", "/.svn",
-            "/.subversion", "/.svn/entries", "/_next/static/development/_devPagesManifest.json", "/Dockerfile",
-            "/.next/required-server-files.json", "/.nuxt", "/vite.config.js", "/.vercel/project.json", "/.kube/config",
-            "/.gitlab-ci.yml", "/.github/workflows/main.yml", "/graphql", "/api/graphql", "/_graphql", "/.git", "/.git/packed-refs"
-        }
-    else:
-        SENSITIVE_ENDPOINT = {}
-
-    results_200, results_dead, results_30x = [], [], []
-    results_services, results_ext, results_subd = [], [], []
-    results_frameworks, results_assets, results_protected = [], [], []
-    invalidated_endpoints = []
-    emscripten_vfs_detected = False
-    #actually test these in 7.5.1/7.6
-    found_paths = set(SENSITIVE_ENDPOINT) if SENSITIVE_ENDPOINT else set()
-    discovered_in_js = {}
-    scanned_xmls = set()
-    scanned_js = set()
-    scanned_html = set()
-
     if not args.only_ratelimit_test:
+        if not args.pipeable: print(f"\nScanning {target}...")
+        # Define useless stuff
+        USELESSSTUFF = {"localhost", "127.0.0.1", "0.0.0.0", "/../"}
+        if args.filter_out_more:
+            USELESSSTUFF.update({
+                "www.w3.org", "schema.org", "xml.org", 
+                "schemas.microsoft.com", "schemas.openxmlformats.org"
+            })
+            
+        if impersonate_settings == None: #if the target is a localhost
+            USELESSSTUFF.discard("localhost")
+            USELESSSTUFF.discard("127.0.0.1")
+        #server uptime
+        serveruptime = checkserveruptime(target, HEADER, impersonate_settings, args)
+        start_test_time = time.perf_counter()
+        #hardcoded dangerous endpoints to test, disabled by -dse
+        if not args.disable_sensitive_endpoint:
+            SENSITIVE_ENDPOINT = {
+                "/.env", "/.env.local", "/.env.production", "/.env.development", "/.env.dev",
+                "/.git/config", "/.git/HEAD", "/package.json", "/package-lock.json", "/.npmrc", "/.dockerenv",
+                "/.gitignore", "/api/health", "/config", "/.env.example", "/docker-compose.yml", "/.babelrc", 
+                "/.eslintrc.json", "/config.json", "/.aws/credentials", "/.git/index",
+                "/etc/passwd", "/.DS_Store", "/.git/logs/HEAD", "/dump.sql", "/database.sqlite", "/db.sql", "/backup.sql",
+                "/actuator/env", "/actuator/heapdump", "/openapi.json", "/etc/shadow", "/.htaccess", "/.htpasswd", "/.hta",
+                "/.ssh/id_rsa", "/.ssh/id_ed25519", "/.bash_history", "/.ssh/authorized_keys", "/swagger-ui.html", "/api/docs",
+                "/swagger.json", "/swagger-ui/", "/health", "/docs", "/docs/oauth2-redirect", "/id_rsa", "/.ssh", "/.svn",
+                "/.subversion", "/.svn/entries", "/_next/static/development/_devPagesManifest.json", "/Dockerfile",
+                "/.next/required-server-files.json", "/.nuxt", "/vite.config.js", "/.vercel/project.json", "/.kube/config",
+                "/.gitlab-ci.yml", "/.github/workflows/main.yml", "/graphql", "/api/graphql", "/_graphql", "/.git", "/.git/packed-refs"
+            }
+        else:
+            SENSITIVE_ENDPOINT = {}
+
+        results_200, results_dead, results_30x = [], [], []
+        results_services, results_ext, results_subd = [], [], []
+        results_frameworks, results_assets, results_protected = [], [], []
+        invalidated_endpoints = []
+        emscripten_vfs_detected = False
+        #actually test these in 7.5.1/7.6
+        found_paths = set(SENSITIVE_ENDPOINT) if SENSITIVE_ENDPOINT else set()
+        discovered_in_js = {}
+        scanned_xmls = set()
+        scanned_js = set()
+        scanned_html = set()
+
         e_files, xml_files, xml_depths = scrape_structure_files(args, target, HEADER, impersonate_settings, found_paths, unique_progress_paths, nd, USELESSSTUFF)
         main_html = ""
         base_res = requests.get(

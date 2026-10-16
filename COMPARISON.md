@@ -44,11 +44,11 @@ and will not include:
 
 | Tool                             | Command used                                                                      | Endpoints found | Time taken (in seconds) |
 | :------------------------------- | :-------------------------------------------------------------------------------- | :-------------- | :---------------------- |
+| **EndpointScanner**              | `time endpointscanner [TARGET] -dse -ds -oo`                                      | **213**         | **15.728**              |
 | **Katana** (by ProjectDiscovery) | `time katana -u https://[TARGET] -d 5 -jc`                                        | 5               | 21.090 total            |
 | **Gobuster**                     | `time gobuster dir -u https://[TARGET] -w common.txt --exclude-length 480 -t 100` | 3               | 1.503                   |
 | **FFuF**                         | `time ffuf -u https://[TARGET]/FUZZ -w common.txt -fs 480 -s -t 100`              | 3               | 18.440                  |
 | **Feroxbuster**                  | `time feroxbuster -u https://[TARGET] -w common.txt -t 100`                       | 5               | 85.68                   |
-| **EndpointScanner**              | `time endpointscanner [TARGET] -dse -ds -oo`                                      | **213**         | **15.728**              |
 
 > ⚠️: Gobuster and FFuF was run with --exclude-length and -fs resspectively as the website is an SPA.
 
@@ -450,11 +450,11 @@ and will not include:
 
 | Tool                             | Command used                                                         | Endpoints found | Time taken (in seconds) |
 | :------------------------------- | :------------------------------------------------------------------- | :-------------- | :---------------------- |
+| **EndpointScanner**              | `endpointscanner https://[TARGET] -ds -dse -oo`                      | **134**         | **14.968**              |
 | **Katana** (by ProjectDiscovery) | `time katana -u https://[TARGET] -jc`                                | 3               | 15.845 total            |
 | **Gobuster**                     | `gobuster dir -u https://[TARGET] -w common.txt`                     | 3               | 15.890                  |
 | **FFuF**                         | `time ffuf -u https://[TARGET]/FUZZ -w common.txt -fs 516 -s -t 100` | 3               | 12.317                  |
 | **Feroxbuster**                  | `time feroxbuster -u https://[TARGET] -w common.txt -t 100`          | 3               | 54.149                  |
-| **EndpointScanner**              | `endpointscanner https://[TARGET] -ds -dse -oo`                      | **134**         | **14.968**              |
 
 > ⚠️: Gobuster and FFuF was run with --exclude-length and -fs resspectively as the website is an SPA.
 

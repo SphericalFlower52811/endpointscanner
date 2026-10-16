@@ -188,6 +188,7 @@ endpointscanner example.com -oo -o examplescan.txt
 - Moved path sorting into `filtersort.py`
 - Optimised sorting endpoints
 - Added `-oe`/`--only-endpoints`, `-ox`/`--only-external` and `-os`/`--only-sub` flag to only print endpoints, external links, and subdomains respectively
+- Rate limit tester now uses curl_cffi instead of httpx
 
 ### Bug Fixes/Code improvements
 
@@ -222,9 +223,8 @@ none right now
 ## Weaknesses
 
 - On Server-Side Rendered websites like PHP websites, there are literally no frontend code files for EndpointScanner to scan hence it will fail on those types of websites. (Keep in mind EndpointScanner is still top-tier when it comes to the modern web)
-- If there is a login page, the script will either show that all of the pages require login, or label all of them as 403.
+- If there is a login page, the script will either show that all of the pages require login, or label all of them as 403 (if sorting is enabled).
 - If there are shells (e.g. React SPA shells) in the page, it may give false positives for sensitive endpoints. If you see sensitive endpoints in the scan, they may not actually be exposed on the website if the website has a shell. (E.g. .gitignore, .env.local). This will be fixed in update 7.5.1
-- The rate limit test is more susceptible to captchas as it uses a module (httpx, not curl_cffi) that is not built to specifically pass through firewalls/captchas.
 
 ai assisted code btw
 

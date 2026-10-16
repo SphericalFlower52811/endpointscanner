@@ -2,7 +2,8 @@
 Asynchronous rate-limiting tester on any endpoint, with 4 different available HTTP methods to test.
 '''
 
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlparse
+from curl_cffi import requests
 import asyncio
 import json
 import sys
@@ -89,9 +90,6 @@ async def async_rate_test(url, num_reqs=100, method="GET", rb=None, rv=None, coo
         print(f"Request body: {rb}")
         
     # async
-    import httpx
-
-    limits = httpx.Limits(max_keepalive_connections=num_reqs, max_connections=num_reqs)
     responses = [None] * len(payload_queue)
 
     processed_queue = []
@@ -105,7 +103,10 @@ async def async_rate_test(url, num_reqs=100, method="GET", rb=None, rv=None, coo
                 parsed_body = b
         processed_queue.append((h, parsed_body, is_json))
 
-    async with httpx.AsyncClient(limits=limits) as client:
+    async with requests.AsyncSession(
+        impersonate="chrome120",
+        max_clients=dyn_limit 
+    ) as client:
         queue = asyncio.Queue()
         
         for idx, (h, body_data, json_flag) in enumerate(processed_queue):
@@ -125,9 +126,11 @@ async def async_rate_test(url, num_reqs=100, method="GET", rb=None, rv=None, coo
                         headers=h,
                         cookies=cookies,
                         json=final_body if is_json_type else None,
-                        content=None if is_json_type else final_body,
-                        timeout=35.0
+                        data=None if is_json_type else final_body,
+                        timeout=35.0,
+                        allow_redirects=False
                     )
+                    responses[index] = res 
                     responses[index] = res 
                 except Exception as e:
                     responses[index] = e
