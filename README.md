@@ -228,12 +228,6 @@ none right now
 
 ai assisted code btw
 
-## Playwright details:
-
-Playwright is an automated browser which means it launches a browser from the cli that does not load a GUI when in headless mode, which is the mode EndpointScanner uses unless the flag to turn off the headless mode is passed. see more at [Playwright Python module documentation](https://playwright.dev/python/docs/api/class-playwright).
-
-EndpointScanner uses playwright-stealth, playwright-stealth at [Playwright-stealth docs](https://pypi.org/project/playwright-stealth/)
-
 # Legal Disclaimer
 
 Note that this tool is strictly meant for **authorised** testing and security research. Running this script on websites where you are not permitted to do so can result in legal action. The author of this script assumes no responsibility for any misuse or legal consequences from running this script. Ensure you have received permission from the owner of the target website before performing tests or scans on their website.

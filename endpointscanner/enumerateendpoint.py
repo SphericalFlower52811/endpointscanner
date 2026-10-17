@@ -173,7 +173,7 @@ def main():
             timeout=10
         )
         fake_path = f"/very-fake-page-123456123456abcdefg_{secrets.token_hex(16)}"
-        if not args.pipeable:
+        if not args.only_res:
             if args.no_headless:
                 print("\nStarting browser to bypass captchas and detect shells with a fake path.")
                 if not args.only_res:
@@ -222,12 +222,12 @@ def main():
             shell_content = fake_res.text
         except:
             shell_content = ""
-        if not args.pipeable:
+        if not args.only_res:
             if args.no_headless_browser:
-                print("Fake path test finished.\n")
+                print("Fake path test finished.")
             else:
-                print("\nHeadless browser & fake path test finished.\n")
-            print("Scraping files...")
+                print("\nHeadless browser & fake path test finished.")
+        if not args.pipeable: print("\nScraping files...")
         try:
             patterns = [
                             r'["\'`](/[a-zA-Z0-9_\-\./{}:~%]*?)["\'`]', 
@@ -361,7 +361,7 @@ def main():
                 assets_suffix, dead_suffix, invalidated_suffix,
                 all_scanned_sources,
                 unsorted_paths, invalidated_count,
-                invalidated_endpoints, SENSITIVE_ENDPOINT
+                invalidated_endpoints
             )
 
             if args.ratelimit is not None:

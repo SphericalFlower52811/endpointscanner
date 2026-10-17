@@ -10,7 +10,7 @@ def display_and_save_results(
     assets_suffix, dead_suffix, invalidated_suffix,
     all_scanned_sources,
     unsorted_paths, invalidated_count,
-    invalidated_endpoints, SENSITIVE_ENDPOINT
+    invalidated_endpoints
 ):
     what_to_output = filter_endpoints(
         args, target, results_ext, results_subd, results_200, results_services, 
@@ -18,6 +18,8 @@ def display_and_save_results(
         results_dead, invalidated_endpoints, unsorted_paths
         )
     if what_to_output is not None:
+        if args.pipeable and args.only_endpoints:
+            what_to_output = [f"{target}{p}" if p.startswith("/") else p for p in what_to_output]
         print()
         print("\n".join(f" {p}" for p in what_to_output))
     else:
@@ -211,11 +213,13 @@ def display_and_save_results(
             if not args.pipeable:
                 print("\nEndpoints will not be sorted. Sensitive endpoints like '.git/config' will be automatically skipped.\n")
                 print('----Raw Results----\n')
-            clean_found_paths = [p for p in unsorted_paths if p not in SENSITIVE_ENDPOINT]
+            clean_found_paths = [p for p in unsorted_paths]
+            if args.pipeable:
+                clean_found_paths = [f"{target}{p}" if p.startswith("/") else p for p in clean_found_paths]
             if clean_found_paths:
                 print("\n".join(clean_found_paths))
             if args.still_show_invalid:
-                print('----Invalidated (-ssi passed)----\n')
+                if not args.pipeable: print('----Invalidated (-ssi passed)----\n')
                 print("\n".join(f"  {p}" for p in invalidated_endpoints))
                 
             if args.show_source:
@@ -236,7 +240,7 @@ def display_and_save_results(
                             if not args.pipeable: fi.write('----Invalidated (-ssi passed)----\n\n')
                             fi.write("\n".join(f"  {p}" for p in invalidated_endpoints) + "\n")
                             
-                        if args.show_source:
+                        if args.show_source and not args.pipeable:
                             fi.write(f"\n\n----Files Scanned----\n")
                             if all_scanned_sources: fi.write("\n".join(f" - {f}" for f in sorted(set(all_scanned_sources))) + "\n")
                         if not args.pipeable:

@@ -3,26 +3,29 @@
 ## What is EndpointScanner?
 
 EndpointScanner is an open-source cybersecurity tool created by SphericalFlower52811 made for web bug bounty hunters, pentesters, and other red teaming roles.
-It is a tool to crawl and parse a website's code files to extract the endpoints of a website, like `/admin`, `/dashboard`, and `/api/v1/users/1`.
-Doing this is very important during a website pentest as it is reconnaissance, the first step in the **Cyber Kill Chain**.
+It is a tool to crawl and parse a website's code files to extract the endpoints of a website, like `/admin`, `/dashboard`, and `/api/v1/users/1`, which helps to map out your attack surface for a pentest.
 Finding endpoints on a website allows you to plan out your pentest, like:
 - Testing attacks on useful endpoints like /admin for broken access control allowing you in the admin panel and allowing an unauthorized user to escalate their privileges
 - Checking for rate-limiting on seemingly insignificant endpoints like /profile/description or /comment/editing, as sending thousands of data-changing requests (POST, PATCH, PUT) can easily exhaust the server leading to a DoS.
-- Finding any injections like SQL/NoSQL/XPATH injection, XSS, SSTI and more in endpoints like /login or /register.
+- Finding injections (like SQL injection, XSS, SSTI etc.) in endpoints like /login or /register.
 
+## Comparisons of EndpointScanner against popular tools
+
+A benchmarking file of EndpointScanner and other popular tools on 2 different websites can be found at [COMPARISON.md](./COMPARISON.md)
 
 ## Features (version 7.5.0):
-- **Sorting Algorithm**: Sorts all results into endpoints, services/APIs, subdomains, code files, and more categories.
-- **Bypasses simple anti-bot software**: Uses a playwright headless browser to retrieve clearance cookies and a hydrated homepage for the website. Uses curl_cffi to impersonate a chrome browser's TLS and JA3 footprint to bypass CAPTCHAs, for example Cloudflare Turnstile.
+- **Sorting Algorithm**: Sorts all results into endpoints, protected paths, services/APIs, subdomains, code files, and more categories.
+- **Bypasses simple anti-bot software**: Uses a `playwright-stealth` headless browser to retrieve anti-bot software clearance cookies and a hydrated homepage for the website. Uses python's `curl_cffi` to impersonate a chrome browser's TLS and JA3 footprint to bypass CAPTCHAs.
 - **Built-in Sensitive Endpoints**: 23 built-in sensitive endpoints like .env.local, .env, package-lock.json that should never be pushed to git.
 - **Crawls many types of files**: Crawls XML, HTML and JS files for endpoints, subdomains, external links, media, source code, and redirects.
 - **Built-in Rate-Limiting Tester** EndpointScanner has a native optional rate limit tester on any endpoint of your choice where you can have a custom header, custom HTTP method, custom body, and a custom variable to iterate in the payload defined as `{X}`.
 - **JavaScript Stack detection**: Scans response headers, JS and HTML files to properly detect what JS Stack the website uses.
-- **Built-in URL normalization**: If the path contains a variable, like example.com/${userId}/settings, the script automatically changes the variable to 1 to make it a valid URL path, which many current scripts fail to do. This also serves as an additional test for broken access control if the endpoint is private user data and should not be accessed by the public. Also shows the original variable used for paths where it was switched to 1.
+- **Built-in URL normalization**: If the path contains a variable, like example.com/${userId}/settings, the script automatically changes the variable to 1 (or any string the user chooses, default to 1) to make it a valid URL path, which many popular scripts fail to do. This also serves as an additional test for broken access control if the endpoint is private user data and should not be accessed by the public. Also shows the original variable used for paths where it was switched to 1.
 - **Local Scanning**: EndpointScanner can scan local/private hosts like a localhost, 127.0.0.1 or a private subnet. For localhost and 127.0.0.1, you will need to pass the -l flag for it to be scanned.
 - **Scan Time Limit Feature**: EndpointScanner has a feature where you can pass the -st flag to make the scan stop after (float) amount of minutes. It will ask you if you want to extend the scan by 5 minutes before actually stopping.
 - **Pinpoint Accuracy**: EndpointScanner only scans code files to extract endpoints if the code file is from the actual target domain. Many other tools tend to scan code files of different subdomains, taking up a lot more time and returning useless results.
 - **Allows External Script Loaders**: EndpointScanner allows you to add multiple external script loaders for their code files to also be scanned for the website.
+- **Pipeable into other tools**: Endpointscanner has a `-p` flag that makes the output pipeable into vulnerability assesment tools like Nuclei or FFuF.
 
 ## Advantage EndpointScanner has against other popular tools
 
@@ -44,13 +47,13 @@ Additionally, website code files are typically unguarded by strict CAPTCHAs. As 
 ### Katana by ProjectDiscovery
 
 #### Flaws of Katana
-> This was done on a mirrored copy of a real website that i had permission to test, hence localhost in the url.
-Tools like Katana mistake minified JavaScript as website endpoints, like:
-- `http://localhost:8080/assets/s.dom.offsetHeight/s.do`
-- `http://localhost:8080/assets/this.program`
-- `http://localhost:8080/assets/a.number/o.do`
-- `http://localhost:8080/assets/-e/this.pl`
-- `http://localhost:8080/assets/%60+up%28this.src%29+%60
+> The exact domain name will be censored as [TARGET] to protect the privacy of the developer.
+Tools like Katana return false positives, like:
+- `http://[TARGET]/assets/s.dom.offsetHeight/s.do`
+- `http://[TARGET]/assets/this.program`
+- `http://[TARGET]/assets/a.number/o.do`
+- `http://[TARGET]/assets/-e/this.pl`
+- `http://[TARGET]/assets/%60+up%28this.src%29+%60
 
 ---
 
@@ -82,11 +85,9 @@ This is a fundamentally flawed approach as it will return endpoints that may hav
 #### Why EndpointScanner is better
 EndpointScanner takes endpoints from present updated code files, ensuring outdated results are not returned.
 
-## Weaknesses of EndpointScanner
-While EndpointScanner is a top-tier scanning tool for websites, it also has its set of weaknesses.
-- On legacy server-side rendered websites like PHP websites, there are literally no frontend code files for EndpointScanner to scan, hence it will fail on these legacy websites. (Keep in mind EndpointScanner is still top-tier when it comes to the modern web)
-- For Single-Page Applications, there may be false positives if the developer left outdated/deleted endpoints defined in the JavaScript/XML files but had removed those endpoints or made it return a 404 page but a 200 status response code.
-- The sorting algorithm to sort each endpoint is not multi-threaded, which will be fixed in a future update.
+## Limitations
+EndpointScanner is designed specifically to find endpoints and paths hidden inside client-side HTML, XML and JavaScript code. Some limitations should be kept in mind:
+- **Legacy Server-Side websites (e.g. PHP)**: If a website is purely server-side rendered and does not serve frontend JavaScript files to the browser, EndpointScanner will not find many endpoints. It is built for the modern web, not legacy websites.
 
 ## Installation:
 EndpointScanner can only be installed via PyPI.
