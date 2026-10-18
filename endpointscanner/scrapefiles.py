@@ -314,7 +314,6 @@ def recursive_js_crawler(
                                         unique_progress_paths.add(clean_c)
                                         if args.show_source: print(f"  └─ Source File: {current_filename}")
 
-
                 #identify js stack (2)
                 else:
                     identify_javascript_type_two(javascript_content=js_res.text, current_stack=js_stack)
@@ -330,6 +329,13 @@ def recursive_js_crawler(
                             m_clean = m_clean.strip()
                             if m_clean.startswith('//'):
                                 m_clean = f"https:{m_clean}"
+
+                            if "://" not in m_clean:
+                                if not m_clean.startswith('/'):
+                                    m_clean = '/' + m_clean
+                                if not m.startswith('/'):
+                                    m = '/' + m
+                            
                             m_display = f"{m_clean} [Original: {m}]" if m_clean != m else m_clean
                             is_external_link = False
                             if "://" in m_clean:
@@ -346,11 +352,6 @@ def recursive_js_crawler(
                                     
                                 if not is_allowed_reg_asset:
                                     is_external_link = True
-                                    
-                            if not is_external_link and "://" not in m_clean and not m_clean.startswith('/'): 
-                                m_clean = '/' + m_clean
-                                if m_clean != m: 
-                                    m_display = '/' + m_display
 
                             clean_m_stripped = m_clean.lstrip('/')
                             if clean_m_stripped in ['http:', 'https:']:
