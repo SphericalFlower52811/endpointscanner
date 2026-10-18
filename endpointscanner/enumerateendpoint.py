@@ -226,7 +226,7 @@ def main():
             if args.no_headless_browser:
                 print("Fake path test finished.")
             else:
-                print("\nHeadless browser & fake path test finished.")
+                print("Headless browser & fake path test finished.")
         if not args.pipeable: print("\nScraping files...")
         try:
             patterns = [

@@ -6,7 +6,7 @@ This file will provide a comparison of EndpointScanner against other popular web
 
 Time taken is measured through the MacOS `time` command, and will be present in the tools' outputs.
 
-This information is updated as of 30 September 2026.
+This information is updated as of 18 October 2026.
 
 ## Navigation Links for websites
 
@@ -15,17 +15,19 @@ This information is updated as of 30 September 2026.
 
 ## Website 1
 
+- [Navigation to website 2](#website-2)
+
 ### Details
 
-I have not asked for permission to publicly disclose what this website is, so this website will remain anonymous. Files like index-[HASH].js will have the hash censored for privacy purposes.
+I have not asked for permission to publicly disclose what this website is, so this website will remain anonymous. Files like index-[HASH].js will have the hash censored for privacy purposes and part of some paths will be censored with [HIDDEN]. Parameters will be hidden as {PARAM}. Website will be censored as [TARGET].
 
 ### Navigation Links for scanners
 
-- [Jump to EndpointScanner's result](#result-from-endpointscanner-on-website-1)
-- [Jump to Katana's result](#result-from-katana-by-projectdiscovery-on-website-1)
-- [Jump to Gobuster's results](#result-from-gobuster-on-website-1)
-- [Jump to FFuF's results](#result-from-ffuf-on-website-1)
-- [Jump to Feroxbuster's results](#result-from-feroxbuster-on-website-1)
+- [Jump to EndpointScanner's result](#endpointscanners-result-on-website-1)
+- [Jump to Katana's result](#katanas-result-on-website-1)
+- [Jump to Gobuster's results](#gobusters-result-on-website-1)
+- [Jump to FFuF's results](#ffufs-result-on-website-1)
+- [Jump to Feroxbuster's results](#feroxbusters-result-on-website-1)
 
 ### Quick Comparison
 
@@ -44,29 +46,28 @@ and will not include:
 
 | Tool                             | Command used                                                                      | Endpoints found | Time taken (in seconds) |
 | :------------------------------- | :-------------------------------------------------------------------------------- | :-------------- | :---------------------- |
-| **EndpointScanner**              | `time endpointscanner [TARGET] -dse -ds -oo`                                      | **213**         | **15.728**              |
-| **Katana** (by ProjectDiscovery) | `time katana -u https://[TARGET] -d 5 -jc`                                        | 5               | 21.090 total            |
-| **Gobuster**                     | `time gobuster dir -u https://[TARGET] -w common.txt --exclude-length 480 -t 100` | 3               | 1.503                   |
-| **FFuF**                         | `time ffuf -u https://[TARGET]/FUZZ -w common.txt -fs 480 -s -t 100`              | 3               | 18.440                  |
-| **Feroxbuster**                  | `time feroxbuster -u https://[TARGET] -w common.txt -t 100`                       | 5               | 85.68                   |
+| **EndpointScanner**              | `time endpointscanner [TARGET] -dse -ds -oo`                                      | **221**         | **16.386**              |
+| **Katana** (by ProjectDiscovery) | `time katana -u https://[TARGET] -d 5 -jc`                                        | 4               | 16.187                  |
+| **Gobuster**                     | `time gobuster dir -u https://[TARGET] -w common.txt --exclude-length 480 -t 100` | 2               | 20.858                  |
+| **FFuF**                         | `time ffuf -u https://[TARGET]/FUZZ -w common.txt -fs 480 -s -t 100`              | 2               | 18.090                  |
+| **Feroxbuster**                  | `time feroxbuster -u https://[TARGET] -w common.txt -t 100`                       | 2               | 83.68                   |
 
-> ⚠️: Gobuster and FFuF was run with --exclude-length and -fs resspectively as the website is an SPA.
+> ⚠️: Gobuster and FFuF were run with --exclude-length and -fs respectively as the website is an SPA.
 
 ### Full Comparison
 
 ---
 
-#### Result from EndpointScanner on website 1
+#### EndpointScanner's result on website 1
 
 <details>
 <summary><b>Click to open EndpointScanner's result:</b></summary>
 
 ```text
 -----------------------------------------------------------------
-Endpointscanner v7.5.0 (DEBUG)
+Endpointscanner v7.5.0
 
 Made by: SphericalFlower52811
-(I was too lazy to make a 3D ASCII banner, nor do I want one.)
 
 GitHub: https://github.com/SphericalFlower52811/endpointscanner
 Docs:   https://sphericalflower52811.github.io/endpointscanner/
@@ -74,99 +75,103 @@ Docs:   https://sphericalflower52811.github.io/endpointscanner/
 
 Scanning https://[TARGET]...
 
-Starting headless browser to bypass captchas and detect shells with a fake path.
-Sensitive endpoints like '.git/config' will be automatically skipped as sorting is not enabled.
-This will be fixed in 7.5.1 to verify all sensitive files.
+Scraping files...
 
-Total paths found: 213
+Total paths found: 221
 
 Endpoints will not be sorted. Sensitive endpoints like '.git/config' will be automatically skipped.
 
 ----Raw Results----
 
-${P.defaults.baseURL}/admin/topics/csv-template
+{PARAM}/admin/topics/csv-template
+{PARAM}/[HIDDEN]
+{PARAM}/[HIDDEN]/{PARAM}/content
+{PARAM}/[HIDDEN]/{PARAM}/resolve
+{PARAM}/[HIDDEN]/{PARAM}/resolve-apply
+{PARAM}/[HIDDEN]/{PARAM}/resolve-status
+{PARAM}/[HIDDEN]/{PARAM}/review-answer
 /accuracy-explained
 /admin
 /admin/catalog
 /admin/catalog/import
-/admin/catalog/packs/${e.curriculum_topic_id}
-/admin/catalog/packs/${e.curriculum_topic_id}/publish
+/admin/catalog/packs/{PARAM}
+/admin/catalog/packs/{PARAM}/publish
+/admin/catalog/[HIDDEN]
+/admin/catalog/[HIDDEN]/{PARAM}
+/admin/catalog/[HIDDEN]/{PARAM}/attach
+/admin/catalog/[HIDDEN]/{PARAM}/preview
 /admin/ingest
 /admin/[HIDDEN]
-/admin/[HIDDEN]/providers/${e}
+/admin/[HIDDEN]/providers/{PARAM}
 /admin/[HIDDEN]/test
 /admin/[HIDDEN]/test-vision
-/admin/[HIDDEN]/[HIDDEN]/${e}
-/admin/[HIDDEN]/[HIDDEN]/${e}/reset
+/admin/[HIDDEN]/workflows/{PARAM}
+/admin/[HIDDEN]/workflows/{PARAM}/reset
 /admin/pdfs
-/admin/schools
-/admin/schools/${de.school.id}
-/admin/schools/import-csv
+/admin/[HIDDEN]
+/admin/[HIDDEN]/{PARAM}
+/admin/[HIDDEN]/import-csv
 /admin/settings/email
 /admin/settings/email/test
 /admin/settings/features
-/admin/settings/features/${e}
-/admin/settings/users/${e}/beta
-/admin/textbooks
-/admin/textbooks/${e}
-/admin/textbooks/${e}/chapters
-/admin/textbooks/${e}/chapters/${t}
-/admin/textbooks/${e}/chapters/${t}/sub-chapters
-/admin/textbooks/${e}/chapters/${t}/sub-chapters/${n}
-/admin/textbooks/import-csv
-/admin/textbooks/tree
+/admin/settings/features/{PARAM}
+/admin/settings/users/{PARAM}/beta
+/admin/[HIDDEN]
+/admin/[HIDDEN]/{PARAM}
+/admin/[HIDDEN]/{PARAM}/[HIDDEN]
+/admin/[HIDDEN]/{PARAM}/[HIDDEN]/{PARAM}
+/admin/[HIDDEN]/{PARAM}/[HIDDEN]/{PARAM}/sub-[HIDDEN]
+/admin/[HIDDEN]/{PARAM}/[HIDDEN]/{PARAM}/sub-[HIDDEN]/{PARAM}
+/admin/[HIDDEN]/import-csv
+/admin/[HIDDEN]/tree
 /admin/topics
-/admin/topics/${e}
-/admin/topics/${e}/subtopics
-/admin/topics/${e}/subtopics/${t}
+/admin/topics/{PARAM}
+/admin/topics/{PARAM}/subtopics
+/admin/topics/{PARAM}/subtopics/{PARAM}
 /admin/topics/bulk
 /admin/topics/filters
 /admin/topics/import-csv
 /admin/topics/tree
 /admin/users
-/admin/users/${d.user.id}
-/admin/users/${e}/associated-users
-/assets/index-[HASH].js
+/admin/users/{PARAM}
+/admin/users/{PARAM}/associated-users
 /assets/index-[HASH].css
-/assignments
-/assignments/${e}
-/assignments/${e}/approve
-/assignments/${Ga}/class-summary
-/assignments/${Ga}/diagnostic-followup
-/assignments/${e}/diagnostic-report
-/assignments/${e}/duplicate
-/assignments/${e}/explanation-cards
-/assignments/${e}/generation-status
-/assignments/${e}/meta
-/assignments/${e.assignment_id}/my-sessions
-/assignments/${e}/prerequisite-report
-/assignments/${e}/preview
-/assignments/:assignmentId/print
-/assignments/${jo}/questions/${e}
-/assignments/${jo}/questions/${e}/regenerate
-/assignments/${Ga}/remediation
-/assignments/${e}/results
-/assignments/${e}/retry-generation
-/assignments/${e}/student-review/${t}
-/assignments/${e}/student-review/${t}/attempts/${n.attempt_id}
-/assignments/${e}/visibility
-/assignments/${fr.assignment_id}/worksheet
-/assignments/${e}/worksheet-diagram/${n}
-/assignments/${e}/worksheet-page/${t}
-/assignments/${e}/worksheet-questions
-/assignments/${e}/worksheet-questions/${t}/resolve
-/assignments/${e}/worksheet-questions/${t}/resolve-apply
-/assignments/${e}/worksheet-questions/${t}/resolve-status
-/assignments/${e}/worksheet-questions/${t}/review-answer
-/assignments/derive-prerequisite-skills
-/assignments/extract-mcq-source
-/assignments/extract-progress/${e}
-/assignments/extract-worksheet
-/assignments/mcq-bundle
-/assignments/parent-assigned
-/assignments/re-extract-worksheet/${Xi}
-/assignments/regenerate-diagram/${Xi}/${t}
-/assignments/worksheet-preview-page/${e}/${n}
+/assets/index-[HASH].js
+/[HIDDEN]
+/[HIDDEN]/{PARAM}
+/[HIDDEN]/{PARAM}/approve
+/[HIDDEN]/{PARAM}/class-summary
+/[HIDDEN]/{PARAM}/diagnostic-followup
+/[HIDDEN]/{PARAM}/diagnostic-report
+/[HIDDEN]/{PARAM}/duplicate
+/[HIDDEN]/{PARAM}/explanation-cards
+/[HIDDEN]/{PARAM}/generation-status
+/[HIDDEN]/{PARAM}/meta
+/[HIDDEN]/{PARAM}/my-sessions
+/[HIDDEN]/{PARAM}/prerequisite-report
+/[HIDDEN]/{PARAM}/preview
+/[HIDDEN]/:assignmentId/print
+/[HIDDEN]/{PARAM}/questions/{PARAM}
+/[HIDDEN]/{PARAM}/questions/{PARAM}/regenerate
+/[HIDDEN]/{PARAM}/remediation
+/[HIDDEN]/{PARAM}/results
+/[HIDDEN]/{PARAM}/retry-generation
+/[HIDDEN]/{PARAM}/student-review/{PARAM}
+/[HIDDEN]/{PARAM}/student-review/{PARAM}/attempts/{PARAM}
+/[HIDDEN]/{PARAM}/visibility
+/[HIDDEN]/{PARAM}/worksheet
+/[HIDDEN]/{PARAM}/worksheet-diagram/{PARAM}
+/[HIDDEN]/{PARAM}/worksheet-page/{PARAM}
+/[HIDDEN]/{PARAM}/[HIDDEN]
+/[HIDDEN]/derive-prerequisite-skills
+/[HIDDEN]/extract-mcq-source
+/[HIDDEN]/extract-progress/{PARAM}
+/[HIDDEN]/extract-worksheet
+/[HIDDEN]/mcq-bundle
+/[HIDDEN]/parent-assigned
+/[HIDDEN]/re-extract-worksheet/{PARAM}
+/[HIDDEN]/regenerate-diagram/{PARAM}/{PARAM}
+/[HIDDEN]/worksheet-preview-page/{PARAM}/{PARAM}
 /auth/forgot-password
 /auth/google
 /auth/login
@@ -176,49 +181,49 @@ ${P.defaults.baseURL}/admin/topics/csv-template
 /auth/reset-password
 /auth/role
 /auth/verify-email
-/backchannel/classrooms/${nt}
-/backchannel/classrooms/${nt}/analyze
-/backchannel/classrooms/${nt}/insights
-/backchannel/classrooms/${e.classroom_id}/mark-read
-/backchannel/classrooms/${r}/questions
-/backchannel/classrooms/${e}/sessions
-/backchannel/questions/${e}/broadcast
-/backchannel/questions/${e}/dismiss
-/backchannel/questions/${e}/regenerate-draft
-/backchannel/questions/${e}/reply
-/backchannel/sessions/${e.id}
-/backchannel/student/feed
-/backchannel/teacher/summary
+/[HIDDEN]/[HIDDEN]/{PARAM}
+/[HIDDEN]/[HIDDEN]/{PARAM}/analyze
+/[HIDDEN]/[HIDDEN]/{PARAM}/insights
+/[HIDDEN]/[HIDDEN]/{PARAM}/mark-read
+/[HIDDEN]/[HIDDEN]/{PARAM}/questions
+/[HIDDEN]/[HIDDEN]/{PARAM}/sessions
+/[HIDDEN]/questions/{PARAM}/broadcast
+/[HIDDEN]/questions/{PARAM}/dismiss
+/[HIDDEN]/questions/{PARAM}/regenerate-draft
+/[HIDDEN]/questions/{PARAM}/reply
+/[HIDDEN]/sessions/{PARAM}
+/[HIDDEN]/student/feed
+/[HIDDEN]/teacher/summary
 /billing/checkout
 /billing/portal
 /billing/status
 /billing/success
-/classrooms
-/classrooms/${e}
-/classrooms/${e}/at-risk
-/classrooms/${e}/collaborators/${t}
-/classrooms/${e}/name
-/classrooms/${e}/quote
-/classrooms/${n}/roster
-/classrooms/${n}/students
-/classrooms/${La}/students/${e.student_id}
-/classrooms/collaborate
-/classrooms/join
-/classrooms/my
+/[HIDDEN]
+/[HIDDEN]/{PARAM}
+/[HIDDEN]/{PARAM}/at-risk
+/[HIDDEN]/{PARAM}/collaborators/{PARAM}
+/[HIDDEN]/{PARAM}/name
+/[HIDDEN]/{PARAM}/quote
+/[HIDDEN]/{PARAM}/roster
+/[HIDDEN]/{PARAM}/students
+/[HIDDEN]/{PARAM}/students/{PARAM}
+/[HIDDEN]/collaborate
+/[HIDDEN]/join
+/[HIDDEN]/my
 /favicon.svg
 /forgot-password
 /lessons
-/lessons/${e}
-/lessons/${e.lesson_id}/content
-/lessons/${e}/copy
-/lessons/${e.lesson_id}/original
-/lessons/${e.lesson_id}/page/${n}
-/lessons/${D.lesson_id}/quiz-result
-/lessons/${e}/results
-/lessons/${n.lesson_id}/thumbnail
-/lessons/${e}/visibility
+/lessons/{PARAM}
+/lessons/{PARAM}/content
+/lessons/{PARAM}/copy
+/lessons/{PARAM}/original
+/lessons/{PARAM}/page/{PARAM}
+/lessons/{PARAM}/quiz-result
+/lessons/{PARAM}/results
+/lessons/{PARAM}/thumbnail
+/lessons/{PARAM}/visibility
 /lessons/check-security
-/lessons/classroom/${e}
+/lessons/classroom/{PARAM}
 /lessons/media
 /lessons/my
 /lessons/packs/candidates
@@ -232,60 +237,62 @@ ${P.defaults.baseURL}/admin/topics/csv-template
 /parent
 /parent/catalog
 /parent/children
-/parent/children/${e.user_id}
-/parent/children/${t}/catalog/${e.curriculum_topic_id}
-/parent/children/${e}/password
-/parent/children/${p.user_id}/profile
-/parent/progress/${e}
+/parent/children/{PARAM}
+/parent/children/{PARAM}/catalog/{PARAM}
+/parent/children/{PARAM}/password
+/parent/children/{PARAM}/profile
+/parent/progress/{PARAM}
 /parent/review/:assignmentId/:childId
 /parent/worksheets
-/parent/worksheets/${e}
-/parent/worksheets/${e}/preview
-/parent/worksheets/${e}/retry-generation
-/parent/worksheets/${e}/review/${t}
+/parent/worksheets/{PARAM}
+/parent/worksheets/{PARAM}/preview
+/parent/worksheets/{PARAM}/retry-generation
+/parent/worksheets/{PARAM}/review/{PARAM}
 /practice/:sessionId
 /preview/:sessionId
 /preview/upload/:sessionId
 /pricing
 /profile
 /prompts
-/prompts/${nt.key}
-/prompts/${e}/reset
-/question-bank/${t.id}
-/question-bank/${t.id}/share
+/prompts/{PARAM}
+/prompts/{PARAM}/reset
+/prompts/meta
+/question-bank/{PARAM}
+/question-bank/{PARAM}/share
 /question-bank/bulk
 /reflect/:sessionId
 /register
 /reset-password
 /review/:assignmentId
 /select-role
-/sessions/${t}
-/sessions/${t}/action
-/sessions/${t}/feedback
-/sessions/${t}/finish
-/sessions/${t}/marking-status
-/sessions/${t}/questions/${e}/explain-card
-/sessions/${e}/reflect
-/sessions/${e}/reflection
-/sessions/${e}/upload-page/${n}
-/sessions/${t}/upload-work
-/sessions/preview/${t}
+/sessions/{PARAM}
+/sessions/{PARAM}/action
+/sessions/{PARAM}/feedback
+/sessions/{PARAM}/finish
+/sessions/{PARAM}/marking-status
+/sessions/{PARAM}/questions/{PARAM}/explain-card
+/sessions/{PARAM}/reflect
+/sessions/{PARAM}/reflection
+/sessions/{PARAM}/upload-page/{PARAM}
+/sessions/{PARAM}/upload-work
+/sessions/preview/{PARAM}
 /sessions/preview/start
-/sessions/review/${e}
+/sessions/review/{PARAM}
 /sessions/start
 /start
 /students/:studentId
 /teacher/profile
 /teacher/review/:assignmentId/:studentId
 /teacher/tools/:tool
-/textbooks
-/textbooks/${ni}/chapters
+/[HIDDEN]
+/[HIDDEN]/{PARAM}/[HIDDEN]
 /topics/meta
 /topics/unified
 /translate
 /upload/:sessionId
 /users/profile
 /users/profile/password
+/users/profile/study-scope
 /verify-email
 http://www.w3.org/1998/Math/MathML
 http://www.w3.org/1999/xhtml
@@ -294,24 +301,23 @@ http://www.w3.org/2000/svg
 http://www.w3.org/2000/xmlns/
 http://www.w3.org/XML/1998/namespace
 https://accounts.google.com/gsi/client
-https://github.com/syntax-tree/hast-util-to-jsx-runtime
+https://github.com/[HIDDEN]
 https://react.dev/errors/
 
 Invalidated Endpoints: 1 (Hidden, use --still-show-invalid or -ssi to show)
-endpointscanner [TARGET] -dse -ds -oo  1.22s user 0.48s system 10% cpu 15.728 total
+endpointscanner [TARGET] -dse -ds -oo  1.24s user 0.49s system 10% cpu 16.386 total
 ```
 
 </details>
 
 ---
 
-#### Result from Katana (by ProjectDiscovery) on website 1
+#### Katana's result on website 1
 
 <details>
 <summary><b>Click to open Katana's result:</b></summary>
 
 ```text
-
    __        __
   / /_____ _/ /____ ____  ___ _
  /  '_/ _  / __/ _  / _ \/ _  /
@@ -319,21 +325,21 @@ endpointscanner [TARGET] -dse -ds -oo  1.22s user 0.48s system 10% cpu 15.728 to
 
 		projectdiscovery.io
 
-[INF] Current katana version v1.7.0 (latest)
+[INF] Current katana version v1.8.0 (latest)
 [INF] Started standard crawling for => https://[TARGET]
 https://[TARGET]
 https://[TARGET]/assets/index-[HASH].css
 https://[TARGET]/assets/index-[HASH].js
-https://[TARGET]/assets/%60+dp%28this.src%29+%60
-[INF] Crawl completed in 16s. 4 endpoints found.
-katana -u https://[TARGET] -d 5 -jc  0.35s user 0.09s system 2% cpu 21.090 total
+https://[TARGET]/assets/%60+up%28this.src%29+%60
+[INF] Crawl completed in 15s. 4 endpoints found.
+katana -u [TARGET] -jc  0.36s user 0.10s system 2% cpu 16.187 total
 ```
 
 </details>
 
 ---
 
-#### Result from Gobuster on website 1
+#### Gobuster's result on website 1
 
 <details>
 <summary><b>Click to open Gobuster's result:</b></summary>
@@ -354,38 +360,35 @@ by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
 ===============================================================
 Starting gobuster in directory enumeration mode
 ===============================================================
-docs                 (Status: 200) [Size: 1018]
 health               (Status: 200) [Size: 15]
 topics               (Status: 401) [Size: 30]
 Progress: 4614 / 4614 (100.00%)
 ===============================================================
 Finished
 ===============================================================
-gobuster dir -u https://[TARGET] -w common.txt --exclude-length 480 -  1.72s user 0.90s system 12% cpu 20.589 total
+gobuster dir -u https://[TARGET] -w common.txt --exclude-length 480 -t 100  1.49s user 0.96s system 11% cpu 20.858 total
 ```
 
 </details>
 
 ---
 
-#### Result from FFuF on website 1
+#### FFuF's result on website 1
 
 <details>
 <summary><b>Click to open FFuF's result:</b></summary>
 
 ```text
-time ffuf -u https://[TARGET]/FUZZ -w common.txt -fs 480 -s -t 100
-docs
 health
 topics
-ffuf -u https://[TARGET]/FUZZ -w common.txt -fs 480 -s -t 100  1.09s user 1.78s system 15% cpu 18.440 total
+ffuf -u https://[TARGET]/FUZZ -w common.txt -fs 480 -s -t 100  1.12s user 1.68s system 15% cpu 18.090 total
 ```
 
 </details>
 
 ---
 
-#### Result from Feroxbuster on website 1
+#### Feroxbuster's result on website 1
 
 <details>
 <summary><b>Click to open Feroxbuster's result:</b></summary>
@@ -410,28 +413,33 @@ by Ben "epi" Risher 🤓                 ver: 2.13.1
  🏁  Press [ENTER] to use the Scan Management Menu™
 ──────────────────────────────────────────────────
 200      GET       15l       38w      480c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
-200      GET       81l      240w     3012c https://[TARGET]/docs/oauth2-redirect
-200      GET        1l     3442w   201628c https://[TARGET]/openapi.json
-200      GET       32l       69w     1018c https://[TARGET]/docs
 200      GET        1l        1w       15c https://[TARGET]/health
 401      GET        1l        2w       30c https://[TARGET]/topics
-[####################] - 84s    18465/18465   0s      found:5       errors:1
-[####################] - 60s     4615/4615    77/s    https://[TARGET]/
-[####################] - 66s     4615/4615    70/s    https://[TARGET]/cgi-bin/
-[####################] - 67s     4615/4615    69/s    https://[TARGET]/cgi-bin/cgi-bin/
-[####################] - 58s     4615/4615    79/s    https://[TARGET]/cgi-bin/cgi-bin/cgi-bin/
-feroxbuster -u https://[TARGET] -w common.txt -t 100  4.90s user 2.52s system 8% cpu 1:25.68 total
+[####################] - 82s    18460/18460   0s      found:2       errors:1
+[####################] - 51s     4615/4615    90/s    https://[TARGET]/
+[####################] - 58s     4615/4615    79/s    https://[TARGET]/cgi-bin/
+[####################] - 64s     4615/4615    72/s    https://[TARGET]/cgi-bin/cgi-bin/
+[####################] - 60s     4615/4615    77/s    https://[TARGET]/cgi-bin/cgi-bin/cgi-bin/
+feroxbuster -u https://[TARGET] -w common.txt -t 100  4.72s user 3.17s system 9% cpu 1:23.68 total
 ```
 
 </details>
 
 ## Website 2
 
-The developer has asked to keep their website anonymous, hence the website will also be censored as [TARGET]. Other details in paths related to the website that could reveal it will be labeled as [HIDDEN], code files with hashes with be `index-[HASH].js`.
+[Navigation to website 1](#website-1)
+
+### Details
+
+The developer has asked to keep their website anonymous, hence the website will also be censored as [TARGET]. Other details in paths related to the website that could reveal it will be labeled as [HIDDEN], code files with hashes with be `index-[HASH].js`. Parameters will be hidden as {PARAM}.
 
 ### Navigation Links
 
-[Jump to EndpointScanner's results](#endpointscanners-result-for-website-2)
+- [Jump to EndpointScanner's result](#endpointscanners-result-on-website-2)
+- [Jump to Katana's result](#katanas-result-on-website-2)
+- [Jump to Gobuster's results](#gobusters-result-on-website-2)
+- [Jump to FFuF's results](#ffufs-result-on-website-2)
+- [Jump to Feroxbuster's results](#feroxbusters-result-on-website-2)
 
 ### Quick Comparison
 
@@ -448,28 +456,27 @@ and will not include:
 - External links
 - Subdomains
 
-| Tool                             | Command used                                                         | Endpoints found | Time taken (in seconds) |
-| :------------------------------- | :------------------------------------------------------------------- | :-------------- | :---------------------- |
-| **EndpointScanner**              | `endpointscanner https://[TARGET] -ds -dse -oo`                      | **134**         | **14.968**              |
-| **Katana** (by ProjectDiscovery) | `time katana -u https://[TARGET] -jc`                                | 3               | 15.845 total            |
-| **Gobuster**                     | `gobuster dir -u https://[TARGET] -w common.txt`                     | 3               | 15.890                  |
-| **FFuF**                         | `time ffuf -u https://[TARGET]/FUZZ -w common.txt -fs 516 -s -t 100` | 3               | 12.317                  |
-| **Feroxbuster**                  | `time feroxbuster -u https://[TARGET] -w common.txt -t 100`          | 3               | 54.149                  |
+| Tool                             | Command used                                                                      | Endpoints found | Time taken (in seconds) |
+| :------------------------------- | :-------------------------------------------------------------------------------- | :-------------- | :---------------------- |
+| **EndpointScanner**              | `time endpointscanner https://[TARGET] -ds -dse -oo`                              | **134**         | **15.598**              |
+| **Katana** (by ProjectDiscovery) | `time katana -u https://[TARGET] -jc`                                             | 3               | 12.004                  |
+| **Gobuster**                     | `time gobuster dir -u https://[TARGET] -w common.txt --exclude-length 480 -t 100` | 3               | 13.066                  |
+| **FFuF**                         | `time ffuf -u https://[TARGET]/FUZZ -w common.txt -fs 516 -s -t 100`              | 3               | 13.371                  |
+| **Feroxbuster**                  | `time feroxbuster -u https://[TARGET] -w common.txt -t 100`                       | 3               | 56.646                  |
 
-> ⚠️: Gobuster and FFuF was run with --exclude-length and -fs resspectively as the website is an SPA.
+> ⚠️: Gobuster and FFuF were run with --exclude-length and -fs respectively as the website is an SPA.
 
 ---
 
-#### EndpointScanner's result for website 2
+#### EndpointScanner's result on website 2
 
 <details><summary><b>Click to open EndpointScanner's result:</b></summary>
 
 ```text
 -----------------------------------------------------------------
-Endpointscanner v7.5.0 (DEBUG)
+Endpointscanner v7.5.0
 
 Made by: SphericalFlower52811
-(I was too lazy to make a 3D ASCII banner, nor do I want one.)
 
 GitHub: https://github.com/SphericalFlower52811/endpointscanner
 Docs:   https://sphericalflower52811.github.io/endpointscanner/
@@ -477,9 +484,7 @@ Docs:   https://sphericalflower52811.github.io/endpointscanner/
 
 Scanning https://[TARGET]...
 
-Starting headless browser to bypass captchas and detect shells with a fake path.
-Sensitive endpoints like '.git/config' will be automatically skipped as sorting is not enabled.
-This will be fixed in 7.5.1 to verify all sensitive files.
+Scraping files...
 
 Total paths found: 134
 
@@ -487,28 +492,28 @@ Endpoints will not be sorted. Sensitive endpoints like '.git/config' will be aut
 
 ----Raw Results----
 
-${this.workspace.options.pathToMedia}delete-icon.svg
-${this.workspace.options.pathToMedia}foldout-icon.svg
-${o.options.pathToMedia}resize-handle.svg
+{PARAM}delete-icon.svg
+{PARAM}foldout-icon.svg
+{PARAM}resize-handle.svg
 /404
 /admin
-/admin/api/force/follow
-/admin/api/force/project
-/admin/api/impersonate/${N.id}
+/admin/api/[HIDDEN]
+/admin/api/[HIDDEN]
+/admin/api/impersonate/{PARAM}
 /admin/api/projects
-/admin/api/projects/${N.id}
+/admin/api/projects/{PARAM}
 /admin/api/stats
 /admin/api/users
-/admin/api/users/${N.id}
-/admin/api/users/${N.id}/${ze}
+/admin/api/users/{PARAM}
+/admin/api/users/{PARAM}/{PARAM}
 /app
 /app/
-/app/desktop-google-auth
+/app/[HIDDEN]auth
 /assets/favicon.ico
 /assets/index-[HASH].js
 /assets/index-[HASH].css
-/assets/mpy-cross-v6-[HASH].wasm
-/assets/mpy-cross-v6-[HASH].js
+/assets/[HIDDEN].wasm
+/assets/[HIDDEN].js
 /assets/[HIDDEN].png
 /assets/[HIDDEN].js
 /assets/[HIDDEN].js
@@ -516,23 +521,23 @@ ${o.options.pathToMedia}resize-handle.svg
 /auth/google/start
 /auth/login
 /auth/passkey/credentials
-/auth/passkey/credentials/${_e}
+/auth/passkey/credentials/{PARAM}
 /auth/passkey/login/complete
 /auth/passkey/login/options
 /auth/passkey/register/complete
 /auth/passkey/register/options
 /auth/register
-/[HIDDEN]-media/
+/[HIDDEN]
 /engine.io
 /explore
 /home
 /login
 /messages
 /messages/:conversationId
-/messages/conversation/${ye}
-/messages/conversation/${E}/accept
-/messages/conversation/${E}/decline
-/messages/conversation/${E}/send
+/messages/conversation/{PARAM}
+/messages/conversation/{PARAM}/accept
+/messages/conversation/{PARAM}/decline
+/messages/conversation/{PARAM}/send
 /messages/conversation/start
 /messages/inbox
 /messages/requests
@@ -540,25 +545,25 @@ ${o.options.pathToMedia}resize-handle.svg
 /projects
 /projects-view
 /projects/:id
-/projects/${Nt}/block-documents
-/projects/${Nt}/block-documents/${$.id}
-/projects/${ke.id}/duplicate
-/projects/${Nt}/export
-/projects/${Nt}/files
-/projects/${Nt}/files/${$}
-/projects/${Nt}/folders
-/projects/${Nt}/folders/${$.id}
-/projects/${Nt}/share
-/projects/${rt}/snapshots
-/projects/${Nt}/snapshots/${$}
-/projects/${Nt}/snapshots/${$.id}/export
-/projects/${Nt}/snapshots/${$.id}/inspect
-/projects/${Nt}/snapshots/${$.id}/restore
-/projects/${rt}/tasks
-/projects/${Nt}/tasks/${$.id}
-/projects/${Nt}/tree/move
-/projects/${ue.id}/visibility
-/projects/access/${ke}
+/projects/{PARAM}/block-documents
+/projects/{PARAM}/block-documents/{PARAM}
+/projects/{PARAM}/duplicate
+/projects/{PARAM}/export
+/projects/{PARAM}/files
+/projects/{PARAM}/files/{PARAM}
+/projects/{PARAM}/folders
+/projects/{PARAM}/folders/{PARAM}
+/projects/{PARAM}/share
+/projects/{PARAM}/snapshots
+/projects/{PARAM}/snapshots/{PARAM}
+/projects/{PARAM}/snapshots/{PARAM}/export
+/projects/{PARAM}/snapshots/{PARAM}/inspect
+/projects/{PARAM}/snapshots/{PARAM}/restore
+/projects/{PARAM}/tasks
+/projects/{PARAM}/tasks/{PARAM}
+/projects/{PARAM}/tree/move
+/projects/{PARAM}/visibility
+/projects/access/{PARAM}
 /projects/explore/all
 /[HIDDEN].html
 /[HIDDEN].js
@@ -569,12 +574,12 @@ ${o.options.pathToMedia}resize-handle.svg
 /share/:code
 /socket.io
 /users/:userId
-/users/${n}/${Q}
-/users/${It.id}/block
-/users/${n}/follow
-/users/${_e}/projects
-/users/${_e}/stats
-/users/${It.id}/unblock
+/users/{PARAM}/{PARAM}
+/users/{PARAM}/block
+/users/{PARAM}/follow
+/users/{PARAM}/projects
+/users/{PARAM}/stats
+/users/{PARAM}/unblock
 /users/me
 /users/me/email/verify/google
 /users/me/picture
@@ -585,45 +590,44 @@ ${o.options.pathToMedia}resize-handle.svg
 /vendor/[HIDDEN]/
 /welcome
 /workspace
-http://randomcolour.com
+http://[HIDDEN]
 http://www.w3.org/1998/Math/MathML
 http://www.w3.org/1999/xhtml
 http://www.w3.org/1999/xlink
 http://www.w3.org/2000/svg
 http://www.w3.org/XML/1998/namespace
-https://${t}/favicon.ico
+https://{PARAM}/favicon.ico
 https://accounts.google.com/gsi/client
 https://accounts.google.com/o/oauth2/v2/auth
-https://[HIDDEN]/static/[HIDDEN]/
-https://[HIDDEN]/static/docs/v2.20.0/${H.docsPath}
-https://[HIDDEN].com/static/media/
+https://[HIDDEN]/static/[HIDDEN]
+https://[HIDDEN]/static/docs/[HIDDEN]/{PARAM}
+https://[HIDDEN]/static/media/
 https://developers.google.com/[HIDDEN]/xml
-https://en.wikipedia.org/wiki/%3F:
-https://en.wikipedia.org/wiki/Arithmetic
-https://en.wikipedia.org/wiki/Atan2
-https://en.wikipedia.org/wiki/Color
-https://en.wikipedia.org/wiki/For_loop
-https://en.wikipedia.org/wiki/Mathematical_constant
-https://en.wikipedia.org/wiki/Modulo_operation
-https://en.wikipedia.org/wiki/Nullable_type
-https://en.wikipedia.org/wiki/Number
-https://en.wikipedia.org/wiki/Random_number_generation
-https://en.wikipedia.org/wiki/Rounding
-https://en.wikipedia.org/wiki/Square_root
-https://en.wikipedia.org/wiki/Subroutine
-https://en.wikipedia.org/wiki/Trigonometric_functions
-https://github.com/RaspberryPiFoundation/[HIDDEN]
+https://en.wikipedia.org/wiki/[HIDDEN]
+https://en.wikipedia.org/wiki/[HIDDEN]
+https://en.wikipedia.org/wiki/[HIDDEN]
+https://en.wikipedia.org/wiki/[HIDDEN]
+https://en.wikipedia.org/wiki/[HIDDEN]
+https://en.wikipedia.org/wiki/[HIDDEN]
+https://en.wikipedia.org/wiki/[HIDDEN]
+https://en.wikipedia.org/wiki/[HIDDEN]
+https://en.wikipedia.org/wiki/[HIDDEN]
+https://en.wikipedia.org/wiki/[HIDDEN]
+https://en.wikipedia.org/wiki/[HIDDEN]
+https://en.wikipedia.org/wiki/[HIDDEN]
+https://en.wikipedia.org/wiki/[HIDDEN]
+https://en.wikipedia.org/wiki/[HIDDEN]
 https://github.com/[HIDDEN]
-https://github.com/[HIDDEN]/IDE/releases/latest/download/[HIDDEN]
-https://github.com/username
-https://icons.duckduckgo.com/ip3/${t}.ico
-https://www.december.com/html/spec/colorpercompact.html
+https://github.com/[HIDDEN]
+https://github.com/[HIDDEN]
+https://github.com/[HIDDEN]
+https://[HIDDEN].ico
+https://[HIDDEN]
 https://www.instagram.com/[HIDDEN]
 https://www.linkedin.com/company/[HIDDEN]
 
 Invalidated Endpoints: 1 (Hidden, use --still-show-invalid or -ssi to show)
-endpointscanner [TARGET] -dse -ds -oo  8.64s user 1.01s system 64% cpu 14.968 total
-
+endpointscanner [TARGET] -dse -ds -oo  9.26s user 1.14s system 66% cpu 15.598 total
 
 ```
 
@@ -631,7 +635,7 @@ endpointscanner [TARGET] -dse -ds -oo  8.64s user 1.01s system 64% cpu 14.968 to
 
 ---
 
-#### Katana's result for website 2
+#### Katana's result on website 2
 
 <details><summary><b>Click to open Katana's result:</b></summary>
 
@@ -644,13 +648,13 @@ endpointscanner [TARGET] -dse -ds -oo  8.64s user 1.01s system 64% cpu 14.968 to
 
 		projectdiscovery.io
 
-[INF] Current katana version v1.7.0 (latest)
+[INF] Current katana version v1.8.0 (latest)
 [INF] Started standard crawling for => https://[TARGET]
 https://[TARGET]
 https://[TARGET]/assets/index-[HASH].css
 https://[TARGET]/assets/index-[HASH].js
 [INF] Crawl completed in 11s. 3 endpoints found.
-katana -u [TARGET] -jc  0.19s user 0.09s system 2% cpu 12.534 total
+katana -u https://[TARGET] -jc  0.20s user 0.06s system 2% cpu 12.004 total
 
 ```
 
@@ -658,10 +662,12 @@ katana -u [TARGET] -jc  0.19s user 0.09s system 2% cpu 12.534 total
 
 ---
 
-#### Gobuster's result for website 2
+#### Gobuster's result on website 2
 
 <details><summary><b>Click to open Gobuster's result:</b></summary>
+
 ```text
+
 ===============================================================
 Gobuster v3.8.2
 by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
@@ -684,21 +690,24 @@ Progress: 4614 / 4614 (100.00%)
 ===============================================================
 Finished
 ===============================================================
-gobuster dir -u https://[TARGET] -w common.txt --exclude-length 516 -t 10  1.26s user 0.64s system 11% cpu 15.890 total
+gobuster dir -u https://[TARGET] -w common.txt --exclude-length 516 -t 100  1.38s user 0.77s system 16% cpu 13.066 total
+
 ```
+
 </details>
 
 ---
 
-#### FFuF's result for website 2
+#### FFuF's result on website 2
 
 <details><summary><b>Click to open FFuF's result:</b></summary>
 
 ```text
+
 favicon.ico
 health
 projects
-ffuf -u https://[TARGET]/FUZZ -w common.txt -fs 516 -s -t 100  0.83s user 1.29s system 17% cpu 12.317 total
+ffuf -u https://[TARGET]/FUZZ -w common.txt -fs 516 -s -t 100  0.98s user 1.30s system 17% cpu 13.371 total
 
 ```
 
@@ -706,11 +715,12 @@ ffuf -u https://[TARGET]/FUZZ -w common.txt -fs 516 -s -t 100  0.83s user 1.29s 
 
 ---
 
-#### Feroxbuster's result for website 2
+#### Feroxbuster's result on website 2
 
 <details><summary><b>Click to open Feroxbuster's result:</b></summary>
 
 ```text
+
  ___  ___  __   __     __      __         __   ___
 |__  |__  |__) |__) | /  `    /  \ \_/ | |  \ |__
 |    |___ |  \ |  \ | \__,    \__/ / \ | |__/ |___
@@ -733,12 +743,12 @@ by Ben "epi" Risher 🤓                 ver: 2.13.1
 500      GET        1l        3w       21c https://[TARGET]/favicon.ico
 200      GET        1l        1w       15c https://[TARGET]/health
 401      GET        1l        2w       30c https://[TARGET]/projects
-[####################] - 53s    18460/18460   0s      found:3       errors:0
-[####################] - 36s     4615/4615    128/s   https://[TARGET]/
-[####################] - 43s     4615/4615    108/s   https://[TARGET]/cgi-bin/
-[####################] - 43s     4615/4615    108/s   https://[TARGET]/cgi-bin/cgi-bin/
-[####################] - 38s     4615/4615    122/s   https://[TARGET]/cgi-bin/cgi-bin/cgi-bin/
-feroxbuster -u https://[TARGET] -w common.txt -t 100  3.40s user 1.56s system 9% cpu 54.149 total
+[####################] - 56s    18460/18460   0s      found:3       errors:0
+[####################] - 37s     4615/4615    124/s   https://[TARGET]/
+[####################] - 42s     4615/4615    109/s   https://[TARGET]/cgi-bin/
+[####################] - 44s     4615/4615    104/s   https://[TARGET]/cgi-bin/cgi-bin/
+[####################] - 40s     4615/4615    116/s   https://[TARGET]/cgi-bin/cgi-bin/cgi-bin/
+feroxbuster -u https://[TARGET] -w common.txt -t 100  3.58s user 2.21s system 10% cpu 56.646 total
 ```
 
 </details>

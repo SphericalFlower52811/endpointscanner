@@ -198,7 +198,6 @@ def startcodeargs():
         print(f"{Style.BRIGHT}Endpointscanner {Fore.LIGHTMAGENTA_EX}v7.5.0 {Fore.RESET}")
         print()
         print(f"Made by: {Fore.LIGHTMAGENTA_EX}SphericalFlower52811")
-        print("(I was too lazy to make a 3D ASCII banner, nor do I want one.)")
         print()
         print(f"{Fore.LIGHTBLUE_EX}GitHub: {Fore.RESET}{Style.BRIGHT}{github_link}")
         print(f"{Fore.LIGHTBLUE_EX}Docs:   {Fore.RESET}{Style.BRIGHT}{docs_link}")
