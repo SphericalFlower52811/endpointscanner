@@ -266,13 +266,16 @@ def main():
 
             if not args.only_res:
                 print(f"\nDetected JS Stack: {' + '.join(js_stack) if js_stack else 'Unknown JS Stack'}")
+            found_paths = [f"{target}{p}" if p.startswith("/") else p for p in found_paths]
             if emscripten_vfs_detected:
                 found_paths = list({
                         i.strip() for i in found_paths 
-                        if i.strip() not in ["/dev", "/dev/"] and not i.strip().startswith('/tmp/')
+                        if (urlparse(i).path if "://" in i else i).strip() not in ["/dev", "/dev/"] 
+                        and not (urlparse(i).path if "://" in i else i).strip().startswith('/tmp/')
+                        and not i.rstrip('/') == target
                     })
             else:
-                found_paths = list({path.strip() for path in found_paths if path.strip()})
+                found_paths = list({path.strip() for path in found_paths if path.strip() and not path.rstrip('/') == target})
             unsorted = []
             
             assets_suffix = "" if args.show_assets else " (Hidden, use --show-media or -m to show)"

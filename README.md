@@ -1,4 +1,4 @@
-# EndpointScanner: Website Endpoint Scanner and Rate Limit Tester (Version 7.5)
+# EndpointScanner: Website Endpoint Scanner and Rate Limit Tester (Version 7.5.1)
 
 **Source code at: [EndpointScanner Repository](https://github.com/SphericalFlower52811/endpointscanner)**
 
@@ -18,7 +18,7 @@ A fast automated website reconnaissance tool for red teaming in cybersecurity th
 - [**Release Notes**](#release-notes)
 - [**Legal Disclaimer**](#legal-disclaimer)
 
-**Feel free to contact me at `sphericalflower@gmail.com` to ask for help on how to use the tool or to leave feedback.**
+**Feel free to contact me at [sphericalflower@gmail.com](mailto:sphericalflower52811@gmail.com) to ask for help on how to use the tool or to leave feedback.**
 
 ## How it works
 
@@ -28,9 +28,9 @@ A fast automated website reconnaissance tool for red teaming in cybersecurity th
 - Uses a fake path to test which are real paths and which are shells. (websites like SPAs give a lot of trouble to current tools)
 - Scrapes all JavaScript, HTML and XML files to find paths in the website.
 - Has a hardcoded set of paths that should never exist in a website to test. (e.g. .env.local, .git/config)
-- Differentiates paths by website endpoints, assets, redirects etc.
+- Differentiates paths by website endpoints, assets, redirects etc. if the `-so` flag is passed
 - Replaces {example} variables in paths with a custom string to be able to test the paths, and can also test for broken access control.
-- Checks server uptime and prints out JS Stack of the website (these are extra details, a flag is needed to show the extra details.)
+- Checks server uptime and prints out JS Stack of the website (these are extra details, a flag, `-ed`, is needed to show the extra details.)
 - Has a rate limit tester by sending `n` number requests to a certain endpoint with 4 HTTP methods, custom headers, body, variable in request body.
 
 ## Tool flags
@@ -206,6 +206,10 @@ endpointscanner example.com -oo -o examplescan.txt
 - Remove a function removing trailing slashes in paths, as some are directories.
 - Added `-o cli` for people who don't realise it prints to CLI by default.
 - Changed `-d` to `-ds` flag
+
+#### 7.5.1 bug fixes/code improvements
+
+- Made script output endpoints in the format `example.com/path` instead of just `/path`.
 
 ## Plans for next version and the future
 
