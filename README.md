@@ -229,7 +229,7 @@ none right now
 
 - On Server-Side Rendered websites like PHP websites, there are literally no frontend code files for EndpointScanner to scan hence it will fail on those types of websites. (Keep in mind EndpointScanner is still top-tier when it comes to the modern web)
 - If there is a login page, the script will either show that all of the pages require login, or label all of them as 403 (if sorting is enabled).
-- If there are shells (e.g. React SPA shells) in the page, it may give false positives for sensitive endpoints. If you see sensitive endpoints in the scan, they may not actually be exposed on the website if the website has a shell. (E.g. .gitignore, .env.local). This will be fixed in update 7.5.1
+- If there are shells (e.g. React SPA shells) in the page, it may give false positives for sensitive endpoints. If you see sensitive endpoints in the scan, they may not actually be exposed on the website if the website has a shell. (E.g. .gitignore, .env.local). This will be fixed in update 7.6
 
 ai assisted code btw
 
