@@ -210,6 +210,7 @@ endpointscanner example.com -oo -o examplescan.txt
 #### 7.5.1 bug fixes/code improvements
 
 - Made script output endpoints in the format `example.com/path` instead of just `/path`.
+- Improve regex to fine `?` and `#` in websites paths.
 
 ## Plans for next version and the future
 
