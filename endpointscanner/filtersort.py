@@ -40,7 +40,9 @@ async def test_path_worker(
                         time_state['stop_triggered'] = True
                         current_idx = sorted(found_paths).index(path)
                         for unverified in sorted(found_paths)[current_idx:]:
-                            unverified_display = discovered_in_js.get(unverified, unverified)
+                            unverified_display = discovered_in_js.get(urlparse(unverified).path if "://" in unverified else unverified, unverified)
+                            if unverified_display.startswith('/'):
+                                unverified_display = f"{target}{unverified_display}"
                             if unverified_display not in unsorted:
                                 unsorted.append(unverified_display)
                         return
@@ -50,7 +52,8 @@ async def test_path_worker(
                 
         if time_state.get('stop_triggered'):
             return
-        display_path = discovered_in_js.get(path, path)
+        relative_key = urlparse(path).path if "://" in path else path
+        display_path = discovered_in_js.get(relative_key, discovered_in_js.get(path, path))
         #take away original if disable-og flag is active
         pure_path = display_path.split(" [Original:")[0]
         if pure_path.strip() in ["/", "//", "///", "/.", "/..", "/...", "/./", "/ "]:
@@ -228,7 +231,6 @@ async def test_path_worker(
 
         except: return
 
-
 def sort_endpoints(
     args, target, S_HEADER, session_cookies, impersonate_settings, shell_content,
     disallowed_url_chars, autoinput_timeout, found_paths, discovered_in_js,
@@ -285,7 +287,9 @@ def sort_endpoints(
     else:
         #UNSORTED_PATHS IS FOR RAW OUTPUT FLAG. FOR UNSORTED AFTER SCAN TIMEOUT IT IS THE 'UNSORTED' LIST.
         for path in sorted(found_paths):
-            display_path = discovered_in_js.get(path, path)
+            relative_key = urlparse(path).path if "://" in path else path
+            display_path = discovered_in_js.get(relative_key, discovered_in_js.get(path, path))
+            
             pure_path = display_path.split(" [Original:")[0]
             if pure_path.strip() in ["/", "//", "///", "/.", "/..", "/...", "/./", "/ "]:
                 continue
@@ -299,7 +303,12 @@ def sort_endpoints(
                 display_path = display_path.split(" [Original: ")[1].rstrip(']')
             elif args.disable_og and " [Original:" in display_path:
                 display_path = display_path.split(" [Original:")[0]
+                
+            if display_path.startswith('/'):
+                display_path = f"{target}{display_path}"
+                
             unsorted_paths.append(display_path)
+
 
     return start_test_time, checktimestatusalready, invalidated_count
 
@@ -321,7 +330,7 @@ def filter_endpoints(
             try:
                 parsed_path = urlparse(path)
                 if not parsed_path.netloc:
-                    raw_endpoints.append(path)
+                    raw_endpoints.append(f"{target}{path}")
                     continue
 
                 asset_domain = parsed_path.netloc.lower()

@@ -18,8 +18,22 @@ def display_and_save_results(
         results_dead, invalidated_endpoints, unsorted_paths
         )
     if what_to_output is not None:
-        if args.pipeable and args.only_endpoints:
-            what_to_output = [f"{target}{p}" if p.startswith("/") else p for p in what_to_output]
+        if not args.pipeable:
+            print()
+            stuff_to_output = ""
+            if args.only_endpoints: 
+                stuff_to_output += "Endpoints"
+                if args.only_external:
+                    stuff_to_output += " + External links"
+                if args.only_sub:
+                    stuff_to_output += " + Subdomains"
+            elif args.only_external:
+                stuff_to_output += "External links"
+                if args.only_sub:
+                    stuff_to_output += " + Subdomains"
+            else:
+                stuff_to_output += "Subdomains"
+            print(f"Total {stuff_to_output}: {len(what_to_output)}")
         print()
         print("\n".join(f" {p}" for p in what_to_output))
     else:
@@ -214,8 +228,6 @@ def display_and_save_results(
                 print("\nEndpoints will not be sorted. Sensitive endpoints like '.git/config' will be automatically skipped.\n")
                 print('----Raw Results----\n')
             clean_found_paths = [p for p in unsorted_paths]
-            if args.pipeable:
-                clean_found_paths = [f"{target}{p}" if p.startswith("/") else p for p in clean_found_paths]
             if clean_found_paths:
                 print("\n".join(clean_found_paths))
             if args.still_show_invalid:
