@@ -194,7 +194,7 @@ def startcodeargs():
         init(autoreset=True)
         print()
         print("-" * 65)
-        print(f"{Style.BRIGHT}Endpointscanner {Fore.LIGHTMAGENTA_EX}v7.5.2 {Fore.RESET}")
+        print(f"{Style.BRIGHT}Endpointscanner {Fore.LIGHTMAGENTA_EX}v7.5.3 {Fore.RESET}")
         print()
         print(f"Made by: {Fore.LIGHTMAGENTA_EX}SphericalFlower52811")
         print()

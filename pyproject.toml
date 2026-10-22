@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "endpointscanner"
-version = "7.5.2"
+version = "7.5.3"
 readme = "README.md"
 description = "Extremely accurate open-source website endpoint scanner and rate limit tester that can bypass simple anti-bot software. Built for cybersecurity red teamers to perform reconnaissance on websites."
 requires-python = ">=3.9"

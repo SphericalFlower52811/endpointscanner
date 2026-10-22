@@ -1,4 +1,4 @@
-# EndpointScanner: Website Endpoint Scanner and Rate Limit Tester (Version 7.5.2)
+# EndpointScanner: Website Endpoint Scanner and Rate Limit Tester (Version 7.5.3)
 
 **Source code at: [EndpointScanner Repository](https://github.com/SphericalFlower52811/endpointscanner)**
 
