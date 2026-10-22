@@ -115,7 +115,7 @@ def gethtmlafterload(args, url, debugbrowser, initial_response=None):
                 error_type = type(e).__name__
 
                 # Instructions to install if people do not read instructions the first time
-                if "error" in error_type.lower() and ("executable" in error_msg.lower() or "install" in error_msg.lower()):
+                if "error" in error_type.lower() and ("executable" in error_msg.lower() or "install" in error_msg.lower()) and not args.pipeable:
                     print(f"\n{Fore.RED}Playwright chromium installation is missing.")
                     print(f"{Fore.RESET}Please read the installation instructions in the README of the repository.")
                     print(f"README link: https://github.com/SphericalFlower52811/endpointscanner/blob/main/README.md")
@@ -123,10 +123,10 @@ def gethtmlafterload(args, url, debugbrowser, initial_response=None):
                     
                     is_blocked, waf_name = isthere_captcha(initial_response, mainhtml)
                     if is_blocked:
-                        print(f"WARNING!!! Scan is blocked by a captcha.\nCaptcha Detected: {waf_name}")
+                        if not args.pipeable: print(f"WARNING!!! Scan is blocked by a captcha.\nCaptcha Detected: {waf_name}")
                     return mainhtml, None, {"blocked": is_blocked, "waf": waf_name if is_blocked else None}
                 else:
-                    print("Unexpected Issue:", e)
+                    if not args.pipeable: print("Unexpected Issue:", e)
                 return mainhtml, None, {"blocked": False, "waf": None}
         
             context = browser.new_context(
@@ -165,14 +165,14 @@ def gethtmlafterload(args, url, debugbrowser, initial_response=None):
                 mainhtml = page.content()
                 is_blocked, waf_name = isthere_captcha(initial_response, mainhtml)
                 if is_blocked:
-                    print(f"WARNING!!! Scan is blocked by a captcha.\nCaptcha Detected: {waf_name}")
+                    if not args.pipeable: print(f"WARNING!!! Scan is blocked by a captcha.\nCaptcha Detected: {waf_name}")
                     browser.close()
                     return mainhtml, None, {"blocked":True, "waf":waf_name}
                 raw_cookies = context.cookies()
                 cookies = {c['name']: c['value'] for c in raw_cookies} if raw_cookies else None
 
             except Exception as e:
-                print("Unexpected Error:", e)
+                if not args.pipeable: print("Unexpected Error:", e)
                 mainhtml, cookies = None, None
 
             browser.close()
@@ -181,5 +181,5 @@ def gethtmlafterload(args, url, debugbrowser, initial_response=None):
         is_blocked, waf_name = isthere_captcha(initial_response, mainhtml)
         cookies = None
         if is_blocked:
-            print(f"WARNING!!! Scan is blocked by a captcha.\nCaptcha Detected: {waf_name}")
+            if not args.pipeable: print(f"WARNING!!! Scan is blocked by a captcha.\nCaptcha Detected: {waf_name}")
         return mainhtml, cookies, {"blocked":is_blocked, "waf":None}

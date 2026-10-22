@@ -58,7 +58,7 @@ def tag_soup_scrape(
         is_allowed_asset = is_internal or is_allowed_external_asset(full_asset_url)
         
         if is_allowed_asset:
-            if asset_clean.lower().endswith(('.js', '.mjs', '.cjs', '.wxs')):
+            if asset_clean.lower().endswith(('.js', '.mjs', '.cjs', '.wxs', '.css')):
                 if full_asset_url not in js_files:
                     js_files.append(full_asset_url)
             
@@ -156,7 +156,7 @@ def initial_html_scrape(
             
     return start_test_time, checktimestatusalready
 
-def recursive_js_crawler(
+def recursive_script_crawler(
     args, target, HEADER, session_cookies, impersonate_settings,
     verified_esl_domains, verified_esl_scripts, patterns,
     JSPDF_SIGNATURE_KEYS, PYODIDE_VFS_PRECISION_PATTERNS,
@@ -170,7 +170,7 @@ def recursive_js_crawler(
     emscripten_vfs_detected = False
     for path in list(found_paths):
         # check for js, html, and htm (htm is a older version that still exists in many sites)
-        if path.lower().endswith(('.js', '.html', '.htm', '.mjs', '.cjs')) and path.lower() not in ['sw.js', 'service-worker.js']:
+        if path.lower().endswith(('.js', '.html', '.htm', '.mjs', '.cjs', '.wxs', '.css')) and path.lower() not in ['sw.js', 'service-worker.js']:
             target_asset_url = urljoin(target, path)
             asset_netloc = urlparse(target_asset_url).netloc.lower()
             target_netloc = urlparse(target if "://" in target else f"https://{target}").netloc.lower()
@@ -182,7 +182,7 @@ def recursive_js_crawler(
                 is_safe_asset = True
             elif any(target_asset_url.lower().startswith(s.lower()) for s in verified_esl_scripts if s):
                 is_safe_asset = True
-            
+
             if is_safe_asset and target_asset_url not in js_files:
                 js_files.append(target_asset_url)
                 found_paths.add(target_asset_url)
@@ -279,7 +279,7 @@ def recursive_js_crawler(
                             nested_safe = True
                             
                         if nested_safe:
-                            if clean_src.lower().endswith(('.js', '.css', '.html', '.htm', '.mjs', '.cjs', '.wxs')):
+                            if clean_src.lower().endswith(('.js', '.css', '.html', '.htm', '.mjs', '.cjs', '.wxs', '.css')):
                                 if nested_asset_url not in js_files:
                                     if can_crawl_deeper:
                                         js_files.append(nested_asset_url)
@@ -371,7 +371,7 @@ def recursive_js_crawler(
                                             break
                                     if is_fake_vfs_path: continue 
                                 
-                                if not is_external_link and m_clean.lower().endswith(('.js', '.html', '.htm', '.mjs', '.cjs', '.wxs')):
+                                if not is_external_link and m_clean.lower().endswith(('.js', '.html', '.htm', '.mjs', '.cjs', '.wxs', '.css')):
                                     check_nested_url = urljoin(target, m_clean)
                                     nested_netloc = urlparse(check_nested_url).netloc.lower()
                                     

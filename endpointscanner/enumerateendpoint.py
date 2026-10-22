@@ -17,7 +17,7 @@ from .miscfuncs import checktime, check_if_local, startcodeargs, testhttpprotoco
 from .outputendpointsfound import display_and_save_results
 from .headerconfig import HEADER
 from .mapfiles import scrape_structure_files
-from .scrapefiles import tag_soup_scrape, initial_html_scrape, recursive_js_crawler, recursive_xml_crawler
+from .scrapefiles import tag_soup_scrape, initial_html_scrape, recursive_script_crawler, recursive_xml_crawler
 from .filtersort import sort_endpoints
 
 def main():
@@ -99,7 +99,7 @@ def main():
             timeout=autoinput_timeout,
             default="TARGET_NOT_INPUTTED",
             auto_input_enabled=(not args.no_auto_input)
-        ).lower()
+        )
         if target == "TARGET_NOT_INPUTTED":
             print(f"Target not input after {autoinput_timeout}s, exiting script.")
             user_exits = False
@@ -108,6 +108,7 @@ def main():
         if user_exits:
             print("\nScan cancelled by user.")
         sys.exit(0)
+    target = target.lower()
     target = target.strip().rstrip('/')
     #http https
     if not target.startswith(("http://", "https://")):
@@ -157,7 +158,7 @@ def main():
         results_frameworks, results_assets, results_protected = [], [], []
         invalidated_endpoints = []
         emscripten_vfs_detected = False
-        #actually test these in 7.5.1/7.6
+        #actually test these in 7.6
         found_paths = set(SENSITIVE_ENDPOINT) if SENSITIVE_ENDPOINT else set()
         discovered_in_js = {}
         scanned_xmls = set()
@@ -201,7 +202,7 @@ def main():
                     print("If this was a false positive, use the -ndc (--no-detect-captcha) flag to disable exiting.")
                     user_exits = False; sys.exit(1)
                 else:
-                    print("Script will not be exited, as --no-detect-captcha flag was passed. Script will continue.")
+                    if args.pipeable: print("Script will not be exited, as --no-detect-captcha flag was passed. Script will continue.")
         except (KeyboardInterrupt, SystemExit):
             if user_exits:
                 print("Scan stopped by user.")
@@ -210,7 +211,7 @@ def main():
             if "TargetClosedError" in type(e).__name__:
                 print("Scan cancelled by user.") #for web version if i make it
                 sys.exit(0)
-            print(f"Error starting up headless browser. Using base request to scan {target}")
+            if not args.pipeable: print(f"Error starting up headless browser. Using base request to scan {target}")
             main_html = base_res.text
         cprs = args.path_sub #custom path normalization replacement string
         #identify js stacks.
@@ -232,7 +233,8 @@ def main():
             patterns = [
                 r'["\'`](/[a-zA-Z0-9_\-\./{}:~%\?#=]*?)["\'`]', 
                 r'(?<![a-zA-Z0-9_\-])(?:path|href|to|post|get|patch|put|delete|head|options|query)[\s]*[:=\(\|]+[\s]*["\'`](/?[a-zA-Z0-9_\-\./{}:\$~%<>\?#=]*[\./][a-zA-Z0-9_\-\./{}:\$~%<>\?#=]*?)["\'`]',
-                r'["\'`](https?://[a-zA-Z0-9_\-\./{}:\$~%\?#=]+)["\'`]' 
+                r'["\'`](https?://[a-zA-Z0-9_\-\./{}:\$~%\?#=]+)["\'`]',
+                r'url\([\'"`]?(/[a-zA-Z0-9_\-\./{}:\$~%<>\?#=]+)[\'"`]?\)' 
             ]
 
             checktimestatusalready = None
@@ -249,7 +251,7 @@ def main():
                                 start_test_time, checktimestatusalready, autoinput_timeout
                             )
             #scrape js
-            emscripten_vfs_detected, start_test_time, checktimestatusalready = recursive_js_crawler(
+            emscripten_vfs_detected, start_test_time, checktimestatusalready = recursive_script_crawler(
                                         args, target, HEADER, session_cookies, impersonate_settings,
                                         verified_esl_domains, verified_esl_scripts, patterns,
                                         JSPDF_SIGNATURE_KEYS, PYODIDE_VFS_PRECISION_PATTERNS,
@@ -330,7 +332,7 @@ def main():
                             args.raw_output = False
                     except (KeyboardInterrupt, SystemExit):
                         print("\nScan cancelled by user.")
-                        return
+                        sys.exit(0)
             else:
                 if not args.pipeable: print(f"\nTotal paths found: {len(found_paths)}")
 

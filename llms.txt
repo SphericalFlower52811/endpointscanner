@@ -13,7 +13,7 @@ Finding endpoints on a website allows you to plan out your pentest, like:
 
 A benchmarking file of EndpointScanner and other popular tools on 2 different websites can be found at [COMPARISON.md](./COMPARISON.md)
 
-## Features (version 7.5.1):
+## Features (version 7.5.2):
 - **Sorting Algorithm**: Sorts all results into endpoints, protected paths, services/APIs, subdomains, code files, and more categories.
 - **Bypasses simple anti-bot software**: Uses a `playwright-stealth` headless browser to retrieve anti-bot software clearance cookies and a hydrated homepage for the website. Uses python's `curl_cffi` to impersonate a chrome browser's TLS and JA3 footprint to bypass CAPTCHAs.
 - **Built-in Sensitive Endpoints**: 23 built-in sensitive endpoints like .env.local, .env, package-lock.json that should never be pushed to git.
