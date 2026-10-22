@@ -27,8 +27,7 @@ def timeout_input(prompt, timeout=90, default='y', auto_input_enabled=True):
             val = input(prompt)
             return val.strip() if val is not None else ""
         except (KeyboardInterrupt, SystemExit):
-            print("\n[!] Scan cancelled by user.")
-            sys.exit(0)
+            raise KeyboardInterrupt
 
     if platform.system().lower() != 'windows':
         import select
@@ -195,7 +194,7 @@ def startcodeargs():
         init(autoreset=True)
         print()
         print("-" * 65)
-        print(f"{Style.BRIGHT}Endpointscanner {Fore.LIGHTMAGENTA_EX}v7.5.1 {Fore.RESET}")
+        print(f"{Style.BRIGHT}Endpointscanner {Fore.LIGHTMAGENTA_EX}v7.5.2 {Fore.RESET}")
         print()
         print(f"Made by: {Fore.LIGHTMAGENTA_EX}SphericalFlower52811")
         print()
@@ -331,13 +330,13 @@ def testhttpprotocol(target, HEADER, impersonate_settings, args):
         response = requests.get(target, headers=HEADER, timeout=5, impersonate=impersonate_settings)
     except requests.exceptions.SSLError:
         if target.startswith("https://"):
-            print('HTTPS SSL Error. Trying HTTP...') #becuase some sites may use http instead of https
+            if not args.pipeable: print('HTTPS SSL Error. Trying HTTP...') #becuase some sites may use http instead of https
             target = target.replace("https://", "http://")
             try:
                 if not args.local:
                     response = requests.get(target, headers=HEADER, timeout=5, impersonate=impersonate_settings)
             except Exception as e:
-                print(f'Target unreachable on HTTP: {e}')
+                print(f'Target unreachable on HTTP and HTTPS: {e}')
                 sys.exit(1)
     except requests.exceptions.Timeout:
         print("Server did not respond after 10 seconds.")

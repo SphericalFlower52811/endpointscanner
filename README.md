@@ -1,4 +1,4 @@
-# EndpointScanner: Website Endpoint Scanner and Rate Limit Tester (Version 7.5.1)
+# EndpointScanner: Website Endpoint Scanner and Rate Limit Tester (Version 7.5.2)
 
 **Source code at: [EndpointScanner Repository](https://github.com/SphericalFlower52811/endpointscanner)**
 
@@ -211,6 +211,11 @@ endpointscanner example.com -oo -o examplescan.txt
 
 - Made script output endpoints in the format `example.com/path` instead of just `/path`.
 - Improve regex to fine `?` and `#` in websites paths.
+
+#### 7.5.2
+
+- Made script scan css files
+- Ensure all print statements only run if `-p`/`--pipeable` flag is not enabled
 
 ## Plans for next version and the future
 
