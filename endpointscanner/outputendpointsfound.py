@@ -36,6 +36,27 @@ def display_and_save_results(
             print(f"Total {stuff_to_output}: {len(what_to_output)}")
         print()
         print("\n".join(f" {p}" for p in what_to_output))
+        if args.output_file:
+            try:
+                with open(args.output_file, 'w', encoding='utf-8') as fi:
+                    if not args.pipeable:
+                        fi.write('----Raw Results----\n\n')
+                    if what_to_output:
+                        fi.write("\n".join(what_to_output) + "\n")
+                    if args.still_show_invalid:
+                        if not args.pipeable: fi.write('----Invalidated (-ssi passed)----\n\n')
+                        fi.write("\n".join(f"  {p}" for p in invalidated_endpoints) + "\n")
+                        
+                    if args.show_source and not args.pipeable:
+                        fi.write(f"\n\n----Files Scanned----\n")
+                        if all_scanned_sources: fi.write("\n".join(f" - {f}" for f in sorted(set(all_scanned_sources))) + "\n")
+                    if not args.pipeable:
+                        if invalidated_count > 0:
+                            fi.write(f"\nInvalidated Endpoints: {invalidated_count}{invalidated_suffix}" + "\n")
+                if not args.pipeable:
+                    print(f"\nRaw results successfully written to '{args.output_file}'")
+            except Exception as e:
+                if not args.pipeable: print(f'\nFailed to write raw results to file: {e}')
     else:
         if not results_assets:
             assets_suffix = ""
@@ -261,4 +282,4 @@ def display_and_save_results(
                     if not args.pipeable:
                         print(f"\nRaw results successfully written to '{args.output_file}'")
                 except Exception as e:
-                    print(f'\nFailed to write raw results to file: {e}')
+                    if not args.pipeable: print(f'\nFailed to write raw results to file: {e}')

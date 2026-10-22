@@ -217,6 +217,10 @@ endpointscanner example.com -oo -o examplescan.txt
 - Made script scan css files
 - Ensure all print statements only run if `-p`/`--pipeable` flag is not enabled
 
+#### 7.5.3
+
+- Fixed bug where if `-oe`, `-ox` or `-os` were used the results would not be outputted into a file.
+
 ## Plans for next version and the future
 
 Version 7.6:
