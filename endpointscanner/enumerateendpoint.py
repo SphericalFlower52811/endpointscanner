@@ -13,7 +13,7 @@ import secrets
 from .browser import gethtmlafterload
 from .ratelimittester import async_rate_test
 from .identifyjs import identify_javascript_type
-from .miscfuncs import checktime, check_if_local, startcodeargs, testhttpprotocol, checkserveruptime, verifyeacheslprotocol, timeout_input
+from .miscfuncs import check_if_local, startcodeargs, testhttpprotocol, checkserveruptime, verifyeacheslprotocol, timeout_input
 from .outputendpointsfound import display_and_save_results
 from .headerconfig import HEADER
 from .mapfiles import scrape_structure_files
@@ -201,8 +201,6 @@ def main():
                     print("It is recommended to use the -nh flag to see what is happening in the headless browser to see if it is actually blocked by a captcha and if it was a false positive.")
                     print("If this was a false positive, use the -ndc (--no-detect-captcha) flag to disable exiting.")
                     user_exits = False; sys.exit(1)
-                else:
-                    if args.pipeable: print("Script will not be exited, as --no-detect-captcha flag was passed. Script will continue.")
         except (KeyboardInterrupt, SystemExit):
             if user_exits:
                 print("Scan stopped by user.")

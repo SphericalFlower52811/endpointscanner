@@ -123,7 +123,7 @@ def gethtmlafterload(args, url, debugbrowser, initial_response=None):
                     
                     is_blocked, waf_name = isthere_captcha(initial_response, mainhtml)
                     if is_blocked:
-                        if not args.pipeable: print(f"WARNING!!! Scan is blocked by a captcha.\nCaptcha Detected: {waf_name}")
+                        if not args.pipeable or args.no_detect_captcha: print(f"WARNING!!! Scan is blocked by a captcha.\nCaptcha Detected: {waf_name}")
                     return mainhtml, None, {"blocked": is_blocked, "waf": waf_name if is_blocked else None}
                 else:
                     if not args.pipeable: print("Unexpected Issue:", e)
@@ -165,7 +165,7 @@ def gethtmlafterload(args, url, debugbrowser, initial_response=None):
                 mainhtml = page.content()
                 is_blocked, waf_name = isthere_captcha(initial_response, mainhtml)
                 if is_blocked:
-                    if not args.pipeable: print(f"WARNING!!! Scan is blocked by a captcha.\nCaptcha Detected: {waf_name}")
+                    if not args.pipeable or args.no_detect_captcha: print(f"WARNING!!! Scan is blocked by a captcha.\nCaptcha Detected: {waf_name}")
                     browser.close()
                     return mainhtml, None, {"blocked":True, "waf":waf_name}
                 raw_cookies = context.cookies()
@@ -181,5 +181,5 @@ def gethtmlafterload(args, url, debugbrowser, initial_response=None):
         is_blocked, waf_name = isthere_captcha(initial_response, mainhtml)
         cookies = None
         if is_blocked:
-            if not args.pipeable: print(f"WARNING!!! Scan is blocked by a captcha.\nCaptcha Detected: {waf_name}")
+            if not args.pipeable or args.no_detect_captcha: print(f"WARNING!!! Scan is blocked by a captcha.\nCaptcha Detected: {waf_name}")
         return mainhtml, cookies, {"blocked":is_blocked, "waf":None}

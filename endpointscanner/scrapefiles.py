@@ -16,7 +16,7 @@ def tag_soup_scrape(
     soup = BeautifulSoup(main_html, 'html.parser')
     target_netloc = urlparse(target).netloc.lower()
     js_files = []
-    current_filename = "raw HTML"
+    current_filename = "Main Page HTML"
 
     if current_filename not in scanned_html:
         scanned_html.add(current_filename)
@@ -80,7 +80,7 @@ def initial_html_scrape(
     found_paths, discovered_in_js, unique_progress_paths, nd, 
     start_test_time, checktimestatusalready, autoinput_timeout
 ):
-    current_filename = "raw HTML"
+    current_filename = "Main Page HTML"
     if current_filename not in scanned_html:
         scanned_html.add(current_filename)
     
@@ -112,7 +112,7 @@ def initial_html_scrape(
                 m_clean = m_clean.strip()
                 if m_clean.startswith('//'):
                     m_clean = f"https:{m_clean}"
-                if m_clean != m:
+                if m_clean != m and not m.startswith('//'):
                     m_display = f"{m_clean} [Original: {m}]"
                 else:
                     m_display = m_clean
@@ -336,7 +336,7 @@ def recursive_script_crawler(
                                 if not m.startswith('/'):
                                     m = '/' + m
                             
-                            m_display = f"{m_clean} [Original: {m}]" if m_clean != m else m_clean
+                            m_display = f"{m_clean} [Original: {m}]" if (m_clean != m and not m.startswith('//')) else m_clean
                             is_external_link = False
                             if "://" in m_clean:
                                 m_netloc = urlparse(m_clean).netloc.lower()
