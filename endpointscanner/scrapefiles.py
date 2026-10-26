@@ -169,6 +169,11 @@ def recursive_script_crawler(
     js_depths = {}
     emscripten_vfs_detected = False
     for path in list(found_paths):
+        #remove url parameter from path
+        if "?" in path:
+            path = path.split("?")[0]
+        if "#" in path:
+            path = path.split("#")[0]
         # check for js, html, and htm (htm is a older version that still exists in many sites)
         if path.lower().endswith(('.js', '.html', '.htm', '.mjs', '.cjs', '.wxs', '.css')) and path.lower() not in ['sw.js', 'service-worker.js']:
             target_asset_url = urljoin(target, path)
@@ -279,6 +284,11 @@ def recursive_script_crawler(
                             nested_safe = True
                             
                         if nested_safe:
+                            #remove url parameter from path
+                            if "?" in clean_src:
+                                clean_src = clean_src.split("?")[0]
+                            if "#" in path:
+                                clean_src = clean_src.split("#")[0]
                             if clean_src.lower().endswith(('.js', '.css', '.html', '.htm', '.mjs', '.cjs', '.wxs', '.css')):
                                 if nested_asset_url not in js_files:
                                     if can_crawl_deeper:
@@ -428,6 +438,11 @@ def recursive_xml_crawler(
         allowed_xml_netlocs = {urlparse(d).netloc.lower() for d in verified_esl_domains if d}
 
         for f in list(found_paths):
+            #remove url parameter from path
+            if "?" in f:
+                f = f.split("?")[0]
+            if "#" in f:
+                f = f.split("#")[0]
             if f.lower().endswith(SITEMAP_EXTENSIONS):
                 if "http://" in f.lower() or "https://" in f.lower():
                     clean_f = f
