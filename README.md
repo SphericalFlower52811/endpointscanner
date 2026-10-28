@@ -1,4 +1,4 @@
-# EndpointScanner: Website Endpoint Scanner and Rate Limit Tester (Version 7.5.3)
+# EndpointScanner: Website Endpoint Scanner and Rate Limit Tester (Version 7.6)
 
 **Source code at: [EndpointScanner Repository](https://github.com/SphericalFlower52811/endpointscanner)**
 
@@ -161,65 +161,13 @@ endpointscanner example.com -oo -o examplescan.txt
 
 ## Release notes
 
-### New features in update 7.5
+### New features in update 7.6
 
-- `-rat`/`--ratelimit-await-time` flag, as th default is 50s and for a PoC with 50-100 requests 50 seconds is way too long.
-- `-p`/`--pipeable` flag to make the output of the tool pipeable into other automated payload testing tools. (E.g. sqlmap)
-- `-ps`/`--path-sub` flag to change the automated path normalization from replacing variables to 1 to any custom string. Defaults to 1.
-- Merged `asset-manifest.json`, `web-manifest.json`, `manifest.json` into one loop.
-- added `-de`/`--depth` flag
-- Made the sitemap loop (which previous only scanned `.xml` files) be able to scan `.xml, .txt, .rss, .atom` files.
-  - Able to scan `.gz` and `.zip` files if the flag `-pz`/`--parse-zip` is passed. (Detects based off the file extension)
-- Added endpoints to the `SENSITIVE_ENDPOINT` set like actuator endpoints and swagger ui
-- Added automatic input where if you don't answer input questions after a set time (default 90 seconds) (e.g. an input where you must say if you want to sort endpoints or not). Can be disabled via the `-nai/--no-auto-input` flag.
-- Fixed a bug in the rate-limiting tester where the rate limit testing function would crash if the number of requests was too high by using a queue.
-- Replace `/*` paths in robots.txt with '1' as \* means everything, showing you the original path. This will also be affected by the -ps and -oo flag.
-- Added a section to the sorted endpoints which are 'protected endpoints', for endpoints that return 401/403 or other status codes showing it exists but is protected.
-- Let the scanner scan `.mjs` and `.cjs` files besides just `.js`
-- Allow text files for the -esl flag
-- Changed the `-or` flag to the `-ed` flag, now you have to pass `-ed` for the extra details, instead of extra details being shown by default (for example, JS Stack detected). Things like found path count will still be shown.
-- Added `-nhb/--no-headless-browser` flag to completely disable the headless browser and use a simple GET request instead.
-- Added `-fm` flag, `--filter-more`. Will filter stuff like `www.w3.org` if passed as results like `http://www.w3.org/2000/svg` are present in almost all websites.
-- Added `-orlt` flag to only perform a rate-limiting test.
-- Changed scraper to scrape all `href` and `src` attributes instead of only looking for code/image files.
-- Allow user to add an entire domain, or only one file as an external script loader (e.g. `examplegiganticcdn.com/example.js`)
-- Moved structure file scraping into `mapfiles.py`
-- Moved code file scraping into `scrapefiles.py`
-- Moved path sorting into `filtersort.py`
-- Optimised sorting endpoints
-- Added `-oe`/`--only-endpoints`, `-ox`/`--only-external` and `-os`/`--only-sub` flag to only print endpoints, external links, and subdomains respectively
-- Rate limit tester now uses curl_cffi instead of httpx
+- `.map` files are added into sensitive endpoints
 
 ### Bug Fixes/Code improvements
 
-- Fixed regex problems in the map file check for:
-  - `openid-configuration`
-  - `asset-manifest.json`
-  - `web-manifest.json`
-  - `manifest.json`
-  - `sw.js`
-  - `service-worker.js`
-- Changed previous `-nhb` flag from showing browser UI to `-nh`/`-no-headless` to be more clear
-- Fixed an issue where the scraping would find data MIME types (e.g. application/x-javascript) and mistake them for real endpoints
-- Fixed a scope bug in the tool
-- Improve regex.
-- Remove a function removing trailing slashes in paths, as some are directories.
-- Added `-o cli` for people who don't realise it prints to CLI by default.
-- Changed `-d` to `-ds` flag
-
-#### 7.5.1 bug fixes/code improvements
-
-- Made script output endpoints in the format `example.com/path` instead of just `/path`.
-- Improve regex to fine `?` and `#` in websites paths.
-
-#### 7.5.2
-
-- Made script scan css files
-- Ensure all print statements only run if `-p`/`--pipeable` flag is not enabled
-
-#### 7.5.3
-
-- Fixed bug where if `-oe`, `-ox` or `-os` were used the results would not be outputted into a file.
+- Fixed bug where invalidated endpoints would not start with the target domain
 
 ## Plans for next version and the future
 

@@ -253,7 +253,7 @@ def display_and_save_results(
                 print("\n".join(clean_found_paths))
             if args.still_show_invalid:
                 if not args.pipeable: print('----Invalidated (-ssi passed)----\n')
-                print("\n".join(f"  {p}" for p in invalidated_endpoints))
+                print("\n".join(invalidated_endpoints))
                 
             if args.show_source:
                 print(f"\n\n----Files Scanned----")

@@ -63,6 +63,8 @@ async def test_path_worker(
         if any(c in decoded_path for c in disallowed_url_chars):
             invalidated_count_wrapper['count'] += 1
             if display_path not in invalidated_endpoints:
+                if display_path.startswith('/'):
+                    display_path = f"{target}{display_path}"
                 invalidated_endpoints.append(display_path)
             return
         if args.only_original and " [Original: " in display_path:
@@ -297,6 +299,8 @@ def sort_endpoints(
             if any(c in decoded_path for c in disallowed_url_chars):
                 invalidated_count += 1
                 if display_path not in invalidated_endpoints:
+                    if display_path.startswith('/'):
+                        display_path = f"{target}{display_path}"
                     invalidated_endpoints.append(display_path)
                 continue
             if args.only_original and " [Original: " in display_path:

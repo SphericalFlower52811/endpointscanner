@@ -136,6 +136,7 @@ def main():
         serveruptime = checkserveruptime(target, HEADER, impersonate_settings, args)
         start_test_time = time.perf_counter()
         #hardcoded dangerous endpoints to test, disabled by -dse
+        #remove openapi.json this upd
         if not args.disable_sensitive_endpoint:
             SENSITIVE_ENDPOINT = {
                 "/.env", "/.env.local", "/.env.production", "/.env.development", "/.env.dev",
@@ -151,21 +152,20 @@ def main():
                 "/.gitlab-ci.yml", "/.github/workflows/main.yml", "/graphql", "/api/graphql", "/_graphql", "/.git", "/.git/packed-refs"
             }
         else:
-            SENSITIVE_ENDPOINT = {}
+            SENSITIVE_ENDPOINT = set()
 
         results_200, results_dead, results_30x = [], [], []
         results_services, results_ext, results_subd = [], [], []
         results_frameworks, results_assets, results_protected = [], [], []
         invalidated_endpoints = []
         emscripten_vfs_detected = False
-        #actually test these in 7.6
+        #actually test these in 7.6, below the fake page thing.
         found_paths = set(SENSITIVE_ENDPOINT) if SENSITIVE_ENDPOINT else set()
         discovered_in_js = {}
         scanned_xmls = set()
         scanned_js = set()
         scanned_html = set()
 
-        e_files, xml_files, xml_depths = scrape_structure_files(args, target, HEADER, impersonate_settings, found_paths, unique_progress_paths, nd, USELESSSTUFF)
         main_html = ""
         base_res = requests.get(
             target, 
@@ -187,6 +187,7 @@ def main():
                 print(f"\nStarting headless browser to bypass captchas and detect shells with a fake path.")
                 if not args.only_res:
                     print(f"Fake path used: {fake_path}\n")
+        e_files, xml_files, xml_depths = scrape_structure_files(args, target, HEADER, impersonate_settings, found_paths, unique_progress_paths, nd, USELESSSTUFF)
         try:
             user_exits = True
             main_html, session_cookies, scan_status = gethtmlafterload(
@@ -257,6 +258,14 @@ def main():
                                         found_paths, js_files, scanned_js, discovered_in_js, unique_progress_paths, js_stack,
                                         start_test_time, checktimestatusalready, autoinput_timeout
                                     )
+            #check map files
+            if not args.disable_sensitive_endpoint:
+                for js_path in js_files:
+                    clean_js_path = urlparse(js_path).path
+                    if not clean_js_path.startswith('/'):
+                        clean_js_path = '/' + clean_js_path
+                    SENSITIVE_ENDPOINT.add(f"{clean_js_path}.map")
+
             #scrape xml
             start_test_time, checktimestatusalready = recursive_xml_crawler(
                 args, target, HEADER, session_cookies, impersonate_settings,

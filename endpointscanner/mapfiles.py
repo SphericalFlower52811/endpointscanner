@@ -11,7 +11,7 @@ def scrape_structure_files(args, target, HEADER, impersonate_settings, found_pat
     xml_depths = {}
     if not args.disable_structure_files:
         if not args.only_res:
-            print("\nFinding paths from website structure files.")
+            print("Finding paths from website structure files.")
         # no 304.
         E_HEADER = HEADER.copy()
         E_HEADER["Cache-Control"] = "no-cache"
