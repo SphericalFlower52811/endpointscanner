@@ -61,6 +61,8 @@ def tag_soup_scrape(
             if asset_clean.lower().endswith(('.js', '.mjs', '.cjs', '.wxs', '.css')):
                 if full_asset_url not in js_files:
                     js_files.append(full_asset_url)
+                if full_asset_url not in found_paths:
+                    found_paths.add(full_asset_url)
             
             if asset_path and asset_path != "/":
                 clean_path = '/' + asset_path.lstrip('/')

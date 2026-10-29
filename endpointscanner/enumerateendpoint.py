@@ -173,6 +173,7 @@ def main():
             impersonate=impersonate_settings, 
             timeout=10
         )
+        home_content = base_res.text
         fake_path = f"/very-fake-page-123456123456abcdefg_{secrets.token_hex(16)}"
         if not args.only_res:
             if args.no_headless:
@@ -187,7 +188,6 @@ def main():
                 print(f"\nStarting headless browser to bypass captchas and detect shells with a fake path.")
                 if not args.only_res:
                     print(f"Fake path used: {fake_path}\n")
-        e_files, xml_files, xml_depths = scrape_structure_files(args, target, HEADER, impersonate_settings, found_paths, unique_progress_paths, nd, USELESSSTUFF)
         try:
             user_exits = True
             main_html, session_cookies, scan_status = gethtmlafterload(
@@ -211,12 +211,13 @@ def main():
                 print("Scan cancelled by user.") #for web version if i make it
                 sys.exit(0)
             if not args.pipeable: print(f"Error starting up headless browser. Using base request to scan {target}")
-            main_html = base_res.text
+            main_html = home_content
         cprs = args.path_sub #custom path normalization replacement string
         #identify js stacks.
         js_stack = []
         identify_javascript_type(html=main_html, headers=None, current_stack=js_stack)
         fake_url = urljoin(target, fake_path)
+        shell_content = ""
         try:
             fake_res = requests.get(fake_url, cookies=session_cookies, headers=HEADER, impersonate=impersonate_settings, timeout=10)
             shell_content = fake_res.text
@@ -227,12 +228,13 @@ def main():
                 print("Fake path test finished.")
             else:
                 print("Headless browser & fake path test finished.")
+        e_files, xml_files, xml_depths = scrape_structure_files(args, target, HEADER, impersonate_settings, found_paths, unique_progress_paths, nd, USELESSSTUFF, shell_content, home_content)
         if not args.pipeable: print("\nScraping files...")
         try:
             patterns = [
                 r'["\'`](/[a-zA-Z0-9_\-\./{}:~%\?#=]*?)["\'`]', 
                 r'(?<![a-zA-Z0-9_\-])(?:path|href|to|post|get|patch|put|delete|head|options|query)[\s]*[:=\(\|]+[\s]*["\'`](/?[a-zA-Z0-9_\-\./{}:\$~%<>\?#=]*[\./][a-zA-Z0-9_\-\./{}:\$~%<>\?#=]*?)["\'`]',
-                r'["\'`](https?://[a-zA-Z0-9_\-\./{}:\$~%\?#=]+)["\'`]',
+                r'["\'`](https?://[a-zA-Z0-9_\-\./{}:\$~%\?#=;&+@]+)["\'`]',
                 r'url\([\'"`]?(/[a-zA-Z0-9_\-\./{}:\$~%<>\?#=]+)[\'"`]?\)' 
             ]
 

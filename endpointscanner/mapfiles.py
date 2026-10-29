@@ -2,10 +2,17 @@
 import sys
 import re
 import json
+from difflib import SequenceMatcher
 from curl_cffi import requests
 from urllib.parse import urljoin, urlparse
 
-def scrape_structure_files(args, target, HEADER, impersonate_settings, found_paths, unique_progress_paths, nd, USELESSSTUFF):
+def is_false_positive(restext, shell, home):
+    has_shell_match = SequenceMatcher(None, restext, shell).quick_ratio() >= 0.93 if shell else False
+    has_home_match = SequenceMatcher(None, restext, home).quick_ratio() >= 0.93 if home else False
+    
+    return has_shell_match or has_home_match
+
+def scrape_structure_files(args, target, HEADER, impersonate_settings, found_paths, unique_progress_paths, nd, USELESSSTUFF, shell_content, home_content):
     e_files = []
     xml_files = []
     xml_depths = {}
@@ -25,9 +32,12 @@ def scrape_structure_files(args, target, HEADER, impersonate_settings, found_pat
             if r_res.status_code == 200:
                 is_legit_robots = any(sig in r_res.text.lower() for sig in ["user-agent:", "disallow:", "allow:", "sitemap:", "llms.txt:"])
                 
-                if is_legit_robots:
+                if is_legit_robots and not is_false_positive(r_res.text, shell_content, home_content):
                     if '/robots.txt' not in e_files:
                         e_files.append('/robots.txt')
+                    if args.show_prog and (not nd or '/robots.txt' not in unique_progress_paths):
+                        print("New path/file: /robots.txt")
+                        unique_progress_paths.add('/robots.txt')
                         
                     if args.depth is not None and args.depth == 0:
                         pass
@@ -88,7 +98,7 @@ def scrape_structure_files(args, target, HEADER, impersonate_settings, found_pat
         # sitemap
         try:
             s_res = requests.get(urljoin(target, "/sitemap.xml"), headers=E_HEADER, impersonate=impersonate_settings, timeout=4)
-            if s_res.status_code == 200 and "<loc" in s_res.text.lower():
+            if s_res.status_code == 200 and "<loc" in s_res.text.lower() and not is_false_positive(s_res.text, shell_content, home_content):
                 e_files.append('/sitemap.xml')
                 
                 if '/sitemap.xml' not in found_paths:
@@ -96,10 +106,7 @@ def scrape_structure_files(args, target, HEADER, impersonate_settings, found_pat
                 xml_depths['/sitemap.xml'] = 1
                 
                 if args.show_prog and (not nd or '/sitemap.xml' not in unique_progress_paths):
-                    if args.show_source:
-                        print("New path/file: /sitemap.xml")
-                    else:
-                        print("New path/file: /sitemap.xml")
+                    print("New path/file: /sitemap.xml")
                     unique_progress_paths.add('/sitemap.xml')
 
                 if args.depth is None or args.depth > 0:
@@ -166,9 +173,13 @@ def scrape_structure_files(args, target, HEADER, impersonate_settings, found_pat
             try:
                 m_url = urljoin(target, manifest_path)
                 m_res = requests.get(m_url, headers=E_HEADER, impersonate=impersonate_settings, timeout=4)
-                if m_res.status_code == 200 and "{" in m_res.text:
+                if m_res.status_code == 200 and "{" in m_res.text and not is_false_positive(m_res.text, shell_content, home_content):
                     e_files.append(manifest_path)
+                    
                     found_paths.add(manifest_path)
+                    if args.show_prog and (not nd or manifest_path not in unique_progress_paths):
+                        print(f"New path/file: {manifest_path}")
+                        unique_progress_paths.add(manifest_path)
                     
                     if args.depth is None or args.depth > 0:
                         try:
@@ -218,7 +229,7 @@ def scrape_structure_files(args, target, HEADER, impersonate_settings, found_pat
                                 
                                 if args.show_prog and (not nd or clean_manifest_path not in unique_progress_paths):
                                     if args.show_source:
-                                        print(f"New path/file: {clean_manifest_path}  [Source File: {manifest_path.lstrip('/')}'")
+                                        print(f"New path/file: {clean_manifest_path}  [Source File: {manifest_path.lstrip('/')}")
                                     else:
                                         print(f"New path/file: {clean_manifest_path}")
                                     unique_progress_paths.add(clean_manifest_path)
@@ -234,11 +245,14 @@ def scrape_structure_files(args, target, HEADER, impersonate_settings, found_pat
                 sw_res = requests.get(urljoin(target, sw_path), headers=E_HEADER, impersonate=impersonate_settings, timeout=4)
                 swct = sw_res.headers.get('Content-Type', '').lower()
                 
-                is_legit_sw = sw_res.status_code == 200 and ('javascript' in swct or 'ecmascript' in swct) and 'html' not in swct
+                is_legit_sw = sw_res.status_code == 200 and ('javascript' in swct or 'ecmascript' in swct) and 'html' not in swct and not is_false_positive(sw_res.text, shell_content, home_content)
                 
                 if is_legit_sw:
                     e_files.append(sw_path)
                     found_paths.add(sw_path)
+                    if args.show_prog and (not nd or sw_path not in unique_progress_paths):
+                        print(f"New path/file: {sw_path}")
+                        unique_progress_paths.add(sw_path)
                     
                     if args.depth is None or args.depth > 0:
                         paths = re.findall(r'["\'`](https?://[^"\']+|//[^"\']+|\/[^"\']+)["\'`]', sw_res.text)
@@ -275,9 +289,12 @@ def scrape_structure_files(args, target, HEADER, impersonate_settings, found_pat
         # openid
         try:
             oidc_res = requests.get(urljoin(target, "/.well-known/openid-configuration"), headers=E_HEADER, impersonate=impersonate_settings, timeout=4)
-            if oidc_res.status_code == 200 and "authorization_endpoint" in oidc_res.text and "issuer" in oidc_res.text:
+            if oidc_res.status_code == 200 and "authorization_endpoint" in oidc_res.text and "issuer" in oidc_res.text and not is_false_positive(oidc_res.text, shell_content, home_content):
                 e_files.append("/.well-known/openid-configuration")
                 found_paths.add("/.well-known/openid-configuration")
+                if args.show_prog and (not nd or '/.well-known/openid-configuration' not in unique_progress_paths):
+                    print("New path/file: /.well-known/openid-configuration")
+                    unique_progress_paths.add('/.well-known/openid-configuration')
                 if args.depth is None or args.depth > 0:
                     try:
                         # json format for openidconfig
