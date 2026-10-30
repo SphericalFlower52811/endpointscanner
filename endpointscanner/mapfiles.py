@@ -65,7 +65,7 @@ def scrape_structure_files(args, target, HEADER, impersonate_settings, found_pat
                                         if '*' in clean_payload and not args.only_original:
                                             original_trace = clean_payload
                                             clean_payload = clean_payload.replace('*', '1')
-                                            m_display = f"{clean_payload} [Original: {original_trace}]"
+                                            m_display = f"{clean_payload} [Original: {original_trace}]" if not args.disable_og else clean_payload
                                         else:
                                             m_display = clean_payload
                                                 

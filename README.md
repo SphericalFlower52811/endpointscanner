@@ -164,10 +164,12 @@ endpointscanner example.com -oo -o examplescan.txt
 ### New features in update 7.6
 
 - `.map` files are added into sensitive endpoints
+- Added request and fetch to regex instead of just href, path, to, and http methods
 
 ### Bug Fixes/Code improvements
 
 - Fixed bug where invalidated endpoints would not start with the target domain
+- Fixed bug where structure files like robots.txt would have false positives, as scanner did not check if it was a false positive
 
 ## Plans for next version and the future
 
