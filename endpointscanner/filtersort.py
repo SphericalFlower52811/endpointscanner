@@ -313,7 +313,6 @@ def sort_endpoints(
                 
             unsorted_paths.append(display_path)
 
-
     return start_test_time, checktimestatusalready, invalidated_count
 
 def filter_endpoints(
