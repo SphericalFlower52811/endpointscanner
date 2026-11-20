@@ -12,6 +12,7 @@ from curl_cffi import requests
 from urllib.parse import urlparse, urljoin, unquote
 from .miscfuncs import checktime
 import asyncio
+import re
 
 async def test_path_worker(
     path, semaphore, session, args, target, home_content, shell_content, 
@@ -52,7 +53,7 @@ async def test_path_worker(
                 
         if time_state.get('stop_triggered'):
             return
-        relative_key = urlparse(path).path if "://" in path else path
+        relative_key = (urlparse(path).path + (f"?{urlparse(path).query}" if urlparse(path).query else "")) if "://" in path else path
         display_path = discovered_in_js.get(relative_key, discovered_in_js.get(path, path))
         #take away original if disable-og flag is active
         pure_path = display_path.split(" [Original:")[0]
@@ -60,7 +61,7 @@ async def test_path_worker(
             return
         
         decoded_path = unquote(pure_path)
-        if any(c in decoded_path for c in disallowed_url_chars):
+        if any(c in decoded_path for c in disallowed_url_chars) or (re.fullmatch(r'/[^\w]*', pure_path) and pure_path != '/'):
             invalidated_count_wrapper['count'] += 1
             if display_path not in invalidated_endpoints:
                 if display_path.startswith('/'):
@@ -289,14 +290,14 @@ def sort_endpoints(
     else:
         #UNSORTED_PATHS IS FOR RAW OUTPUT FLAG. FOR UNSORTED AFTER SCAN TIMEOUT IT IS THE 'UNSORTED' LIST.
         for path in sorted(found_paths):
-            relative_key = urlparse(path).path if "://" in path else path
+            relative_key = (urlparse(path).path + (f"?{urlparse(path).query}" if urlparse(path).query else "")) if "://" in path else path
             display_path = discovered_in_js.get(relative_key, discovered_in_js.get(path, path))
             
             pure_path = display_path.split(" [Original:")[0]
             if pure_path.strip() in ["/", "//", "///", "/.", "/..", "/...", "/./", "/ "]:
                 continue
             decoded_path = unquote(pure_path)
-            if any(c in decoded_path for c in disallowed_url_chars):
+            if any(c in decoded_path for c in disallowed_url_chars) or (re.fullmatch(r'/[^\w]*', pure_path) and pure_path != '/'):
                 invalidated_count += 1
                 if display_path not in invalidated_endpoints:
                     if display_path.startswith('/'):
@@ -310,7 +311,6 @@ def sort_endpoints(
                 
             if display_path.startswith('/'):
                 display_path = f"{target}{display_path}"
-                
             unsorted_paths.append(display_path)
 
     return start_test_time, checktimestatusalready, invalidated_count

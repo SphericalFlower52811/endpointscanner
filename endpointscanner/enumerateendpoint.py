@@ -160,7 +160,7 @@ def main():
         invalidated_endpoints = []
         emscripten_vfs_detected = False
         #actually test these in 7.6, below the fake page thing.
-        found_paths = set(SENSITIVE_ENDPOINT) if SENSITIVE_ENDPOINT else set()
+        found_paths = set()
         discovered_in_js = {}
         scanned_xmls = set()
         scanned_js = set()
@@ -232,13 +232,10 @@ def main():
         if not args.pipeable: print("\nScraping files...")
         try:
             patterns = [
-                r'["\'`](/[a-zA-Z0-9_\-\./{}:\$~%\?#=&+@]*?)["\'`]', 
-                r'(?<![a-zA-Z0-9_\-])(?:path|href|to|request|fetch|post|get|patch|put|delete|head|options|query)[\s]*[:=\(\|]+[\s]*["\'`](/?[a-zA-Z0-9_\-\./{}:\$~%<>\?#=;&+@]*?(?:[\./][a-zA-Z0-9_\-\./{}:\$~%<>\?#=;&+@]*?)?)["\'`]',
-                r'["\'`](https?://[a-zA-Z0-9_\-\./{}:\$~%\?#=;&+@]+)["\'`]',
-                r'url\([\'"`]?(/[a-zA-Z0-9_\-\./{}:\$~%<>\?#=]+)[\'"`]?\)' 
-            ]
-
-
+                    r'["\'`]((?:\$\{[^}]*\}|\{[^{}]*\})?/[a-zA-Z0-9_\-./{}:$~%?#=&+@()]*?)["\'`]',
+                    r'["\'`](https?://[a-zA-Z0-9_\-./{}:$~%?#=;&+@]+)["\'`]',
+                    r'url\([\'"`]?(/[a-zA-Z0-9_\-./{}:$~%<>\?#=]+)[\'"`]?\)'
+                ]
             checktimestatusalready = None
             #scrape files
             js_files = tag_soup_scrape(
@@ -291,7 +288,6 @@ def main():
                     })
             else:
                 found_paths = list({path.strip() for path in found_paths if path.strip() and not path.rstrip('/') == target})
-            found_paths = list(set(found_paths))
             unsorted = []
             
             assets_suffix = "" if args.show_assets else " (Hidden, use --show-media or -m to show)"
@@ -358,7 +354,6 @@ def main():
             disallowed_url_chars = {
                 '"', '<', '>', backslash, '^', '`', '{', '|', '}', '[', ']', "'"
             }
-
             start_test_time, checktimestatusalready, invalidated_count = sort_endpoints(
                 args, target, S_HEADER, session_cookies, impersonate_settings, shell_content,
                 disallowed_url_chars, autoinput_timeout, found_paths, discovered_in_js,

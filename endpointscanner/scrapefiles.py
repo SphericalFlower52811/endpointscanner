@@ -1,5 +1,3 @@
-# ill make this in the next update rn its just in enumerateendpoint.py
-
 import time
 import re
 import sys
@@ -59,8 +57,9 @@ def tag_soup_scrape(
         
         if is_allowed_asset:
             if asset_clean.lower().endswith(('.js', '.mjs', '.cjs', '.wxs', '.css')):
-                if full_asset_url not in js_files:
-                    js_files.append(full_asset_url)
+                if args.depth is None or args.depth > 0:        # <-- add this
+                    if full_asset_url not in js_files:
+                        js_files.append(full_asset_url)
                 if full_asset_url not in found_paths:
                     found_paths.add(full_asset_url)
             
@@ -169,31 +168,33 @@ def recursive_script_crawler(
     # JS loop
     allowed_domain_netlocs = {urlparse(d).netloc.lower() for d in verified_esl_domains if d}
     js_depths = {}
+    js_identities = set()
+    for _existing_js in js_files:
+        _existing_ident = urlparse(_existing_js).path if "://" in _existing_js else _existing_js.split("?")[0].split("#")[0]
+        js_identities.add(_existing_ident)
     emscripten_vfs_detected = False
-    for path in list(found_paths):
-        #remove url parameter from path
-        if "?" in path:
-            path = path.split("?")[0]
-        if "#" in path:
-            path = path.split("#")[0]
-        # check for js, html, and htm (htm is a older version that still exists in many sites)
-        if path.lower().endswith(('.js', '.html', '.htm', '.mjs', '.cjs', '.wxs', '.css')) and path.lower() not in ['sw.js', 'service-worker.js']:
-            target_asset_url = urljoin(target, path)
-            asset_netloc = urlparse(target_asset_url).netloc.lower()
-            target_netloc = urlparse(target if "://" in target else f"https://{target}").netloc.lower()
-            
-            is_safe_asset = False
-            if asset_netloc == target_netloc:
-                is_safe_asset = True
-            elif asset_netloc in allowed_domain_netlocs:
-                is_safe_asset = True
-            elif any(target_asset_url.lower().startswith(s.lower()) for s in verified_esl_scripts if s):
-                is_safe_asset = True
+    if args.depth is None or args.depth > 0:
+        for path in list(found_paths):
+            #remove url parameter from path
+            ext_check = path.split("?")[0].split("#")[0]
+            if ext_check.lower().endswith(('.js', '.html', '.htm', '.mjs', '.cjs', '.wxs', '.css')) and ext_check.lower() not in ['sw.js', 'service-worker.js']:
+                target_asset_url = urljoin(target, path)
+                asset_netloc = urlparse(target_asset_url).netloc.lower()
+                target_netloc = urlparse(target if "://" in target else f"https://{target}").netloc.lower()
+                
+                is_safe_asset = False
+                if asset_netloc == target_netloc:
+                    is_safe_asset = True
+                elif asset_netloc in allowed_domain_netlocs:
+                    is_safe_asset = True
+                elif any(target_asset_url.lower().startswith(s.lower()) for s in verified_esl_scripts if s):
+                    is_safe_asset = True
 
-            if is_safe_asset and target_asset_url not in js_files:
-                js_files.append(target_asset_url)
-                found_paths.add(target_asset_url)
-                js_depths[target_asset_url] = 1
+                if is_safe_asset and target_asset_url not in js_files and ext_check not in js_identities:
+                    js_identities.add(ext_check)
+                    js_files.append(target_asset_url)
+                    found_paths.add(target_asset_url)
+                    js_depths[target_asset_url] = 1
 
     # check for pyodide
     for j in js_files:
@@ -287,19 +288,17 @@ def recursive_script_crawler(
                             
                         if nested_safe:
                             #remove url parameter from path
-                            if "?" in clean_src:
-                                clean_src = clean_src.split("?")[0]
-                            if "#" in path:
-                                clean_src = clean_src.split("#")[0]
-                            if clean_src.lower().endswith(('.js', '.css', '.html', '.htm', '.mjs', '.cjs', '.wxs', '.css')):
-                                if nested_asset_url not in js_files:
+                            ext_check = clean_src.split("?")[0].split("#")[0]
+                            if ext_check.lower().endswith(('.js', '.html', '.htm', '.mjs', '.cjs', '.wxs', '.css')):
+                                if nested_asset_url not in js_files and ext_check not in js_identities:
                                     if can_crawl_deeper:
+                                        js_identities.add(ext_check)
                                         js_files.append(nested_asset_url)
                                         js_depths[nested_asset_url] = current_depth + 1
 
                     for inline_tag in local_soup.find_all('script'):
                         if inline_tag.string:
-                            inline_chunks = re.findall(r'["\'](/?[a-zA-Z0-9_\-\./]*\.js)["\']', inline_tag.string)
+                            inline_chunks = re.findall(r'["\'](/?[a-zA-Z0-9_\-\./]+\.(?:js|mjs|cjs|css|wxs))["\']', inline_tag.string)
                             for c in inline_chunks:
                                 clean_c = c if c.startswith('/') else '/' + c
                                 nested_inline_url = urljoin(js_url, clean_c)
@@ -313,8 +312,9 @@ def recursive_script_crawler(
                                 elif any(nested_inline_url.lower().startswith(s.lower()) for s in verified_esl_scripts if s):
                                     safe_nested_url = True
                                     
-                                if safe_nested_url and nested_inline_url not in js_files:
+                                if safe_nested_url and nested_inline_url not in js_files and clean_c.split("?")[0].split("#")[0] not in js_identities:
                                     if can_crawl_deeper:
+                                        js_identities.add(clean_c.split("?")[0].split("#")[0])
                                         js_files.append(nested_inline_url)
                                         js_depths[nested_inline_url] = current_depth + 1
                                 
@@ -383,7 +383,7 @@ def recursive_script_crawler(
                                             break
                                     if is_fake_vfs_path: continue 
                                 
-                                if not is_external_link and m_clean.lower().endswith(('.js', '.html', '.htm', '.mjs', '.cjs', '.wxs', '.css')):
+                                if not is_external_link and m_clean.split("?")[0].split("#")[0].lower().endswith(('.js', '.html', '.htm', '.mjs', '.cjs', '.wxs', '.css')):
                                     check_nested_url = urljoin(target, m_clean)
                                     nested_netloc = urlparse(check_nested_url).netloc.lower()
                                     
@@ -394,8 +394,9 @@ def recursive_script_crawler(
                                         nested_safe = True
                                     elif any(check_nested_url.lower().startswith(s.lower()) for s in verified_esl_scripts if s):
                                         nested_safe = True    
-                                    if nested_safe and check_nested_url not in js_files:
+                                    if nested_safe and check_nested_url not in js_files and m_clean.split("?")[0].split("#")[0] not in js_identities:
                                         if can_crawl_deeper:
+                                            js_identities.add(m_clean.split("?")[0].split("#")[0])
                                             js_files.append(check_nested_url)
                                             js_depths[check_nested_url] = current_depth + 1
 
@@ -441,11 +442,8 @@ def recursive_xml_crawler(
 
         for f in list(found_paths):
             #remove url parameter from path
-            if "?" in f:
-                f = f.split("?")[0]
-            if "#" in f:
-                f = f.split("#")[0]
-            if f.lower().endswith(SITEMAP_EXTENSIONS):
+            ext_check = f.split("?")[0].split("#")[0]
+            if ext_check.lower().endswith(SITEMAP_EXTENSIONS):
                 if "http://" in f.lower() or "https://" in f.lower():
                     clean_f = f
                     f_domain = urlparse(f).netloc.lower()

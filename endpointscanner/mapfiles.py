@@ -110,7 +110,7 @@ def scrape_structure_files(args, target, HEADER, impersonate_settings, found_pat
                     unique_progress_paths.add('/sitemap.xml')
 
                 if args.depth is None or args.depth > 0:
-                    raw_locs = re.findall(r'<loc>\s*([^<]+)\s*</loc>', s_res.text, re.IGNORECASE | re.DOTALL)
+                    raw_locs = re.findall(r'<loc\b[^>]*>\s*(?:<!\[CDATA\[)?\s*(.*?)\s*(?:\]\]>)?\s*</loc>', s_res.text, re.IGNORECASE | re.DOTALL)
                     xhtml_locs = re.findall(r'<xhtml:link[^>]*href=["\']([^"\']+)["\']', s_res.text, re.IGNORECASE)
 
                     all_sitemap_locs = raw_locs + xhtml_locs
@@ -193,11 +193,15 @@ def scrape_structure_files(args, target, HEADER, impersonate_settings, found_pat
                                     for item in node: strings.extend(extract_json_strings(item))
                                 elif isinstance(node, str):
                                     node_strip = node.strip()
-                                    
+
+                                    ASSET_EXTS = ('.js', '.mjs', '.cjs', '.css', '.wasm', '.map', '.json', '.png',
+                                    '.jpg', '.jpeg', '.svg', '.webp', '.gif', '.ico', '.woff', '.woff2', '.ttf')
                                     is_valid_route = False
                                     if node_strip.startswith(('http://', 'https://', '/')):
                                         is_valid_route = True
                                     elif '.' in node_strip and '/' in node_strip:
+                                        is_valid_route = True
+                                    elif node_strip.lower().endswith(ASSET_EXTS):
                                         is_valid_route = True
                                         
                                     if is_valid_route:

@@ -170,10 +170,10 @@ def display_and_save_results(
                             f.write("  ----NO ENDPOINTS FOUND----\n")
 
                         if results_protected:
-                            print("\n----PROTECTED ENDPOINTS----\n")
-                            print("\n".join(f"  {p}" for p in results_protected) + "\n")
+                            f.write("\n----PROTECTED ENDPOINTS----\n")
+                            f.write("\n".join(f"  {p}" for p in results_protected) + "\n")
                         else:
-                            print("\n----NO PROTECTED ENDPOINTS----\n")
+                            f.write("\n----NO PROTECTED ENDPOINTS----\n")
 
                         if results_services:
                             f.write("\n----SERVICES/APIS USED----\n")

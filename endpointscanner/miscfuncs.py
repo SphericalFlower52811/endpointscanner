@@ -157,7 +157,7 @@ def startcodeargs():
     parser.add_argument("-aep", "--all-esl-protocol", type=str, default=None, choices=['https', 'http'], help="Flag to automatically add https/http to every single external script loader that is not defined at the start. Does nothing if -esl is not passed.")
     parser.add_argument("-eH", "--extra-header", action="append", default=[], help="Add extra headers you want for the website like cookies or authorization etc. Also applies to rate limit test even if -orlt is passed.")
     parser.add_argument("-nh", "--no-headless", action="store_true", help="Playwright browser used will not be headless, serves as a debug function.")
-    parser.add_argument("-dse", "--disable-sensitive-endpoint", action="store_true", help="Flag to disable testing sensitive endpoints, allowing the tool to send less requests.")
+    parser.add_argument("-tse", "--test-sensitive-endpoint", action="store_true", help="Flag to test sensitive endpoints (e.g. .env.local).")
     parser.add_argument("-ssi", "--still-show-invalid", action='store_true', help='Show endpoints that were flagged as invalid.') 
     parser.add_argument("-orlt", "--only-ratelimit-test", action='store_true', help="Make the scanner only test for rate limiting.")
     parser.add_argument("-rat", "--ratelimit-await-time", type=int, default=50, help="Adjust rate limiting test await time for small or extremely large request quantities. Default is 50. Time is in seconds.")
@@ -175,6 +175,7 @@ def startcodeargs():
     args = parser.parse_args()
 
     args.raw_output = not args.sort_output
+    args.disable_sensitive_endpoint = not args.test_sensitive_endpoint
     if args.output_file: 
         outputfile = str(args.output_file)
         #for ppl who think i made -o cli
@@ -194,7 +195,7 @@ def startcodeargs():
         init(autoreset=True)
         print()
         print("-" * 65)
-        print(f"{Style.BRIGHT}Endpointscanner {Fore.LIGHTMAGENTA_EX}v7.5.3 {Fore.RESET}")
+        print(f"{Style.BRIGHT}Endpointscanner {Fore.LIGHTMAGENTA_EX}v7.6.0 {Fore.RED}(DEVELOPMENT) {Fore.RESET}")
         print()
         print(f"Made by: {Fore.LIGHTMAGENTA_EX}SphericalFlower52811")
         print()
