@@ -478,6 +478,7 @@ def recursive_crawler(
     def process_xml(xml_url, current_depth, res):
         new_js, new_pages, new_xml = [], [], []
         can_deeper = (args.depth is None or current_depth < args.depth)
+        scanned_xmls.add(xml_url) 
         all_locs = []
         path_only = urlparse(xml_url).path.lower()
         ct = (res.headers.get('Content-Type', '') or '').lower()
