@@ -342,4 +342,4 @@ def scrape_structure_files(args, target, HEADER, impersonate_settings, found_pat
             print("Scan cancelled by user.")
             sys.exit(0)
         except: pass
-    return e_files, xml_files, xml_depths
+    return e_files

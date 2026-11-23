@@ -17,7 +17,7 @@ from .miscfuncs import check_if_local, startcodeargs, testhttpprotocol, checkser
 from .outputendpointsfound import display_and_save_results
 from .headerconfig import HEADER
 from .mapfiles import scrape_structure_files
-from .scrapefiles import tag_soup_scrape, initial_html_scrape, recursive_crawler, recursive_xml_crawler
+from .scrapefiles import tag_soup_scrape, initial_html_scrape, recursive_crawler
 from .filtersort import sort_endpoints
 
 def main():
@@ -215,7 +215,7 @@ def main():
         cprs = args.path_sub #custom path normalization replacement string
         #identify js stacks.
         js_stack = []
-        identify_javascript_type(html=main_html, headers=None, current_stack=js_stack)
+        identify_javascript_type(html=main_html, headers=base_res.headers, current_stack=js_stack)
         fake_url = urljoin(target, fake_path)
         shell_content = ""
         try:
@@ -228,7 +228,7 @@ def main():
                 print("Fake path test finished.")
             else:
                 print("Headless browser & fake path test finished.")
-        e_files, xml_files, xml_depths = scrape_structure_files(args, target, HEADER, impersonate_settings, found_paths, unique_progress_paths, nd, USELESSSTUFF, shell_content, home_content)
+        e_files = scrape_structure_files(args, target, HEADER, impersonate_settings, found_paths, unique_progress_paths, nd, USELESSSTUFF, shell_content, home_content)
         if not args.pipeable: print("\nScraping files...")
         try:
             patterns = [
@@ -255,7 +255,7 @@ def main():
                                         verified_esl_domains, verified_esl_scripts, patterns,
                                         JSPDF_SIGNATURE_KEYS, PYODIDE_VFS_PRECISION_PATTERNS,
                                         cprs, ignored_extensions, USELESSSTUFF, nd,
-                                        found_paths, js_files, scanned_js, discovered_in_js, unique_progress_paths, js_stack,
+                                        found_paths, js_files, scanned_js, scanned_xmls, discovered_in_js, unique_progress_paths, js_stack,
                                         start_test_time, checktimestatusalready, autoinput_timeout
                                     )
             #check map files
@@ -265,14 +265,6 @@ def main():
                     if not clean_js_path.startswith('/'):
                         clean_js_path = '/' + clean_js_path
                     SENSITIVE_ENDPOINT.add(f"{clean_js_path}.map")
-
-            #scrape xml
-            start_test_time, checktimestatusalready = recursive_xml_crawler(
-                args, target, HEADER, session_cookies, impersonate_settings,
-                verified_esl_domains, verified_esl_scripts, USELESSSTUFF, nd,
-                found_paths, xml_files, xml_depths, unique_progress_paths,
-                start_test_time, checktimestatusalready, autoinput_timeout
-            )
 
             if not args.only_res:
                 print(f"\nDetected JS Stack: {' + '.join(js_stack) if js_stack else 'Unknown JS Stack'}")
