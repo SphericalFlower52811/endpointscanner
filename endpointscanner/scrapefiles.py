@@ -157,7 +157,33 @@ def initial_html_scrape(
             
     return start_test_time, checktimestatusalready
 
-def recursive_script_crawler(
+import asyncio
+from urllib.parse import urlparse, urljoin
+from bs4 import BeautifulSoup
+from curl_cffi import requests
+
+# page-like filter
+_PAGE_EXTS = ('.html', '.htm', '.php', '.asp', '.aspx', '.jsp', '.shtml')
+_NON_PAGE_PREFIXES = ('/api', '/v1', '/v2', '/v3', '/v4', '/v5', '/graphql', '/socket.io', '/static', '/assets')
+_ASSET_EXTS = ('.js', '.mjs', '.cjs', '.css', '.wxs', '.png', '.jpg', '.jpeg', '.svg', '.webp', '.gif',
+               '.ico', '.woff', '.woff2', '.ttf', '.map', '.json', '.txt', '.xml', '.wasm', '.pdf', '.zip', '.gz')
+
+def _is_page_like(path):
+    p = path.split("?")[0].split("#")[0]
+    ext = ""
+    base = p.rsplit('/', 1)[-1]
+    if "." in base:
+        ext = "." + base.rsplit(".", 1)[-1].lower()
+    if ext in _ASSET_EXTS:
+        return False
+    if p.lower().startswith(_NON_PAGE_PREFIXES):
+        return False
+    if ext == "" or ext in _PAGE_EXTS:
+        return True
+    return False
+
+
+def recursive_crawler(
     args, target, HEADER, session_cookies, impersonate_settings,
     verified_esl_domains, verified_esl_scripts, patterns,
     JSPDF_SIGNATURE_KEYS, PYODIDE_VFS_PRECISION_PATTERNS,
@@ -165,265 +191,281 @@ def recursive_script_crawler(
     found_paths, js_files, scanned_js, discovered_in_js, unique_progress_paths, js_stack,
     start_test_time, checktimestatusalready, autoinput_timeout
 ):
-    # JS loop
     allowed_domain_netlocs = {urlparse(d).netloc.lower() for d in verified_esl_domains if d}
+    target_netloc = urlparse(target if "://" in target else f"https://{target}").netloc.lower()
+
     js_depths = {}
     js_identities = set()
+    page_identities = set()
+
     for _existing_js in js_files:
-        _existing_ident = urlparse(_existing_js).path if "://" in _existing_js else _existing_js.split("?")[0].split("#")[0]
-        js_identities.add(_existing_ident)
+        _ident = urlparse(_existing_js).path if "://" in _existing_js else _existing_js.split("?")[0].split("#")[0]
+        js_identities.add(_ident)
+
     emscripten_vfs_detected = False
+
+    work_queue = []
+    for j in js_files:
+        work_queue.append(('js', j, js_depths.get(j, 1)))
+
     if args.depth is None or args.depth > 0:
         for path in list(found_paths):
-            #remove url parameter from path
             ext_check = path.split("?")[0].split("#")[0]
             if ext_check.lower().endswith(('.js', '.html', '.htm', '.mjs', '.cjs', '.wxs', '.css')) and ext_check.lower() not in ['sw.js', 'service-worker.js']:
                 target_asset_url = urljoin(target, path)
                 asset_netloc = urlparse(target_asset_url).netloc.lower()
-                target_netloc = urlparse(target if "://" in target else f"https://{target}").netloc.lower()
-                
-                is_safe_asset = False
-                if asset_netloc == target_netloc:
-                    is_safe_asset = True
-                elif asset_netloc in allowed_domain_netlocs:
-                    is_safe_asset = True
-                elif any(target_asset_url.lower().startswith(s.lower()) for s in verified_esl_scripts if s):
-                    is_safe_asset = True
-
+                is_safe_asset = (asset_netloc == target_netloc
+                                 or asset_netloc in allowed_domain_netlocs
+                                 or any(target_asset_url.lower().startswith(s.lower()) for s in verified_esl_scripts if s))
                 if is_safe_asset and target_asset_url not in js_files and ext_check not in js_identities:
                     js_identities.add(ext_check)
                     js_files.append(target_asset_url)
                     found_paths.add(target_asset_url)
                     js_depths[target_asset_url] = 1
+                    work_queue.append(('js', target_asset_url, 1))
 
-    # check for pyodide
     for j in js_files:
         if 'pyodide' in j.lower():
             emscripten_vfs_detected = True
             break
 
-    # recursive scanning 
-    js_idx = 0
-    while js_idx < len(js_files):
-        js_url = js_files[js_idx]
+    semaphore = asyncio.Semaphore(max(1, int(args.concurrency)))
 
-        current_depth = js_depths.get(js_url, 1)
-        
-        if args.scan_timeout:
-            ts, checktimestatusalready = checktime(start_test_time, args.scan_timeout, checktimestatusalready, (not args.no_auto_input), autoinput_timeout) #timer status
-            if ts == "STOP":
-                break
-            elif ts == "EXTEND":
-                start_test_time = time.perf_counter()
-                args.scan_timeout = 5.0 #5min more
-                
-        try:
-            DOWNLOAD_HEADERS = HEADER.copy()
-            DOWNLOAD_HEADERS["Cache-Control"] = "no-cache"
-            DOWNLOAD_HEADERS["Pragma"] = "no-cache"
-            DOWNLOAD_HEADERS["If-None-Match"] = ""
-            DOWNLOAD_HEADERS["If-Modified-Since"] = ""
+    async def _fetch(session, url, is_js):
+        async with semaphore:
+            headers = HEADER.copy()
+            headers["Cache-Control"] = "no-cache"
+            headers["Pragma"] = "no-cache"
+            headers["If-None-Match"] = ""
+            headers["If-Modified-Since"] = ""
+            domain = urlparse(url).netloc.lower()
+            cookies = session_cookies if domain == target_netloc else None
+            try:
+                return await session.get(url, headers=headers, cookies=cookies, timeout=10)
+            except Exception:
+                return None
 
-            current_script_domain = urlparse(js_url).netloc.lower()
-            base_target_domain = urlparse(target).netloc.lower()
-            
-            active_download_cookies = session_cookies if current_script_domain == base_target_domain else None
-            js_res = requests.get(js_url, headers=DOWNLOAD_HEADERS, cookies=active_download_cookies, timeout=5, impersonate=impersonate_settings)
-            
-            if js_res.status_code == 200:
-                current_filename = js_url
-                scanned_js.add(js_url)
-                if 'pyodide' in js_url.lower():
-                    emscripten_vfs_detected = True
-                can_crawl_deeper = True
-                if args.depth is not None and current_depth >= args.depth:
-                    can_crawl_deeper = False
-                    
-                if js_url.lower().endswith(('.html', '.htm')):
-                    local_soup = BeautifulSoup(js_res.text, 'html.parser')
+    def process_js(js_url, current_depth, text):
+        nonlocal emscripten_vfs_detected
+        new_js, new_pages = [], []
+        scanned_js.add(js_url)
+        if 'pyodide' in js_url.lower():
+            emscripten_vfs_detected = True
+        can_deeper = (args.depth is None or current_depth < args.depth)
 
-                    for tag in local_soup.find_all(True):
-                        raw_src_or_href = tag.get('src') or tag.get('href')
-                        if not raw_src_or_href:
-                            continue
-                            
-                        clean_src = raw_src_or_href.strip()
-                        if clean_src.lower().startswith(('data:', 'blob:', 'javascript:')):
-                            continue
-                        if clean_src.startswith('//'):
-                            clean_src = f"https:{clean_src}"
-                            
-                        nested_asset_url = urljoin(js_url, clean_src)
-                        parsed_nested = urlparse(nested_asset_url)
-                        nested_netloc = parsed_nested.netloc.lower()
-                        nested_path = parsed_nested.path.strip()
-                        
-                        if any(char in nested_netloc for char in [' ', ',', '(', ')', '{', '}']):
-                            continue
-                        if any(char in nested_path for char in [' ', ',', '(', ')', '{', '}']):
-                            continue
-                            
-                        if "://" in clean_src:
-                            rel_path = clean_src
-                        else:
-                            rel_path = '/' + nested_path.lstrip('/') if nested_path else '/'
+        if js_url.lower().endswith(('.html', '.htm')):
+            local_soup = BeautifulSoup(text, 'html.parser')
+            for tag in local_soup.find_all(True):
+                raw = tag.get('src') or tag.get('href')
+                if not raw: continue
+                clean_src = raw.strip()
+                if clean_src.lower().startswith(('data:', 'blob:', 'javascript:')): continue
+                if clean_src.startswith('//'): clean_src = f"https:{clean_src}"
+                nested_asset_url = urljoin(js_url, clean_src)
+                parsed_nested = urlparse(nested_asset_url)
+                nested_netloc = parsed_nested.netloc.lower()
+                nested_path = parsed_nested.path.strip()
+                if any(c in nested_netloc for c in [' ', ',', '(', ')', '{', '}']): continue
+                if any(c in nested_path for c in [' ', ',', '(', ')', '{', '}']): continue
+                rel_path = clean_src if "://" in clean_src else ('/' + nested_path.lstrip('/') if nested_path else '/')
+                if rel_path not in discovered_in_js:
+                    discovered_in_js[rel_path] = rel_path
+                    found_paths.add(rel_path)
+                    if args.show_prog and (not nd or rel_path not in unique_progress_paths):
+                        print(f"Found: {rel_path}"); unique_progress_paths.add(rel_path)
+                        if args.show_source: print(f"  └─ Source File: {js_url}")
+                nested_safe = (nested_netloc == target_netloc or nested_netloc in allowed_domain_netlocs
+                               or any(nested_asset_url.lower().startswith(s.lower()) for s in verified_esl_scripts if s))
+                if nested_safe:
+                    ext_check = clean_src.split("?")[0].split("#")[0]
+                    if ext_check.lower().endswith(('.js', '.html', '.htm', '.mjs', '.cjs', '.wxs', '.css')):
+                        if can_deeper and nested_asset_url not in js_files and ext_check not in js_identities:
+                            js_identities.add(ext_check); js_files.append(nested_asset_url)
+                            js_depths[nested_asset_url] = current_depth + 1
+                            new_js.append((nested_asset_url, current_depth + 1))
+            for inline_tag in local_soup.find_all('script'):
+                if inline_tag.string:
+                    inline_chunks = re.findall(r'["\'](/?[a-zA-Z0-9_\-\./]+\.(?:js|mjs|cjs|css|wxs))["\']', inline_tag.string)
+                    for c in inline_chunks:
+                        clean_c = c if c.startswith('/') else '/' + c
+                        nested_inline_url = urljoin(js_url, clean_c)
+                        n_netloc = urlparse(nested_inline_url).netloc.lower()
+                        safe = (n_netloc == target_netloc or n_netloc in allowed_domain_netlocs
+                                or any(nested_inline_url.lower().startswith(s.lower()) for s in verified_esl_scripts if s))
+                        ident = clean_c.split("?")[0].split("#")[0]
+                        if safe and can_deeper and nested_inline_url not in js_files and ident not in js_identities:
+                            js_identities.add(ident); js_files.append(nested_inline_url)
+                            js_depths[nested_inline_url] = current_depth + 1
+                            new_js.append((nested_inline_url, current_depth + 1))
+                        found_paths.add(clean_c)
+                        if clean_c not in discovered_in_js:
+                            discovered_in_js[clean_c] = clean_c
+                            if args.show_prog and (not nd or clean_c not in unique_progress_paths):
+                                print(f"Found: {clean_c}"); unique_progress_paths.add(clean_c)
+                                if args.show_source: print(f"  └─ Source File: {js_url}")
+            return new_js, new_pages
 
-                        if rel_path not in discovered_in_js:
-                            discovered_in_js[rel_path] = rel_path
-                            found_paths.add(rel_path)
-                            if args.show_prog and (not nd or rel_path not in unique_progress_paths):
-                                print(f"Found: {rel_path}")
-                                unique_progress_paths.add(rel_path)
-                                if args.show_source: print(f"  └─ Source File: {current_filename}")
+        identify_javascript_type_two(javascript_content=text, current_stack=js_stack)
+        identify_javascript_type(html="", headers=None, current_stack=js_stack)
+        for p in patterns:
+            matches = re.findall(p, text)
+            detected = set(matches).intersection(JSPDF_SIGNATURE_KEYS)
+            if len(detected) >= 3:
+                matches = [m for m in matches if m not in JSPDF_SIGNATURE_KEYS]
+            for m in matches:
+                m_clean = re.sub(r'(\$\{.*?\}|:[a-zA-Z0-9_\-]+|\{[^{}]*\}|<[^<>]*>)', cprs, m).strip()
+                if m_clean.startswith('//'): m_clean = f"https:{m_clean}"
+                if "://" not in m_clean:
+                    if not m_clean.startswith('/'): m_clean = '/' + m_clean
+                    if not m.startswith('/'): m = '/' + m
+                m_display = f"{m_clean} [Original: {m}]" if (m_clean != m and not m.startswith('//')) else m_clean
+                is_external_link = False
+                if "://" in m_clean:
+                    m_netloc = urlparse(m_clean).netloc.lower()
+                    allowed_reg = {urlparse(d).netloc.lower() for d in verified_esl_domains if d}
+                    allowed_asset = (m_netloc == target_netloc or m_netloc in allowed_reg
+                                     or any(m_clean.lower().startswith(s.lower()) for s in verified_esl_scripts if s))
+                    if not allowed_asset: is_external_link = True
+                clean_stripped = m_clean.lstrip('/')
+                if clean_stripped in ['http:', 'https:']: continue
+                if clean_stripped.lower().startswith(('http://', 'https://')) and (len(clean_stripped) < 11 or "." not in clean_stripped): continue
+                if not m_clean.lower().endswith(ignored_extensions):
+                    if m_clean.strip() in ["/", "//", "///", "/.", "/..", "/...", "/./"]: continue
+                    if any(t in m_clean.lower() for t in USELESSSTUFF): continue
+                    if emscripten_vfs_detected:
+                        if any(re.match(vp, m_clean, re.IGNORECASE) for vp in PYODIDE_VFS_PRECISION_PATTERNS): continue
 
-                        nested_safe = False
-                        if nested_netloc == target_netloc:
-                            nested_safe = True
-                        elif nested_netloc in allowed_domain_netlocs:
-                            nested_safe = True
-                            
-                        esl_prefix_check = any(nested_asset_url.lower().startswith(s.lower()) for s in verified_esl_scripts if s)
-                        if esl_prefix_check:
-                            nested_safe = True
-                            
-                        if nested_safe:
-                            #remove url parameter from path
-                            ext_check = clean_src.split("?")[0].split("#")[0]
-                            if ext_check.lower().endswith(('.js', '.html', '.htm', '.mjs', '.cjs', '.wxs', '.css')):
-                                if nested_asset_url not in js_files and ext_check not in js_identities:
-                                    if can_crawl_deeper:
-                                        js_identities.add(ext_check)
-                                        js_files.append(nested_asset_url)
-                                        js_depths[nested_asset_url] = current_depth + 1
+                    ext_check = m_clean.split("?")[0].split("#")[0]
+                    is_js_ref = (not is_external_link) and ext_check.lower().endswith(('.js', '.html', '.htm', '.mjs', '.cjs', '.wxs', '.css'))
+                    if is_js_ref:
+                        resolved = urljoin(js_url, m_clean) if m_clean.startswith(('./', '../')) else urljoin(target, m_clean)
+                        resolved_netloc = urlparse(resolved).netloc.lower()
+                        nested_safe = (resolved_netloc == target_netloc or resolved_netloc in allowed_domain_netlocs
+                                       or any(resolved.lower().startswith(s.lower()) for s in verified_esl_scripts if s))
+                        resolved_ident = urlparse(resolved).path
+                        if nested_safe and can_deeper and resolved not in js_files and resolved_ident not in js_identities:
+                            js_identities.add(resolved_ident); js_files.append(resolved)
+                            js_depths[resolved] = current_depth + 1
+                            new_js.append((resolved, current_depth + 1))
 
-                    for inline_tag in local_soup.find_all('script'):
-                        if inline_tag.string:
-                            inline_chunks = re.findall(r'["\'](/?[a-zA-Z0-9_\-\./]+\.(?:js|mjs|cjs|css|wxs))["\']', inline_tag.string)
-                            for c in inline_chunks:
-                                clean_c = c if c.startswith('/') else '/' + c
-                                nested_inline_url = urljoin(js_url, clean_c)
-                                nested_netloc = urlparse(nested_inline_url).netloc.lower()
-                                safe_nested_url = False
+                    if not args.spa and not is_external_link and _is_page_like(m_clean):
+                        resolved = urljoin(js_url, m_clean) if m_clean.startswith(('./', '../')) else urljoin(target, m_clean)
+                        r_netloc = urlparse(resolved).netloc.lower()
+                        if r_netloc == target_netloc and can_deeper:
+                            r_ident = urlparse(resolved).path
+                            if r_ident not in page_identities:
+                                page_identities.add(r_ident)
+                                new_pages.append((resolved, current_depth + 1))
 
-                                if nested_netloc == target_netloc:
-                                    safe_nested_url = True
-                                elif nested_netloc in allowed_domain_netlocs:
-                                    safe_nested_url = True
-                                elif any(nested_inline_url.lower().startswith(s.lower()) for s in verified_esl_scripts if s):
-                                    safe_nested_url = True
-                                    
-                                if safe_nested_url and nested_inline_url not in js_files and clean_c.split("?")[0].split("#")[0] not in js_identities:
-                                    if can_crawl_deeper:
-                                        js_identities.add(clean_c.split("?")[0].split("#")[0])
-                                        js_files.append(nested_inline_url)
-                                        js_depths[nested_inline_url] = current_depth + 1
-                                
-                                found_paths.add(clean_c)
-                                if clean_c not in discovered_in_js:
-                                    discovered_in_js[clean_c] = clean_c
-                                    if args.show_prog and (not nd or clean_c not in unique_progress_paths):
-                                        print(f"Found: {clean_c}")
-                                        unique_progress_paths.add(clean_c)
-                                        if args.show_source: print(f"  └─ Source File: {current_filename}")
+                    found_paths.add(m_clean)
+                    if m_clean not in discovered_in_js:
+                        discovered_in_js[m_clean] = m_display
+                        prog = m_display
+                        if args.only_original and " [Original: " in m_display:
+                            prog = m_display.split(" [Original: ")[1].rstrip(']')
+                        elif args.disable_og and " [Original:" in m_display:
+                            prog = m_display.split(" [Original:")[0].strip()
+                        if args.show_prog and (not nd or m_clean not in unique_progress_paths):
+                            print(f"Found: {prog}"); unique_progress_paths.add(m_clean)
+                            if args.show_source: print(f"  └─ Source File: {js_url}")
+        return new_js, new_pages
 
-                #identify js stack (2)
-                else:
-                    identify_javascript_type_two(javascript_content=js_res.text, current_stack=js_stack)
-                    identify_javascript_type(html="", headers=js_res.headers, current_stack=js_stack)
-                    
-                    for p in patterns:
-                        matches = re.findall(p, js_res.text)
-                        detected_library_keys = set(matches).intersection(JSPDF_SIGNATURE_KEYS)
-                        if len(detected_library_keys) >= 3:
-                            matches = [m for m in matches if m not in JSPDF_SIGNATURE_KEYS]
-                        for m in matches:
-                            m_clean = re.sub(r'(\$\{.*?\}|:[a-zA-Z0-9_\-]+|\{[^{}]*\}|<[^<>]*>)', cprs, m).strip()
-                            m_clean = m_clean.strip()
-                            if m_clean.startswith('//'):
-                                m_clean = f"https:{m_clean}"
+    def process_page(page_url, current_depth, text):
+        new_js, new_pages = [], []
+        can_deeper = (args.depth is None or current_depth < args.depth)
+        local_soup = BeautifulSoup(text, 'html.parser')
+        for tag in local_soup.find_all(True):
+            raw = tag.get('src') or tag.get('href')
+            if not raw: continue
+            clean_src = raw.strip()
+            if clean_src.lower().startswith(('data:', 'blob:', 'javascript:')): continue
+            if clean_src.startswith('//'): clean_src = f"https:{clean_src}"
+            nested_asset_url = urljoin(page_url, clean_src)
+            parsed_nested = urlparse(nested_asset_url)
+            nested_netloc = parsed_nested.netloc.lower()
+            nested_path = parsed_nested.path.strip()
+            if any(c in nested_netloc for c in [' ', ',', '(', ')', '{', '}']): continue
+            if any(c in nested_path for c in [' ', ',', '(', ')', '{', '}']): continue
+            rel_path = clean_src if "://" in clean_src else ('/' + nested_path.lstrip('/') if nested_path else '/')
+            if rel_path not in discovered_in_js:
+                discovered_in_js[rel_path] = rel_path
+                found_paths.add(rel_path)
+                if args.show_prog and (not nd or rel_path not in unique_progress_paths):
+                    print(f"Found: {rel_path}"); unique_progress_paths.add(rel_path)
+                    if args.show_source: print(f"  └─ Source File: {page_url}")
+            nested_safe = (nested_netloc == target_netloc or nested_netloc in allowed_domain_netlocs
+                           or any(nested_asset_url.lower().startswith(s.lower()) for s in verified_esl_scripts if s))
+            if nested_safe:
+                ext_check = clean_src.split("?")[0].split("#")[0]
+                if ext_check.lower().endswith(('.js', '.mjs', '.cjs', '.css', '.wxs')):
+                    if can_deeper and nested_asset_url not in js_files and ext_check not in js_identities:
+                        js_identities.add(ext_check); js_files.append(nested_asset_url)
+                        js_depths[nested_asset_url] = current_depth + 1
+                        new_js.append((nested_asset_url, current_depth + 1))
+                elif not args.spa and _is_page_like(nested_path):
+                    if can_deeper:
+                        r_ident = nested_path
+                        if r_ident not in page_identities:
+                            page_identities.add(r_ident)
+                            new_pages.append((nested_asset_url, current_depth + 1))
+        for inline_tag in local_soup.find_all('script'):
+            if inline_tag.string:
+                for c in re.findall(r'["\'](/?[a-zA-Z0-9_\-\./]+\.(?:js|mjs|cjs|css|wxs))["\']', inline_tag.string):
+                    clean_c = c if c.startswith('/') else '/' + c
+                    nested_inline_url = urljoin(page_url, clean_c)
+                    n_netloc = urlparse(nested_inline_url).netloc.lower()
+                    safe = (n_netloc == target_netloc or n_netloc in allowed_domain_netlocs
+                            or any(nested_inline_url.lower().startswith(s.lower()) for s in verified_esl_scripts if s))
+                    ident = clean_c.split("?")[0].split("#")[0]
+                    if safe and can_deeper and nested_inline_url not in js_files and ident not in js_identities:
+                        js_identities.add(ident); js_files.append(nested_inline_url)
+                        js_depths[nested_inline_url] = current_depth + 1
+                        new_js.append((nested_inline_url, current_depth + 1))
+                    found_paths.add(clean_c)
+                    if clean_c not in discovered_in_js:
+                        discovered_in_js[clean_c] = clean_c
+        return new_js, new_pages
 
-                            if "://" not in m_clean:
-                                if not m_clean.startswith('/'):
-                                    m_clean = '/' + m_clean
-                                if not m.startswith('/'):
-                                    m = '/' + m
-                            
-                            m_display = f"{m_clean} [Original: {m}]" if (m_clean != m and not m.startswith('//')) else m_clean
-                            is_external_link = False
-                            if "://" in m_clean:
-                                m_netloc = urlparse(m_clean).netloc.lower()
-                                allowed_reg_netlocs = {urlparse(d).netloc.lower() for d in verified_esl_domains if d}
-                                
-                                is_allowed_reg_asset = False
-                                if m_netloc == target_netloc:
-                                    is_allowed_reg_asset = True
-                                elif m_netloc in allowed_reg_netlocs:
-                                    is_allowed_reg_asset = True
-                                elif any(m_clean.lower().startswith(s.lower()) for s in verified_esl_scripts if s):
-                                    is_allowed_reg_asset = True
-                                    
-                                if not is_allowed_reg_asset:
-                                    is_external_link = True
+    async def run_async_scrape():
+        nonlocal start_test_time, checktimestatusalready
+        async with requests.AsyncSession(
+            headers=HEADER, cookies=session_cookies, impersonate=impersonate_settings,
+            max_clients=max(1, int(args.concurrency))
+        ) as session:
+            queue = work_queue[:]
+            wave_size = max(1, int(args.concurrency))
+            processed = 0
+            limit = getattr(args, 'html_crawl_limit', None)
+            while queue:
+                if args.scan_timeout:
+                    ts, checktimestatusalready = checktime(start_test_time, args.scan_timeout, checktimestatusalready, (not args.no_auto_input), autoinput_timeout)
+                    if ts == "STOP": break
+                    elif ts == "EXTEND":
+                        start_test_time = time.perf_counter(); args.scan_timeout = 5.0
 
-                            clean_m_stripped = m_clean.lstrip('/')
-                            if clean_m_stripped in ['http:', 'https:']:
-                                continue
-                            if clean_m_stripped.lower().startswith(('http://', 'https://')) and (len(clean_m_stripped) < 11 or "." not in clean_m_stripped):
-                                continue
-                                    
-                            if not m_clean.lower().endswith(ignored_extensions):
-                                if m_clean.strip() in ["/", "//", "///", "/.", "/..", "/...", "/./"]: continue
-                                if any(term in m_clean.lower() for term in USELESSSTUFF): continue
-                                    
-                                if emscripten_vfs_detected:
-                                    is_fake_vfs_path = False
-                                    for vfs_pattern in PYODIDE_VFS_PRECISION_PATTERNS:
-                                        if re.match(vfs_pattern, m_clean, re.IGNORECASE):
-                                            is_fake_vfs_path = True
-                                            break
-                                    if is_fake_vfs_path: continue 
-                                
-                                if not is_external_link and m_clean.split("?")[0].split("#")[0].lower().endswith(('.js', '.html', '.htm', '.mjs', '.cjs', '.wxs', '.css')):
-                                    check_nested_url = urljoin(target, m_clean)
-                                    nested_netloc = urlparse(check_nested_url).netloc.lower()
-                                    
-                                    nested_safe = False
-                                    if nested_netloc == target_netloc:
-                                        nested_safe = True
-                                    elif nested_netloc in allowed_domain_netlocs:
-                                        nested_safe = True
-                                    elif any(check_nested_url.lower().startswith(s.lower()) for s in verified_esl_scripts if s):
-                                        nested_safe = True    
-                                    if nested_safe and check_nested_url not in js_files and m_clean.split("?")[0].split("#")[0] not in js_identities:
-                                        if can_crawl_deeper:
-                                            js_identities.add(m_clean.split("?")[0].split("#")[0])
-                                            js_files.append(check_nested_url)
-                                            js_depths[check_nested_url] = current_depth + 1
+                wave, queue = queue[:wave_size], queue[wave_size:]
+                wave = [(k, u, d) for (k, u, d) in wave if (args.depth is None or d <= args.depth)]
+                if not wave: continue
+                fetched = await asyncio.gather(*[_fetch(session, u, k == 'js') for (k, u, d) in wave])
+                for (kind, url, depth), res in zip(wave, fetched):
+                    if res is None or res.status_code != 200: continue
+                    if kind == 'js':
+                        if getattr(args, 'html_crawl_limit', None) is not None:
+                            pass
+                        new_js, new_pages = process_js(url, depth, res.text)
+                    else:
+                        new_js, new_pages = process_page(url, depth, res.text)
+                        processed += 1
+                        if limit is not None and processed >= limit:
+                            queue = []
+                            break
+                    for (nu, nd) in new_js:
+                        queue.append(('js', nu, nd))
+                    for (nu, nd) in new_pages:
+                        if not args.spa:
+                            queue.append(('page', nu, nd))
 
-                                found_paths.add(m_clean)
-                                if m_clean not in discovered_in_js:
-                                    discovered_in_js[m_clean] = m_display
-                                    prog_display = m_display
-                                    if args.only_original and " [Original: " in m_display:
-                                        prog_display = m_display.split(" [Original: ")[1].rstrip(']')
-                                    elif args.disable_og and " [Original:" in m_display:
-                                        prog_display = m_display.split(" [Original:")[0].strip() 
-                                    
-                                    if args.show_prog:
-                                        if not nd or m_clean not in unique_progress_paths:
-                                            print(f"Found: {prog_display}")
-                                            unique_progress_paths.add(m_clean)
-                                            if args.show_source:
-                                                print(f"  └─ Source File: {current_filename}")
-        except (KeyboardInterrupt, SystemExit):
-            print("Scan cancelled by user.")
-            sys.exit(0)
-        except: 
-            js_idx += 1
-            continue
-            
-        js_idx += 1
-
+    asyncio.run(run_async_scrape())
     return emscripten_vfs_detected, start_test_time, checktimestatusalready
 
 def recursive_xml_crawler(

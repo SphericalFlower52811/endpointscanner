@@ -17,7 +17,7 @@ from .miscfuncs import check_if_local, startcodeargs, testhttpprotocol, checkser
 from .outputendpointsfound import display_and_save_results
 from .headerconfig import HEADER
 from .mapfiles import scrape_structure_files
-from .scrapefiles import tag_soup_scrape, initial_html_scrape, recursive_script_crawler, recursive_xml_crawler
+from .scrapefiles import tag_soup_scrape, initial_html_scrape, recursive_crawler, recursive_xml_crawler
 from .filtersort import sort_endpoints
 
 def main():
@@ -250,7 +250,7 @@ def main():
                                 start_test_time, checktimestatusalready, autoinput_timeout
                             )
             #scrape js
-            emscripten_vfs_detected, start_test_time, checktimestatusalready = recursive_script_crawler(
+            emscripten_vfs_detected, start_test_time, checktimestatusalready = recursive_crawler(
                                         args, target, HEADER, session_cookies, impersonate_settings,
                                         verified_esl_domains, verified_esl_scripts, patterns,
                                         JSPDF_SIGNATURE_KEYS, PYODIDE_VFS_PRECISION_PATTERNS,

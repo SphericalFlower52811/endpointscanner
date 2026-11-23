@@ -172,6 +172,9 @@ def startcodeargs():
     parser.add_argument("-fm", "--filter-out-more", action='store_true', help="Filter out more unhelpful results like w3.org or schema.org")
     parser.add_argument("-nhb", "--no-headless-browser", action='store_true', help="Script will not use the headless browser at all, and use a request instead to get the html body.")
     parser.add_argument("-ait", "--auto-input-time", type=float, default=90, help="Customise amount of time taken for automatic input if you don't answer in seconds. Default 90 seconds.")
+    parser.add_argument("-c", "--concurrency", type=int, default=75, help="Concurrent requests for async, default 75.")
+    parser.add_argument("-spa", action='store_true', help="skip crawling website pages as all pages are the same in SPAs.")
+    parser.add_argument("-hcl", "--html-crawl-limit", type=int, default=500, help="Max HTML pages to crawl. Default 500, set higher for bigger websites")
     args = parser.parse_args()
 
     args.raw_output = not args.sort_output
