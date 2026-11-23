@@ -58,7 +58,7 @@ def tag_soup_scrape(
         
         if is_allowed_asset:
             if asset_clean.lower().endswith(('.js', '.mjs', '.cjs', '.wxs', '.css')):
-                if args.depth is None or args.depth > 0:        # <-- add this
+                if args.depth is None or args.depth > 0:  
                     if full_asset_url not in js_files:
                         js_files.append(full_asset_url)
                 if full_asset_url not in found_paths:
