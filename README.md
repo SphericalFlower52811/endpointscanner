@@ -165,11 +165,15 @@ endpointscanner example.com -oo -o examplescan.txt
 
 - `.map` files are added into sensitive endpoints
 - Added request and fetch to regex instead of just href, path, to, and http methods
+- Improved regex
+- Fixed bug where paths would not have url parameters
+- Made script remove redundant `./` in paths, like example.com/./example as it is just example.com/example.
 
 ### Bug Fixes/Code improvements
 
 - Fixed bug where invalidated endpoints would not start with the target domain
 - Fixed bug where structure files like robots.txt would have false positives, as scanner did not check if it was a false positive
+- Fixed bug where scraper would not scrape paths like "./admin"
 
 ## Plans for next version and the future
 
@@ -179,10 +183,6 @@ Version 7.6:
 - Further improving regex
 - Scanning `openapi.json` for paths
 - properly checking sensitive endpoints
-
-Future plans (May be added in the future version):
-
-none right now
 
 ## Weaknesses
 

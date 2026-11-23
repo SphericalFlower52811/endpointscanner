@@ -232,7 +232,7 @@ def main():
         if not args.pipeable: print("\nScraping files...")
         try:
             patterns = [
-                    r'["\'`]((?:\$\{[^}]*\}|\{[^{}]*\})?/[a-zA-Z0-9_\-./{}:$~%?#=&+@()]*?)["\'`]',
+                    r'["\'`]((?:\$\{[^}]*\}|\{[^{}]*\})?(?:/|\.\.?/)[a-zA-Z0-9_\-./{}:$~%?#=&+@()]*?)["\'`]',
                     r'["\'`](https?://[a-zA-Z0-9_\-./{}:$~%?#=;&+@]+)["\'`]',
                     r'url\([\'"`]?(/[a-zA-Z0-9_\-./{}:$~%<>\?#=]+)[\'"`]?\)'
                 ]
@@ -276,7 +276,7 @@ def main():
 
             if not args.only_res:
                 print(f"\nDetected JS Stack: {' + '.join(js_stack) if js_stack else 'Unknown JS Stack'}")
-            found_paths = [f"{target}{p}" if p.startswith("/") else p for p in found_paths]
+            found_paths = [urljoin(target + "/", p) if not p.startswith(("http://", "https://")) else p for p in found_paths]
             # remove # because website.com/path#... is just /path but diff locations, it's the exact same page.
             found_paths = [path.split('#')[0] if '#' in path else path for path in found_paths]
             if emscripten_vfs_detected:
