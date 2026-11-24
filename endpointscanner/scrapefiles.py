@@ -349,7 +349,7 @@ def recursive_crawler(
             for m in matches:
                 m_clean = re.sub(r'(\$\{.*?\}|:[a-zA-Z0-9_\-]+|\{[^{}]*\}|<[^<>]*>)', cprs, m).strip()
                 if m_clean.startswith('//'): m_clean = f"https:{m_clean}"
-                if "://" not in m_clean:
+                if "://" not in m_clean and not m_clean.startswith(('./', '../')):
                     if not m_clean.startswith('/'): m_clean = '/' + m_clean
                     if not m.startswith('/'): m = '/' + m
                 m_display = f"{m_clean} [Original: {m}]" if (m_clean != m and not m.startswith('//')) else m_clean
