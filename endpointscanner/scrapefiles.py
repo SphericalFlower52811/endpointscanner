@@ -400,7 +400,13 @@ def recursive_crawler(
                                 xml_identities.add(xml_ident)
                                 new_xml.append((resolved, current_depth + 1))
 
-                    found_paths.add(m_clean)
+                    if "://" not in m_clean and m_clean.startswith(('./', '../')):
+                        resolved_found = urljoin(js_url, m_clean)
+                    elif "://" not in m_clean:
+                        resolved_found = urljoin(target, m_clean)
+                    else:
+                        resolved_found = m_clean
+                    found_paths.add(resolved_found)
                     if m_clean not in discovered_in_js:
                         discovered_in_js[m_clean] = m_display
                         prog = m_display
