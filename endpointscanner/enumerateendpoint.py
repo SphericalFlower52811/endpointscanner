@@ -21,6 +21,7 @@ from .scrapefiles import tag_soup_scrape, initial_html_scrape, recursive_crawler
 from .filtersort import sort_endpoints
 
 def main():
+    start_time = time.perf_counter()
     #jspdf 
     JSPDF_SIGNATURE_KEYS = {
         "/ASCII85Decode", "/ASCII85Encode", "/ASCIIHexDecode", "/ASCIIHexEncode", 
@@ -358,7 +359,7 @@ def main():
             #filter external links
             results_ext = list({el for el in results_ext if len(el) >= 4})
             all_scanned_sources = list(e_files) + list(scanned_html) + list(scanned_xmls) + list(scanned_js)
-
+            time_taken = time.perf_counter() - start_time
             display_and_save_results(
                 args, show_dead, target,
                 results_200, results_services, results_ext, results_subd,
@@ -369,6 +370,8 @@ def main():
                 unsorted_paths, invalidated_count,
                 invalidated_endpoints
             )
+            if not args.pipeable:
+                print(f"Time taken to scan endpoints: {time_taken:.2f} seconds")
 
             if args.ratelimit is not None:
                 num = args.ratelimit

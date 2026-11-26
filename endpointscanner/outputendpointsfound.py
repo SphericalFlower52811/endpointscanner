@@ -96,19 +96,7 @@ def display_and_save_results(
                 print("\n".join(f"  {p}" for p in results_services))
             else:
                 print("\n----NO SERVICES/APIS FOUND----")
-                
-            if results_ext:
-                print("\n----EXTERNAL LINKS----")
-                print("\n".join(f"  {p}" for p in results_ext))
-            else:
-                print("\n----NO EXTERNAL LINKS FOUND----")
-                
-            if results_subd:
-                print("\n----SUBDOMAINS----")
-                print("\n".join(f"  {p}" for p in results_subd))
-            else:
-                print("\n----NO SUBDOMAINS FOUND----")
-                
+
             if results_frameworks:
                 print("\n----WEBSITE SOURCE CODE/FILES----")
                 print("\n".join(f"  {p}" for p in results_frameworks))
@@ -120,6 +108,18 @@ def display_and_save_results(
                 print("\n".join(f"  {p}" for p in results_30x))
             else:
                 print("\n----NO REDIRECTS FOUND----")
+
+            if results_subd:
+                print("\n----SUBDOMAINS----")
+                print("\n".join(f"  {p}" for p in results_subd))
+            else:
+                print("\n----NO SUBDOMAINS FOUND----")
+
+            if results_ext:
+                print("\n----EXTERNAL LINKS----")
+                print("\n".join(f"  {p}" for p in results_ext))
+            else:
+                print("\n----NO EXTERNAL LINKS FOUND----")
                 
             if args.show_assets:
                 if results_assets:
