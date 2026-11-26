@@ -163,7 +163,7 @@ def startcodeargs():
     parser.add_argument("-rat", "--ratelimit-await-time", type=int, default=50, help="Adjust rate limiting test await time for small or extremely large request quantities. Default is 50. Time is in seconds.")
     parser.add_argument("-p", "--pipeable", action='store_true', help="Make the tool pipeable by automatically passing other arguments.")
     parser.add_argument("-ps", "--path-sub", type=str, default='1', help="Change the default path normalization replacement from 1 to a custom string.")
-    parser.add_argument("-os", "--only-sub", action='store_true', help="Make the tool only output subdomains.")
+    parser.add_argument("-os", "--only-subd", action='store_true', help="Make the tool only output subdomains.")
     parser.add_argument("-ox", "--only-external", action='store_true', help="Make the tool only output external links.")
     parser.add_argument("-oe", "--only-endpoints", action='store_true', help="Make the tool only output endpoints. Does not include assets, services/apis.")
     parser.add_argument("-de", "--depth", type=int, default=None, help="How deep the recursive scanning for both js and xml files can go. Defaults to infinite.")
@@ -175,9 +175,11 @@ def startcodeargs():
     parser.add_argument("-c", "--concurrency", type=int, default=75, help="Concurrent requests for async, default 75.")
     parser.add_argument("-spa", action='store_true', help="skip crawling website pages as all pages are the same in SPAs.")
     parser.add_argument("-hcl", "--html-crawl-limit", type=int, default=500, help="Max HTML pages to crawl. Default 500, set higher for bigger websites")
+    parser.add_argument("-cro", "--categorised-raw-output", action='store_true', help='categorise raw output into endpoints, subdomains and external links.')
     args = parser.parse_args()
 
     args.raw_output = not args.sort_output
+    if args.categorised_raw_output: args.raw_output = True
     args.disable_sensitive_endpoint = not args.test_sensitive_endpoint
     if args.output_file: 
         outputfile = str(args.output_file)

@@ -1,9 +1,7 @@
 '''
-This file (will) contain an algorithm to sort out the results based off the three flags:
--oe
--os
--oea
--oc
+filtersort.py
+sort endpoints into categories like 200 OK, 404 or protected etc.
+filter endpoints based off flags like -oe, -ox, -os
 '''
 
 import time
@@ -320,8 +318,10 @@ def filter_endpoints(
     results_assets, results_frameworks, results_30x, results_protected, 
     results_dead, invalidated_endpoints, unsorted_paths
 ):
-    if not (args.only_endpoints or args.only_sub or args.only_external):
+    if not (args.only_endpoints or args.only_subd or args.only_external) and not args.categorised_raw_output:
         return None
+    if not (args.only_endpoints or args.only_subd or args.only_external):
+        args.only_endpoints, args.only_subd, args.only_external = True, True, True
     all_endpoints = []
     def get_base(domain):
         parts = domain.split('.')
@@ -350,9 +350,9 @@ def filter_endpoints(
         results_200.extend(raw_endpoints)
         results_ext.extend(raw_ext)
         results_subd.extend(raw_subd)
-    if args.only_external:
+    if args.only_external and not args.categorised_raw_output:
         all_endpoints.extend(results_ext)
-    if args.only_sub:
+    if args.only_subd and not args.categorised_raw_output:
         all_endpoints.extend(results_subd)
     if args.only_endpoints:
         all_endpoints.extend(results_200)
@@ -363,7 +363,12 @@ def filter_endpoints(
         if args.show_media: all_endpoints.extend(results_assets)
         if args.show_404s: all_endpoints.extend(results_dead)
         if args.still_show_invalid: all_endpoints.extend(invalidated_endpoints)
+    if args.categorised_raw_output:
+        return {"endpoints":sorted(list(set(all_endpoints))), 
+                "sub":sorted(list(set(results_subd))), 
+                "ext":sorted(list(set(results_ext)))
+                }
+    else:
+        return sorted(list(set(all_endpoints)))
 
-    return sorted(list(set(all_endpoints)))
-        
         

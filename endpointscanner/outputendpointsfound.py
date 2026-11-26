@@ -17,7 +17,7 @@ def display_and_save_results(
         results_assets, results_frameworks, results_30x, results_protected, 
         results_dead, invalidated_endpoints, unsorted_paths
         )
-    if what_to_output is not None:
+    if what_to_output:
         if not args.pipeable:
             print()
             stuff_to_output = ""
@@ -25,38 +25,52 @@ def display_and_save_results(
                 stuff_to_output += "Endpoints"
                 if args.only_external:
                     stuff_to_output += " + External links"
-                if args.only_sub:
+                if args.only_subd:
                     stuff_to_output += " + Subdomains"
             elif args.only_external:
                 stuff_to_output += "External links"
-                if args.only_sub:
+                if args.only_subd:
                     stuff_to_output += " + Subdomains"
             else:
                 stuff_to_output += "Subdomains"
-            print(f"Total {stuff_to_output}: {len(what_to_output)}")
-        print()
-        print("\n".join(f" {p}" for p in what_to_output))
-        if args.output_file:
-            try:
-                with open(args.output_file, 'w', encoding='utf-8') as fi:
+            if args.categorised_raw_output:
+                print(f"Total {stuff_to_output}: {len(what_to_output["endpoints"]) + len(what_to_output["sub"]) + len(what_to_output["ext"])}")
+            else:
+                print(f"Total {stuff_to_output}: {len(what_to_output)}")
+        if args.categorised_raw_output:
+            if args.only_endpoints and what_to_output["endpoints"]:
+                print("\n---- ENDPOINTS ----")
+                print("\n".join(f"  {p}" for p in what_to_output["endpoints"]))
+            if args.only_subd and what_to_output["sub"]:
+                print("\n---- SUBDOMAINS ----")
+                print("\n".join(f"  {p}" for p in what_to_output["sub"]))
+            if args.only_external and what_to_output["ext"]:
+                print("\n---- EXTERNAL LINKS ----")
+                print("\n".join(f"  {p}" for p in what_to_output["ext"]))
+        else:
+            print()
+            print("\n".join(f" {p}" for p in what_to_output))
+            if args.output_file:
+                try:
+                    with open(args.output_file, 'w', encoding='utf-8') as fi:
+                        if not args.pipeable:
+                            fi.write('----Raw Results----\n\n')
+                        if what_to_output:
+                            fi.write("\n".join(what_to_output) + "\n")
+                        if args.still_show_invalid:
+                            if not args.pipeable: fi.write('----Invalidated (-ssi passed)----\n\n')
+                            fi.write("\n".join(f"  {p}" for p in invalidated_endpoints) + "\n")
+                            
+                        if args.show_source and not args.pipeable:
+                            fi.write(f"\n\n----Files Scanned----\n")
+                            if all_scanned_sources: fi.write("\n".join(f" - {f}" for f in sorted(set(all_scanned_sources))) + "\n")
+                        if not args.pipeable:
+                            if invalidated_count > 0:
+                                fi.write(f"\nInvalidated Endpoints: {invalidated_count}{invalidated_suffix}" + "\n")
                     if not args.pipeable:
-                        fi.write('----Raw Results----\n\n')
-                    if what_to_output:
-                        fi.write("\n".join(what_to_output) + "\n")
-                    if args.still_show_invalid:
-                        if not args.pipeable: fi.write('----Invalidated (-ssi passed)----\n\n')
-                        fi.write("\n".join(f"  {p}" for p in invalidated_endpoints) + "\n")
-                        
-                    if args.show_source and not args.pipeable:
-                        fi.write(f"\n\n----Files Scanned----\n")
-                        if all_scanned_sources: fi.write("\n".join(f" - {f}" for f in sorted(set(all_scanned_sources))) + "\n")
-                    if not args.pipeable:
-                        if invalidated_count > 0:
-                            fi.write(f"\nInvalidated Endpoints: {invalidated_count}{invalidated_suffix}" + "\n")
-                if not args.pipeable:
-                    print(f"\nRaw results successfully written to '{args.output_file}'")
-            except Exception as e:
-                if not args.pipeable: print(f'\nFailed to write raw results to file: {e}')
+                        print(f"\nRaw results successfully written to '{args.output_file}'")
+                except Exception as e:
+                    if not args.pipeable: print(f'\nFailed to write raw results to file: {e}')
     else:
         if not results_assets:
             assets_suffix = ""
