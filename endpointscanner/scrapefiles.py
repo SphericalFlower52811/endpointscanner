@@ -130,7 +130,7 @@ def initial_html_scrape(
                     continue
                 
                 if not m_clean.lower().endswith(ignored_extensions):
-                    if m_clean in ["/", "//", "///", "/.", "/..", "/...", "/./", "/ "]:
+                    if m_clean in ["/", "//", "///", "/.", "/..", "/...", "/./", "/ ", ".", "..", "../", "./"]:
                         continue
                     if any(term in m_clean.lower() for term in USELESSSTUFF):
                         continue
@@ -289,13 +289,16 @@ def recursive_crawler(
                 clean_src = raw.strip()
                 if clean_src.lower().startswith(('data:', 'blob:', 'javascript:')): continue
                 if clean_src.startswith('//'): clean_src = f"https:{clean_src}"
+                if clean_src.strip() in ["./", "../", ".", ".."]: continue
                 nested_asset_url = urljoin(js_url, clean_src)
                 parsed_nested = urlparse(nested_asset_url)
                 nested_netloc = parsed_nested.netloc.lower()
                 nested_path = parsed_nested.path.strip()
                 if any(c in nested_netloc for c in [' ', ',', '(', ')', '{', '}']): continue
                 if any(c in nested_path for c in [' ', ',', '(', ')', '{', '}']): continue
+                if nested_path.strip() in ["/", "//", "///", "/.", "/..", "/...", "/./", "./", "../", ".", ".."]: continue
                 rel_path = clean_src if "://" in clean_src else ('/' + nested_path.lstrip('/') if nested_path else '/')
+                if rel_path.strip() in ["/", "//", "///", "/.", "/..", "/...", "/./", "./", "../", ".", ".."]: continue
                 if rel_path not in discovered_in_js:
                     discovered_in_js[rel_path] = rel_path
                     found_paths.add(rel_path)
@@ -331,6 +334,7 @@ def recursive_crawler(
                             js_identities.add(ident); js_files.append(nested_inline_url)
                             js_depths[nested_inline_url] = current_depth + 1
                             new_js.append((nested_inline_url, current_depth + 1))
+                        if clean_c.strip() in ["/", "//", "///", "/.", "/..", "/...", "/./", "./", "../", ".", ".."]: continue
                         found_paths.add(clean_c)
                         if clean_c not in discovered_in_js:
                             discovered_in_js[clean_c] = clean_c
@@ -364,7 +368,7 @@ def recursive_crawler(
                 if clean_stripped in ['http:', 'https:']: continue
                 if clean_stripped.lower().startswith(('http://', 'https://')) and (len(clean_stripped) < 11 or "." not in clean_stripped): continue
                 if not m_clean.lower().endswith(ignored_extensions):
-                    if m_clean.strip() in ["/", "//", "///", "/.", "/..", "/...", "/./"]: continue
+                    if m_clean.strip() in ["/", "//", "///", "/.", "/..", "/...", "/./", ".", "..", "./", "../"]: continue
                     if any(t in m_clean.lower() for t in USELESSSTUFF): continue
                     if emscripten_vfs_detected:
                         if any(re.match(vp, m_clean, re.IGNORECASE) for vp in PYODIDE_VFS_PRECISION_PATTERNS): continue
@@ -429,6 +433,7 @@ def recursive_crawler(
             clean_src = raw.strip()
             if clean_src.lower().startswith(('data:', 'blob:', 'javascript:')): continue
             if clean_src.startswith('//'): clean_src = f"https:{clean_src}"
+            if clean_src.strip() in ["./", "../", ".", ".."]: continue  
             nested_asset_url = urljoin(page_url, clean_src)
             parsed_nested = urlparse(nested_asset_url)
             nested_netloc = parsed_nested.netloc.lower()
@@ -436,6 +441,7 @@ def recursive_crawler(
             if any(c in nested_netloc for c in [' ', ',', '(', ')', '{', '}']): continue
             if any(c in nested_path for c in [' ', ',', '(', ')', '{', '}']): continue
             rel_path = clean_src if "://" in clean_src else ('/' + nested_path.lstrip('/') if nested_path else '/')
+            if rel_path.strip() in ["/", "//", "///", "/.", "/..", "/...", "/./", "./", "../", ".", ".."]: continue
             if rel_path not in discovered_in_js:
                 discovered_in_js[rel_path] = rel_path
                 found_paths.add(rel_path)
@@ -476,6 +482,7 @@ def recursive_crawler(
                         js_identities.add(ident); js_files.append(nested_inline_url)
                         js_depths[nested_inline_url] = current_depth + 1
                         new_js.append((nested_inline_url, current_depth + 1))
+                    if clean_c.strip() in ["/", "//", "///", "/.", "/..", "/...", "/./", "./", "../", ".", ".."]: continue
                     found_paths.add(clean_c)
                     if clean_c not in discovered_in_js:
                         discovered_in_js[clean_c] = clean_c
@@ -535,7 +542,7 @@ def recursive_crawler(
             else:
                 clean_path = '/' + loc_stripped.lstrip('/')
             clean_path = '/' + clean_path.lstrip('/') if "://" not in clean_path else clean_path
-            if not clean_path or clean_path in ["/", "//", "///", "/.", "/..", "/...", "/./", "/ "]: continue
+            if not clean_path or clean_path in ["/", "//", "///", "/.", "/..", "/...", "/./", "/ ", ".", "..", "./", "../"]: continue
             if any(t in clean_path.lower() for t in USELESSSTUFF): continue
 
             if clean_path.lower().endswith(SITEMAP_EXTS):
